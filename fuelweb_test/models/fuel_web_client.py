@@ -3241,7 +3241,7 @@ class FuelWebClient30(FuelWebClient29):
             interfaces.extend(raw_data)
 
         def get_iface_by_name(ifaces, name):
-            iface = [i for i in ifaces if i['name'] == name]
+            iface = [_iface for _iface in ifaces if _iface['name'] == name]
             assert_true(len(iface) > 0,
                         "Interface with name {} is not present on "
                         "node. Please check override params.".format(name))
