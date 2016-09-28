@@ -24,7 +24,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 @test(groups=['failover_group_mongo'])
 class FailoverGroupMongo(TestBasic):
-    """ FailoverGroupMongo """  # TODO documentation
+    """FailoverGroupMongo """  # TODO documentation
 
     @test(depends_on_groups=["prepare_slaves_9"],
           groups=['deploy_mongo_cluster'])

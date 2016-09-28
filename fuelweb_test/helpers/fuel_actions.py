@@ -484,7 +484,7 @@ class CobblerActions(BaseActions):
 
 
 class NessusActions(object):
-    """ NessusActions."""   # TODO documentation
+    """NessusActions."""   # TODO documentation
 
     def __init__(self, d_env):
         self.devops_env = d_env
