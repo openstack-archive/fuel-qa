@@ -3006,14 +3006,18 @@ class FuelWebClient30(FuelWebClient29):
                   self.environment.d_env.get_groups()}
             ng_nets = []
             for rack in self.environment.d_env.get_groups():
-                nets = {'name': rack.name}
-                nets['networks'] = {r.name: r.address_pool.name for
-                                    r in rack.get_network_pools(
-                                        name__in=['fuelweb_admin',
-                                                  'public',
-                                                  'management',
-                                                  'storage',
-                                                  'private'])}
+                nets = {
+                    'name': rack.name,
+                    'networks': {
+                        r.name: r.address_pool.name
+                        for r in rack.get_network_pools(
+                            name__in=['fuelweb_admin',
+                                      'public',
+                                      'management',
+                                      'storage',
+                                      'private'])
+                    }
+                }
                 ng_nets.append(nets)
             self.update_nodegroups(cluster_id=cluster_id,
                                    node_groups=ng)
@@ -3168,13 +3172,12 @@ class FuelWebClient30(FuelWebClient29):
                         node_iface.mac_address]['name']] = net.networks
                 else:
                     assigned_networks[net.label] = net.networks
-                logger.info(
-                    'Assigned networks for node {node} are: {networks}'
-                    ''.format(
-                        node=node['name'],
-                        networks=str(assigned_networks)
-                    )
+            logger.info(
+                'Assigned networks for node {node} are: {networks}'.format(
+                    node=node['name'],
+                    networks=pretty_log(assigned_networks, indent=4)
                 )
+            )
 
             self.update_node_networks(node['id'], assigned_networks)
 
@@ -3208,7 +3211,7 @@ class FuelWebClient30(FuelWebClient29):
             interfaces.extend(raw_data)
 
         def get_iface_by_name(ifaces, name):
-            iface = [i for i in ifaces if i['name'] == name]
+            iface = [_iface for _iface in ifaces if _iface['name'] == name]
             assert_true(len(iface) > 0,
                         "Interface with name {} is not present on "
                         "node. Please check override params.".format(name))

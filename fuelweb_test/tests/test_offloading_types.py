@@ -29,6 +29,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 class TestOffloading(TestBasic):
 
     interfaces = {
+        settings.iface_alias('eth0'): ['fuelweb_admin'],
         settings.iface_alias('eth1'): ['public'],
         settings.iface_alias('eth2'): ['management'],
         settings.iface_alias('eth3'): ['private'],

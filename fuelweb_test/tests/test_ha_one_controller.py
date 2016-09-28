@@ -621,6 +621,7 @@ class NodeMultipleInterfaces(TestBasic):
         self.env.revert_snapshot("ready_with_3_slaves")
 
         interfaces_dict = {
+            iface_alias('eth0'): ['fuelweb_admin'],
             iface_alias('eth1'): ['public'],
             iface_alias('eth2'): ['storage'],
             iface_alias('eth3'): ['private'],
