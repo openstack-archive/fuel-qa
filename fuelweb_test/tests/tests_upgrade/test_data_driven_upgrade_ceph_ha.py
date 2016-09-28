@@ -123,10 +123,13 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
             tenant=self.cluster_creds['tenant'])
 
         self.show_step(7)
+        ip_jump_host = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['controller'])[0]['ip']
         vmdata = os_conn.boot_parameterized_vms(attach_volume=True,
                                                 boot_vm_from_volume=True,
                                                 enable_floating_ips=True,
-                                                on_each_compute=True)
+                                                on_each_compute=True,
+                                                ip_jump_host=ip_jump_host)
         self.show_step(8)
         with open(self.workload_description_file, "w") as file_obj:
             yaml.dump(vmdata, file_obj,
