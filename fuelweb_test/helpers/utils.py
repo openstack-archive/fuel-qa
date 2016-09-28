@@ -331,7 +331,7 @@ def update_yaml(yaml_tree=None, yaml_value='', is_uniq=True,
 
 
 class TimeStat(object):
-    """ Context manager for measuring the execution time of the code.
+    """Context manager for measuring the execution time of the code.
     Usage:
     with TimeStat([name],[is_uniq=True]):
     """
@@ -703,7 +703,7 @@ class TimeoutException(Exception):
 
 
 def pretty_log(src, indent=0, invert=False):
-    """ Make log more readable and awesome
+    """Make log more readable and awesome
     The main application is using instead of json.dumps().
 
     :param src: dictionary with data, list of dicts
@@ -1093,7 +1093,7 @@ def get_quantity_of_numa(ip):
 
 @logwrap
 def dict_merge(a, b):
-    """ Recursively merges dict's.
+    """Recursively merges dict's.
 
     Not just simple a['key'] = b['key'], if both a and b have a key
     who's value is a dict then dict_merge is called on both values
@@ -1125,7 +1125,7 @@ def get_access_config_file():
 
 @logwrap
 def install_configdb():
-    """ Install ConfigDB extension on master node
+    """Install ConfigDB extension on master node
 
     :return: None
     """
@@ -1473,7 +1473,7 @@ class SettingsChanger(object):
 
 @logwrap
 def install_lynis_master(master_node_ip):
-    """ Install Lynis package on master node
+    """Install Lynis package on master node
 
     :return: None
     """
