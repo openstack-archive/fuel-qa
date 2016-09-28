@@ -31,12 +31,10 @@ from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers.regenerate_repo import regenerate_centos_repo
 from fuelweb_test.helpers.regenerate_repo import regenerate_ubuntu_repo
-from fuelweb_test.helpers import replace_repos
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
 from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
 from fuelweb_test.settings import KEYSTONE_CREDS
-from fuelweb_test.settings import MIRROR_UBUNTU
 from fuelweb_test.settings import PLUGIN_PACKAGE_VERSION
 from fuelweb_test.settings import FUEL_SETTINGS_YAML
 from fuelweb_test.settings import NESSUS_IMAGE_PATH
@@ -143,15 +141,6 @@ class AdminActions(BaseActions):
                     fuel_settings.pop(key)
                 fuel_settings['NTP1'] = router
 
-        if MIRROR_UBUNTU:
-            fuel_settings['BOOTSTRAP']['repos'] = \
-                replace_repos.replace_ubuntu_repos(
-                    {
-                        'value': fuel_settings['BOOTSTRAP']['repos']
-                    },
-                    upstream_host='archive.ubuntu.com')
-            logger.info("Replace default Ubuntu mirror URL for "
-                        "bootstrap image in Fuel settings")
         self.save_fuel_settings(fuel_settings)
 
     @logwrap

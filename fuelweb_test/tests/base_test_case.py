@@ -21,10 +21,12 @@ from proboscis import test
 
 from fuelweb_test import logger
 from fuelweb_test import settings
+from fuelweb_test.helpers import replace_repos
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import erase_data_from_hdd
 from fuelweb_test.helpers.utils import get_test_method_name
 from fuelweb_test.helpers.utils import TimeStat
+from fuelweb_test.helpers.utils import YamlEditor
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.models.environment import EnvironmentModel
 from fuelweb_test.settings import EXTERNAL_HAPROXY_TEMPLATE
@@ -191,6 +193,14 @@ class TestBasic(object):
                         ip=self.ssh_manager.admin_ip,
                         cmd=cmd
                     )
+            if settings.EXTRA_DEB_REPOS:
+                path = "/etc/fuel/astute.yaml"
+                with YamlEditor(path,
+                                ip=self.env.get_admin_node_ip()) as editor:
+                    editor.content['BOOTSTRAP']['repos'] = \
+                        replace_repos.replace_ubuntu_repos(
+                            {'value': editor.content['BOOTSTRAP']['repos']},
+                            upstream_host='archive.ubuntu.com')
             self.env.admin_install_updates()
         if settings.MULTIPLE_NETWORKS:
             self.env.describe_other_admin_interfaces(
