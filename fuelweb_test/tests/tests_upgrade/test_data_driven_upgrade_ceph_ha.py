@@ -142,12 +142,16 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
 
         self.show_step(8)
         vmdata = []
-        for _ in range(3):
-            vmdata.extend(
-                os_conn.boot_parameterized_vms(attach_volume=True,
-                                               boot_vm_from_volume=True,
-                                               enable_floating_ips=True,
-                                               on_each_compute=True))
+        ip_jump_host = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['controller'])[0]['ip']
+        with self.env.d_env.get_ssh_to_remote(ip_jump_host) as rmt:
+            for _ in range(3):
+                vmdata.extend(
+                    os_conn.boot_parameterized_vms(attach_volume=True,
+                                                   boot_vm_from_volume=True,
+                                                   enable_floating_ips=True,
+                                                   on_each_compute=True,
+                                                   rmt_jump_host=rmt))
         self.show_step(9)
         with open(self.workload_description_file, "w") as file_obj:
             yaml.dump(vmdata, file_obj,

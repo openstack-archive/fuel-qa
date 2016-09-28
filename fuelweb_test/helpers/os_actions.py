@@ -18,11 +18,13 @@ from warnings import warn
 
 from devops.error import TimeoutError
 from devops.helpers import helpers
+from devops.helpers.ssh_client import SSHAuth
 import paramiko
 from proboscis import asserts
 
 from fuelweb_test.helpers import common
 from fuelweb_test import logger
+from fuelweb_test.settings import SSH_IMAGE_CREDENTIALS
 
 
 class OpenStackActions(common.Common):
@@ -658,10 +660,12 @@ class OpenStackActions(common.Common):
         endpoints = self.keystone.endpoints.list()
         return endpoints
 
-    def boot_parameterized_vms(self, attach_volume=False,
+    def boot_parameterized_vms(self,
+                               attach_volume=False,
                                boot_vm_from_volume=False,
                                enable_floating_ips=False,
                                on_each_compute=False,
+                               rmt_jump_host=None,
                                **kwargs):
         """Boot parameterized VMs
 
@@ -670,6 +674,7 @@ class OpenStackActions(common.Common):
         :param enable_floating_ips: bool, flag for assigning of floating ip to
                booted VM
         :param on_each_compute: bool, boot VMs on each compute or only one
+        :param rmt_jump_host: a obj, SSH connection object
         :param kwargs: dict, it includes the same keys like for
                nova.servers.create
         :return: list, list of vms data dicts
@@ -707,7 +712,26 @@ class OpenStackActions(common.Common):
             vm_data['attached_volume'] = volume._info
 
         if enable_floating_ips:
-            self.assign_floating_ip(server)
+            ip = self.assign_floating_ip(server)
+            if not rmt_jump_host:
+                logger.warning('The object of SSH conncetion to of jump host '
+                               'was not passed! There is not '
+                               'the possibility to prepare instance for a '
+                               'check by SSH')
+            else:
+                cirros_auth = SSHAuth(**SSH_IMAGE_CREDENTIALS)
+                cmd = 'echo "testtext" > testfile'
+                res = rmt_jump_host.execute_through_host(
+                    hostname=ip,
+                    cmd=cmd,
+                    auth=cirros_auth
+                )
+                logger.debug('Command {!r} was executed on {!r}. The execution'
+                             ' details: {!r}'.format(cmd, ip, res))
+                asserts.assert_equal(res.exit_code, 0,
+                                     'Execution of command {!r} failed on {!r}'
+                                     '. Please, take a look at details: {}'
+                                     .format(cmd, ip, res))
 
         server = self.get_instance_detail(server)
         vm_data['server'] = server.to_dict()
