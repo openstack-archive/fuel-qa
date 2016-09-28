@@ -123,7 +123,8 @@ class UpgradeCephHA(DataDrivenUpgradeBase):
             tenant=self.cluster_creds['tenant'])
 
         self.show_step(7)
-        vmdata = os_conn.boot_parameterized_vms(attach_volume=True,
+        vmdata = os_conn.boot_parameterized_vms(self,
+                                                attach_volume=True,
                                                 boot_vm_from_volume=True,
                                                 enable_floating_ips=True,
                                                 on_each_compute=True)

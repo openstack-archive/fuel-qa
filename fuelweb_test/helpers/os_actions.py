@@ -16,10 +16,12 @@ import random
 
 from devops.error import TimeoutError
 from devops.helpers import helpers
+from devops.helpers.ssh_client import SSHAuth
 from proboscis import asserts
 
 from fuelweb_test import logger
 from fuelweb_test.helpers import common
+from fuelweb_test.settings import SSH_IMAGE_CREDENTIALS
 
 
 class OpenStackActions(common.Common):
@@ -684,13 +686,15 @@ class OpenStackActions(common.Common):
         endpoints = self.keystone.endpoints.list()
         return endpoints
 
-    def boot_parameterized_vms(self, attach_volume=False,
+    def boot_parameterized_vms(self, testclass_inst,
+                               attach_volume=False,
                                boot_vm_from_volume=False,
                                enable_floating_ips=False,
                                on_each_compute=False,
                                **kwargs):
         """Boot parameterized VMs
 
+        :param testclass_inst: a obj, an instance of Test Class
         :param attach_volume: bool, flag for attaching of volume to booted VM
         :param boot_vm_from_volume: bool, flag for the boot of VM from volume
         :param enable_floating_ips: bool, flag for assigning of floating ip to
@@ -733,7 +737,20 @@ class OpenStackActions(common.Common):
             vm_data['attached_volume'] = volume._info
 
         if enable_floating_ips:
-            self.assign_floating_ip(server)
+            ip = self.assign_floating_ip(server)
+            cirros_auth = SSHAuth(**SSH_IMAGE_CREDENTIALS)
+            cmd = 'ls testfile'
+            cluster_id = testclass_inst.fuel_web.get_last_created_cluster()
+            cntr = testclass_inst.fuel_web.get_nailgun_cluster_nodes_by_roles(
+                cluster_id, ['controller'])[0]['ip']
+            with testclass_inst.env.d_env.get_ssh_to_remote(cntr) as remote:
+                res = remote.execute_through_host(
+                    hostname=ip,
+                    cmd=cmd,
+                    auth=cirros_auth
+                )
+            logger.debug('Command {!r} was executed on {!r}. The execution'
+                         ' details: {!r}'.format(cmd, ip, res))
 
         server = self.get_instance_detail(server)
         vm_data['server'] = server.to_dict()
