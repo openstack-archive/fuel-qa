@@ -1587,3 +1587,33 @@ def preserve_partition(admin_remote, node_id, partition):
     # Upload the updated disks config to the corresponding node
     admin_remote.execute("fuel node --node-id {0} "
                          "--disk --upload".format(str(node_id)))
+
+
+def execute_through_host(ip, through_host_connection, cmd):
+    """Execute command through_host
+
+    :param ip: a str, ip of target node
+    :param through_host_connection: a dict, it should contain keys: remote,
+    ssh_auth_obj
+    :param cmd: a str, command for executing on remote
+    :return:
+    """
+    if not through_host_connection:
+        logger.warning('Data is not passed for the setup of ssh '
+                       'connection! You need to set dictionary:'
+                       'through_host_connection = {"remote": "object of '
+                       'remote ssh connection to controller node",'
+                       '"ssh_auth_obj": "SSHAuth object to connect '
+                       'to target node"}')
+        return
+
+    rmt = through_host_connection['remote']
+    cirros_auth = through_host_connection['ssh_auth_obj']
+    res = rmt.execute_through_host(
+        hostname=ip,
+        cmd=cmd,
+        auth=cirros_auth
+    )
+    logger.debug('Command {!r} was executed on {!r}. The execution '
+                 'details: {!r}'.format(cmd, ip, res))
+    return res

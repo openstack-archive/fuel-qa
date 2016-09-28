@@ -20,6 +20,7 @@ from proboscis import asserts
 
 from fuelweb_test import logger
 from fuelweb_test.helpers import common
+from fuelweb_test.helpers.utils import execute_through_host
 
 
 class OpenStackActions(common.Common):
@@ -69,6 +70,14 @@ class OpenStackActions(common.Common):
             if srv.name == name:
                 return srv
         logger.warning("Instance with name {} was not found".format(name))
+        return None
+
+    def get_server_by_id(self, srv_id):
+        servers = self.get_servers()
+        for srv in servers:
+            if srv.id == srv_id:
+                return srv
+        logger.warning("Instance with id {} was not found".format(srv_id))
         return None
 
     def get_flavor_by_name(self, name):
@@ -688,6 +697,7 @@ class OpenStackActions(common.Common):
                                boot_vm_from_volume=False,
                                enable_floating_ips=False,
                                on_each_compute=False,
+                               through_host_connection=None,
                                **kwargs):
         """Boot parameterized VMs
 
@@ -696,6 +706,8 @@ class OpenStackActions(common.Common):
         :param enable_floating_ips: bool, flag for assigning of floating ip to
                booted VM
         :param on_each_compute: bool, boot VMs on each compute or only one
+        :param through_host_connection: a dict, it should contain keys: remote,
+        ssh_auth_obj
         :param kwargs: dict, it includes the same keys like for
                nova.servers.create
         :return: list, list of vms data dicts
@@ -733,7 +745,9 @@ class OpenStackActions(common.Common):
             vm_data['attached_volume'] = volume._info
 
         if enable_floating_ips:
-            self.assign_floating_ip(server)
+            ip = self.assign_floating_ip(server)
+            cmd = 'touch testfile'
+            execute_through_host(ip, through_host_connection, cmd)
 
         server = self.get_instance_detail(server)
         vm_data['server'] = server.to_dict()

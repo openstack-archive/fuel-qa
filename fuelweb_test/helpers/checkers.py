@@ -40,6 +40,7 @@ from core.helpers.log_helpers import logwrap
 from fuelweb_test import logger
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.utils import get_mongo_partitions
+from fuelweb_test.helpers.utils import execute_through_host
 from fuelweb_test.settings import EXTERNAL_DNS
 from fuelweb_test.settings import EXTERNAL_NTP
 from fuelweb_test.settings import OPENSTACK_RELEASE
@@ -1481,3 +1482,105 @@ def check_package_version(ip, package_name, expected_version, condition='ge'):
                                                        expected_version)
     ssh_manager.execute_on_remote(ip, cmd, assert_ec_equal=[0],
                                   err_msg=err_msg)
+
+
+def check_produced_vms(os_conn, vms_data, through_host_connection=None):
+    """Check VMs which were produced by
+    method helpers.os_actions.OpenStackActions.boot_parameterized_vms
+
+    :param os_conn: an instance of class helpers.common.Common
+    :param vms_data: a list of produced vms data dicts, result of
+    method helpers.os_actions.OpenStackActions.boot_parameterized_vms
+    :param through_host_connection: a dict, it should contain keys: remote,
+    ssh_auth_obj
+    """
+    def check_instance_status_by_id(instance_id):
+        server = os_conn.get_server_by_id(instance_id)
+        status = os_conn.get_instance_detail(server).status
+        logger.debug('Instance with id {!r} has status {!r}'
+                     .format(instance_id, status))
+        return status != "ACTIVE"
+
+    def check_volume_status(vol_id, srv_id, bootable=False):
+        volume = os_conn.cinder.volumes.get(vol_id)
+        logger.debug('Volume with id {!r} has status {!r}'
+                     .format(vol_id, volume.status))
+        bootable_fail = False
+        if bootable:
+            logger.debug('Volume with id {!r} should be '
+                         '"bootable", actually {!r}'
+                         .format(vol_id, volume.bootable))
+            bootable_fail = volume.bootable == 'false'
+
+        logger.debug('Volume with id {!r} should be attached to '
+                     'instance {!r}, actually attached to {!r}'
+                     .format(vol_id, srv_id, volume.server_id))
+        return volume.status != "available" \
+            or bootable_fail or srv_id != volume.server_id
+
+    def get_floating_ip_of_vm(vm_dict):
+        addresses = vm_dict['addresses']
+        for ip_address in addresses.values():
+            if ip_address['OS-EXT-IPS:type'] == 'floating':
+                logger.debug('Vm {!r} has floating ip {!r}'
+                             .format(vm_dict['id'], ip_address['addr']))
+                return ip_address['addr']
+        logger.debug('Vm {!r} has not floating ip'.format(vm_dict['id']))
+
+    def check_ssh_call_by_floating_ip(ip, through_host_connection):
+        cmd = 'ls testfile'
+        res = execute_through_host(ip, through_host_connection, cmd)
+        return res['exit_code'] != 0
+
+    instances = [x['server'] for x in vms_data
+                 if 'server' in x]
+    logger.info('Check instances status...')
+    broken_vms = []
+    for instance in instances:
+        if check_instance_status_by_id(instance['id']):
+            broken_vms.append(instance['id'])
+    assert_true(broken_vms, 'Vms : {!r} are not in "ACTIVE" state! Please, '
+                            'see sys_test.log for the more details'
+                            .format(broken_vms))
+
+    bootable_volumes = dict([
+        (x['id'],
+         x['os-extended-volumes:volumes_attached'][0]['id'])
+        for x in vms_data
+        if x['os-extended-volumes:volumes_attached']
+    ])
+
+    broken_bootable_volumes = []
+    if bootable_volumes:
+        logger.info('Check bootable volumes ...')
+    for inst_id, vol_id in bootable_volumes.items():
+        if check_volume_status(vol_id, inst_id, bootable=True):
+            broken_bootable_volumes.append(vol_id)
+    assert_true(broken_bootable_volumes,
+                'Volumes : {!r} are in invalid state. Please, see sys_test.log'
+                'for more details'.format(broken_bootable_volumes))
+
+    attached_volumes = [x['attached_volume'] for x in vms_data
+                        if 'attached_volume' in x]
+    broken_attached_volumes = []
+    if attached_volumes:
+        logger.info('Check attached volumes ...')
+    for volume in attached_volumes:
+        if check_volume_status(volume['id'], volume['sever_id']):
+            broken_attached_volumes.append(volume['id'])
+    assert_true(broken_attached_volumes,
+                'Volumes : {!r} are in invalid state. Please, see sys_test.log'
+                'for more details'.format(broken_attached_volumes))
+
+    floating_ips = [get_floating_ip_of_vm(x) for x in instances
+                    if get_floating_ip_of_vm(x)]
+    broken_access_by_floating = []
+    if floating_ips:
+        logger.info('Check availability VMs by floating ip ...')
+    for ip in floating_ips:
+        if check_ssh_call_by_floating_ip(ip, through_host_connection):
+            broken_attached_volumes.append(ip)
+    assert_true(broken_access_by_floating,
+                'The access to instances is broken by the following '
+                'floating ips: {!r}. Please, see sys_test.log'
+                'for more details'.format(broken_access_by_floating))
