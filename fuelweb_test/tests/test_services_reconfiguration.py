@@ -85,6 +85,20 @@ class ServicesReconfiguration(TestBasic):
             timeout_msg="Timeout exceeded while waiting for "
                         "node status: {0}".format(status))
 
+    def wait_for_task(self, cluster_id, task_name, statuses, timeout=300):
+        def task_in_list(tasks):
+            for task in tasks:
+                if (task.get('cluster') == cluster_id and
+                        task.get('name') == task_name and
+                        task.get('status') in statuses):
+                    return True
+            return False
+        helpers.wait(
+            lambda: task_in_list(self.fuel_web.client.get_all_tasks_list()),
+            timeout=timeout,
+            timeout_msg="Timeout exceeded while waiting for task {} "
+                        "for cluster {}".format(task_name, cluster_id))
+
     @staticmethod
     def check_response_code(expected_code, err_msg,
                             func, *args, **kwargs):
@@ -1188,6 +1202,10 @@ class ServicesReconfiguration(TestBasic):
 
         self.show_step(3)
         task = self.fuel_web.deploy_cluster(cluster_id)
+        # wait for creation of child 'deployment' task
+        self.fuel_web.wait_for_tasks_presence(self.fuel_web.client.get_tasks,
+                                              name='deployment',
+                                              parent_id=task.get('id'))
 
         self.show_step(4)
         self.show_step(5)
