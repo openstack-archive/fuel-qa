@@ -24,6 +24,7 @@ from proboscis import SkipTest
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 # pylint: disable=redefined-builtin
+# noinspection PyUnresolvedReferences
 from six.moves import xrange
 # pylint: enable=redefined-builtin
 
@@ -47,6 +48,7 @@ from system_test.helpers.decorators import make_snapshot_if_step_fail
 
 
 # pylint: disable=no-member
+# noinspection PyUnresolvedReferences
 class PrepareActions(object):
     """Base class with prepare actions
 
@@ -146,12 +148,11 @@ class PrepareActions(object):
             os.path.dirname(fuelweb_test.__file__),
             'cloud_image_settings/cloud_settings.iso')
 
-        admin_net_object = self.env.d_env.get_network(
-            name=self.env.d_env.admin_net)
+        admin_net_object = self.env.d_env.get_network(name='admin')
         admin_network = admin_net_object.ip.network
         admin_netmask = admin_net_object.ip.netmask
         admin_ip = str(self.env.d_env.nodes(
-        ).admin.get_ip_address_by_network_name(self.env.d_env.admin_net))
+        ).admin.get_ip_address_by_network_name('admin'))
         interface_name = settings.iface_alias("eth0")
         gateway = self.env.d_env.router()
         dns = settings.DNS
@@ -227,6 +228,7 @@ class PrepareActions(object):
         snapshot_name = "ready_with_{}_slaves".format(slaves)
         self.env.revert_snapshot(snapshot_name)
 
+    # noinspection PyMethodParameters
     @nested_action
     def prepare_admin_node_with_slaves():
         """Combine preparation steps in alias"""
@@ -372,7 +374,9 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions,
 
         """
         if self.cluster_id is None:
-            raise SkipTest()
+            raise SkipTest(
+                "The cluster_id is not specified, can not add node to cluster"
+            )
 
         self._add_node(self.env_config['nodes'])
 
@@ -385,7 +389,9 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions,
 
         """
         if self.cluster_id is None:
-            raise SkipTest()
+            raise SkipTest(
+                "The cluster_id is not specified, can not run the deploy"
+            )
 
         self.fuel_web.deploy_cluster_wait(self.cluster_id)
 
@@ -394,7 +400,9 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions,
     def stop_on_deploy(self):
         """Stop environment deploying and wait while slave bacame online"""
         if self.cluster_id is None:
-            raise SkipTest()
+            raise SkipTest(
+                "The cluster_id is not specified, can not stop the deploy"
+            )
 
         cluster_id = self.cluster_id
         self.fuel_web.deploy_cluster_wait_progress(
@@ -413,7 +421,8 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions,
 
         """
         if self.cluster_id is None:
-            raise SkipTest()
+            raise SkipTest("The cluster_id is not specified, "
+                           "can not run network verification")
 
         self.fuel_web.verify_network(self.cluster_id)
 
@@ -569,6 +578,7 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions,
                 dev_node = self.fuel_web.get_devops_node_by_nailgun_fqdn(
                     ng_nodes[node_number]['fqdn'])
 
+                # noinspection PyCallingNonCallable
                 power_action([dev_node])
             else:
                 logger.error("Unknown power switch action: "
