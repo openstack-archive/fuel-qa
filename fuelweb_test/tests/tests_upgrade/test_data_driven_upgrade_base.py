@@ -14,7 +14,6 @@
 
 from __future__ import unicode_literals
 
-import itertools
 import os
 # pylint: disable=import-error
 # pylint: disable=no-name-in-module
@@ -447,15 +446,16 @@ class DataDrivenUpgradeBase(TestBasic):
             ignr_tests = []
 
         if ignore_known_issues:
-            if (
-                LooseVersion(UPGRADE_FUEL_TO) >= LooseVersion('9.0') and
-                LooseVersion(UPGRADE_FUEL_FROM) == LooseVersion('7.0')
-            ):
-                mrg_set = set(ignr_tests) | set(
-                    itertools.chain(*self.IGNORED_OSTF_TESTS.values()))
-                ignr_tests = list(mrg_set)
-            else:
-                ignr_tests.extend(self.IGNORED_OSTF_TESTS[UPGRADE_FUEL_FROM])
+            mrg_set = set()
+            for key, val in self.IGNORED_OSTF_TESTS.items():
+                if (
+                    LooseVersion(UPGRADE_FUEL_FROM) <
+                    LooseVersion(key) <
+                    LooseVersion(UPGRADE_FUEL_TO)
+                ):
+                    mrg_set.update(val)
+            mrg_set.update(ignr_tests)
+            ignr_tests = list(mrg_set)
 
         self.fuel_web.run_ostf(cluster_id, test_sets=test_sets,
                                should_fail=len(ignr_tests),
