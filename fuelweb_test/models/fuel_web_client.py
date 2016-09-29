@@ -15,17 +15,17 @@
 import re
 import time
 import traceback
-import yaml
 
 from devops.error import DevopsCalledProcessError
 from devops.error import TimeoutError
 from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
-from ipaddr import IPNetwork
+import netaddr
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_true
+import yaml
 
 from fuelweb_test.helpers import ceph
 from fuelweb_test.helpers import checkers
@@ -96,7 +96,9 @@ class FuelWebClient(object):
             lambda: all([run['status'] == 'finished'
                          for run in
                          self.client.get_ostf_test_run(cluster_id)]),
-            timeout=timeout)
+            timeout=timeout,
+            timeout_msg='OSTF tests run timeout '
+                        '(cluster_id={})'.format(cluster_id))
         return self.client.get_ostf_test_run(cluster_id)
 
     @logwrap
@@ -277,13 +279,19 @@ class FuelWebClient(object):
     @logwrap
     def assert_task_success(
             self, task, timeout=130 * 60, interval=5, progress=None):
+        def _message(_task):
+            if 'message' in _task:
+                return _task['message']
+            else:
+                return ''
+
         logger.info('Assert task %s is success', task)
         if not progress:
             task = self.task_wait(task, timeout, interval)
             assert_equal(
                 task['status'], 'ready',
-                "Task '{name}' has incorrect status. {} != {}".format(
-                    task['status'], 'ready', name=task["name"]
+                "Task '{0}' has incorrect status. {1} != {2}, '{3}'".format(
+                    task["name"], task['status'], 'ready', _message(task)
                 )
             )
         else:
@@ -851,7 +859,7 @@ class FuelWebClient(object):
         Returns dict with nailgun slave node description if node is
         registered. Otherwise return None.
         """
-        d_macs = {i.mac_address.upper() for i in devops_node.interfaces}
+        d_macs = {netaddr.EUI(i.mac_address) for i in devops_node.interfaces}
         logger.debug('Verify that nailgun api is running')
         attempts = ATTEMPTS
         nodes = []
@@ -869,7 +877,8 @@ class FuelWebClient(object):
                 time.sleep(TIMEOUT)
         logger.debug('Look for nailgun node by macs %s', d_macs)
         for nailgun_node in nodes:
-            macs = {i['mac'] for i in nailgun_node['meta']['interfaces']}
+            macs = {netaddr.EUI(i['mac']) for i in
+                    nailgun_node['meta']['interfaces']}
             logger.debug('Look for macs returned by nailgun {0}'.format(macs))
             # Because our HAproxy may create some interfaces
             if d_macs.issubset(macs):
@@ -897,10 +906,11 @@ class FuelWebClient(object):
             :rtype: Devops Node or None
         """
         nailgun_node = self.get_nailgun_node_by_fqdn(fqdn)
-        macs = {i['mac'] for i in nailgun_node['meta']['interfaces']}
+        macs = {netaddr.EUI(i['mac']) for i in
+                nailgun_node['meta']['interfaces']}
         for devops_node in devops_nodes:
-            devops_macs = {i.mac_address.upper()
-                           for i in devops_node.interfaces}
+            devops_macs = {netaddr.EUI(i.mac_address) for i in
+                           devops_node.interfaces}
             if devops_macs == macs:
                 return devops_node
 
@@ -913,7 +923,7 @@ class FuelWebClient(object):
         """
         for node in self.environment.d_env.nodes():
             for iface in node.interfaces:
-                if iface.mac_address.lower() == mac_address.lower():
+                if netaddr.EUI(iface.mac_address) == netaddr.EUI(mac_address):
                     return node
 
     @logwrap
@@ -962,9 +972,11 @@ class FuelWebClient(object):
 
     @logwrap
     def get_ssh_for_node(self, node_name):
-        ip = self.get_nailgun_node_by_devops_node(
-            self.environment.d_env.get_node(name=node_name))['ip']
-        return self.environment.d_env.get_ssh_to_remote(ip)
+        node = self.get_nailgun_node_by_devops_node(
+            self.environment.d_env.get_node(name=node_name))
+        assert_true(node is not None,
+                    'Node with name "{0}" not found!'.format(node_name))
+        return self.environment.d_env.get_ssh_to_remote(node['ip'])
 
     @logwrap
     def get_ssh_for_role(self, nodes_dict, role):
@@ -1100,13 +1112,13 @@ class FuelWebClient(object):
                  timeout=60 * 2)
             node = self.get_nailgun_node_by_devops_node(devops_node)
             assert_true(node['online'],
-                        'Node {} is online'.format(node['mac']))
+                        'Node {0} is offline'.format(node['mac']))
 
             if contrail and nodes_dict[node_name][0] == 'base-os':
                 name = 'contrail-' + node_name.split('-')[1].strip('0')
 
             else:
-                name = '{}_{}'.format(node_name, "_".join(node_roles))
+                name = '{0}_{1}'.format(node_name, "_".join(node_roles))
 
             node_data = {
                 'cluster_id': cluster_id,
@@ -1419,8 +1431,9 @@ class FuelWebClient(object):
             net_config['vlan_start'] = None
             net_config['gateway'] = self.environment.d_env.router(net_name)
 
-    def get_range(self, ip_network, ip_range=0):
-        net = list(IPNetwork(ip_network))
+    @staticmethod
+    def get_range(ip_network, ip_range=0):
+        net = list(netaddr.IPNetwork(str(ip_network)))
         half = len(net) / 2
         if ip_range == 0:
             return [[str(net[2]), str(net[-2])]]
@@ -1430,6 +1443,8 @@ class FuelWebClient(object):
             return [[str(net[2]), str(net[half - 1])]]
         elif ip_range == 2:
             return [[str(net[3]), str(net[half - 1])]]
+        elif ip_range == 3:
+            return [[str(net[half]), str(net[-3])]]
 
     def get_floating_ranges(self, network_set=''):
         net_name = 'public{0}'.format(network_set)
@@ -1947,7 +1962,8 @@ class FuelWebClient(object):
         for subnet in subnets_list:
             logger.debug("Check that subnet {0} is part of network {1}"
                          .format(subnet, nailgun_cidr))
-            assert_true(IPNetwork(subnet) in IPNetwork(nailgun_cidr),
+            assert_true(netaddr.IPNetwork(str(subnet)) in
+                        netaddr.IPNetwork(str(nailgun_cidr)),
                         'Something goes wrong. Seems subnet {0} is out '
                         'of net {1}'.format(subnet, nailgun_cidr))
 
@@ -1959,7 +1975,8 @@ class FuelWebClient(object):
         for subnet1, subnet2 in subnets_pairs:
             logger.debug("Check if the subnet {0} is part of the subnet {1}"
                          .format(subnet1, subnet2))
-            assert_true(IPNetwork(subnet1) not in IPNetwork(subnet2),
+            assert_true(netaddr.IPNetwork(str(subnet1)) not in
+                        netaddr.IPNetwork(str(subnet2)),
                         "Subnet {0} is part of subnet {1}"
                         .format(subnet1, subnet2))
 
@@ -2062,9 +2079,9 @@ class FuelWebClient(object):
 
     @logwrap
     def get_rabbit_master_node(self, node, fqdn_needed=False):
-        remote = self.get_ssh_for_node(node)
-        cmd = 'crm resource status master_p_rabbitmq-server'
-        output = ''.join(remote.execute(cmd)['stdout'])
+        with self.get_ssh_for_node(node) as remote:
+            cmd = 'crm resource status master_p_rabbitmq-server'
+            output = ''.join(remote.execute(cmd)['stdout'])
         master_node = re.search(
             'resource master_p_rabbitmq-server is running on: (.*) Master',
             output).group(1)

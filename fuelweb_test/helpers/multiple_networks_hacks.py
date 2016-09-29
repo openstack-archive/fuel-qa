@@ -19,7 +19,7 @@
 # This code should be removed from tests as soon as automatic cobbler
 # configuring for non-default admin (PXE) networks is implemented in Fuel
 
-from ipaddr import IPNetwork
+from netaddr import IPNetwork
 from proboscis.asserts import assert_equal
 
 from fuelweb_test import settings
@@ -39,7 +39,7 @@ def configure_second_admin_cobbler(self):
     second_admin_netmask = admin_net2_object.ip.netmask
     network = IPNetwork('{0}/{1}'.format(second_admin_network,
                                          second_admin_netmask))
-    discovery_subnet = [net for net in network.iter_subnets(1)][-1]
+    discovery_subnet = list(network.subnet(network.prefixlen + 1))[-1]
     first_discovery_address = str(discovery_subnet.network)
     last_discovery_address = str(discovery_subnet.broadcast - 1)
     new_range = ('interface={4}\\n'
