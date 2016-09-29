@@ -15,7 +15,7 @@
 import os
 import re
 import sys
-import yaml
+import traceback
 import zlib
 from urllib2 import urlopen
 from urlparse import urlparse
@@ -27,6 +27,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_is_not_none
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
+import yaml
 
 from fuelweb_test import logger
 from fuelweb_test import settings
@@ -222,8 +223,9 @@ def get_package_test_info(package, pkg_type, tests_path, patch_target):
             test = yaml.load(open(path).read())
             if 'system_tests' in test.keys():
                 tests.update(test['system_tests']['tags'])
-        except IOError:
-            pass
+        except IOError as e:
+            logger.warning('Ignoring exception: {!r}'.format(e))
+            logger.debug(traceback.format_exc())
     return tests
 
 
@@ -349,7 +351,7 @@ def update_packages(environment, remote, packages, exclude_packages=None):
                 ' '.join(packages), ','.join(exclude_packages or []))
         ]
     for cmd in cmds:
-        environment.execute_remote_cmd(remote, cmd, exit_code=0)
+        remote.check_call(cmd)
 
 
 def update_packages_on_slaves(environment, slaves, packages=None,
@@ -385,7 +387,7 @@ def get_slaves_ids_by_role(slaves, role=None):
 
 def verify_fix_apply_step(apply_step):
     validation_schema = patching_validation_schema
-    for key in validation_schema.keys():
+    for key in validation_schema:
         if key in apply_step.keys():
             is_exists = apply_step[key] is not None
         else:
@@ -411,13 +413,14 @@ def verify_fix_apply_step(apply_step):
                                       value=apply_step[key],
                                       valid=validation_schema[key]['values']))
         if 'data_type' in validation_schema[key].keys():
-            assert_true(type(apply_step[key]) is
-                        validation_schema[key]['data_type'],
-                        "Unexpected data type in patch apply scenario step:  '"
-                        "{key}' is '{type}', but expecting '{expect}'.".format(
-                            key=key,
-                            type=type(apply_step[key]),
-                            expect=validation_schema[key]['data_type']))
+            assert_true(
+                isinstance(
+                    apply_step[key], validation_schema[key]['data_type']),
+                "Unexpected data type in patch apply scenario step:  '"
+                "{key}' is '{type}', but expecting '{expect}'.".format(
+                    key=key,
+                    type=type(apply_step[key]),
+                    expect=validation_schema[key]['data_type']))
 
 
 def validate_fix_apply_step(apply_step, environment, slaves):
@@ -511,7 +514,7 @@ def validate_fix_apply_step(apply_step, environment, slaves):
 def get_errata(path, bug_id):
     scenario_path = '{0}/bugs/{1}/erratum.yaml'.format(path, bug_id)
     assert_true(os.path.exists(scenario_path),
-                "Erratum for bug #{0} is not found in '{0}' "
+                "Erratum for bug #{0} is not found in '{1}' "
                 "directory".format(bug_id, settings.PATCHING_APPLY_TESTS))
     with open(scenario_path) as f:
         return yaml.load(f.read())
@@ -577,7 +580,7 @@ def run_actions(environment, target, slaves, action_type='patch-scenario'):
                                                        tasks, timeout)
             continue
         for remote in remotes:
-            environment.execute_remote_cmd(remote, command)
+            remote.check_call(command)
         if devops_action == 'down':
             environment.fuel_web.warm_shutdown_nodes(devops_nodes)
         elif devops_action == 'up':
