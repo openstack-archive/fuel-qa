@@ -532,6 +532,7 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions,
                 dev_node = self.fuel_web.get_devops_node_by_nailgun_fqdn(
                     ng_nodes[node_number]['fqdn'])
 
+                # noinspection PyCallingNonCallable
                 power_action([dev_node])
             else:
                 logger.error("Unknown power switch action: "
