@@ -40,7 +40,7 @@ def configure_second_admin_cobbler(self):
     second_admin_netmask = admin_net2_object.ip.netmask
     network = IPNetwork('{0}/{1}'.format(second_admin_network,
                                          second_admin_netmask))
-    discovery_subnet = list(network.subnet(network.netmask + 1))[-1]
+    discovery_subnet = list(network.subnet(network.prefixlen + 1))[-1]
     first_discovery_address = str(discovery_subnet.network)
     last_discovery_address = str(discovery_subnet.broadcast - 1)
     new_range = ('interface={4}\\n'
