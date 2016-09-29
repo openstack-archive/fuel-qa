@@ -67,6 +67,11 @@ VCenter actions
 General tests
 =============
 
+Release tests
+-------------
+.. automodule:: system_test.tests.test_releases
+   :members:
+
 ActionTest
 ----------
 .. automodule:: system_test.tests.base
