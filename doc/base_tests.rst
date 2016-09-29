@@ -11,6 +11,11 @@ Base Test Case
 .. automodule:: fuelweb_test.tests.base_test_case
    :members:
 
+Release tests
+-------------
+.. automodule:: fuelweb_test.tests.test_releases
+   :members:
+
 Admin Node Tests
 ----------------
 .. automodule:: fuelweb_test.tests.test_admin_node
@@ -795,7 +800,7 @@ Test SR-IOV
    :members:
 
 Test graph extension
-------------------------------------------------------
+--------------------
 .. automodule:: fuelweb_test.tests.test_graph_extension
    :members:
 
