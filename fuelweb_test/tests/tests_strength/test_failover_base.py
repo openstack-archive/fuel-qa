@@ -778,7 +778,7 @@ class TestHaFailoverBase(TestBasic):
         pcm_nodes = self.fuel_web.get_pcm_nodes(
             self.env.d_env.nodes().slaves[0].name, pure=True)['Online']
         logger.debug("pcm nodes are {}".format(pcm_nodes))
-        rabbit_nodes = [node.replace('.' + self.env.d_env.domain, "")
+        rabbit_nodes = [node.replace('.' + 'test.domain.local', "")
                         for node in pcm_nodes]
         logger.debug("rabbit nodes are {}".format(rabbit_nodes))
 
@@ -845,7 +845,7 @@ class TestHaFailoverBase(TestBasic):
             self.env.d_env.nodes().slaves[0].name, pure=True)['Online']
         logger.debug("pcm nodes are {}".format(pcm_nodes))
 
-        rabbit_nodes = [node.replace('.' + self.env.d_env.domain, "")
+        rabbit_nodes = [node.replace('.' + 'test.domain.local', "")
                         for node in pcm_nodes]
         logger.debug("rabbit nodes are {}".format(rabbit_nodes))
 

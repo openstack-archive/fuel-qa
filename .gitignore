@@ -47,4 +47,13 @@ local_settings.py
 doc/_build/
 
 # Logs
-sys_test.log
+/logs
+*.log
+
+# Certs
+/ca.crt
+/ca.pem
+
+# Cache
+/.cache
+__pycache__

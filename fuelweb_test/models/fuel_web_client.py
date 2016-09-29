@@ -2021,8 +2021,8 @@ class FuelWebClient(object):
 
     @logwrap
     def get_fqdn_by_hostname(self, hostname):
-        if self.environment.d_env.domain not in hostname:
-            hostname += "." + self.environment.d_env.domain
+        if 'test.domain.local' not in hostname:
+            hostname += "." + 'test.domain.local'
             return hostname
         else:
             return hostname
