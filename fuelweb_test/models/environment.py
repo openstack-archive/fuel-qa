@@ -152,9 +152,7 @@ class EnvironmentModel(object):
     @logwrap
     def get_admin_node_ip(self):
         return str(
-            self.d_env.nodes(
-            ).admin.get_ip_address_by_network_name(
-                self.d_env.admin_net))
+            self.d_env.nodes().admin.get_ip_address_by_network_name('admin'))
 
     @logwrap
     def get_ebtables(self, cluster_id, devops_nodes):
@@ -166,15 +164,13 @@ class EnvironmentModel(object):
         params = {
             'ks': 'hd:LABEL=Mirantis_Fuel:/ks.cfg' if iso_connect_as == 'usb'
             else 'cdrom:/ks.cfg',
-            'repo': 'hd:LABEL=Mirantis_Fuel:/',  # only required for USB boot
-            'ip': node.get_ip_address_by_network_name(
-                self.d_env.admin_net),
-            'mask': self.d_env.get_network(
-                name=self.d_env.admin_net).ip.netmask,
+            'repo': 'hd:LABEL="Mirantis_Fuel":/',  # only required for USB boot
+            'ip': node.get_ip_address_by_network_name('admin'),
+            'mask': self.d_env.get_network(name='admin').ip.netmask,
             'gw': self.d_env.router(),
             'hostname': ''.join((settings.FUEL_MASTER_HOSTNAME,
                                  settings.DNS_SUFFIX)),
-            'nat_interface': self.d_env.nat_interface,
+            'nat_interface': '',
             'dns1': settings.DNS,
             'showmenu': 'no',
             'wait_for_external_config': 'yes',
@@ -290,7 +286,7 @@ class EnvironmentModel(object):
         admin = self.d_env.nodes().admin
 
         try:
-            admin.await(self.d_env.admin_net, timeout=30, by_port=8000)
+            admin.await('admin', timeout=30, by_port=8000)
         except Exception as e:
             logger.warning("From first time admin isn't reverted: "
                            "{0}".format(e))
@@ -300,7 +296,7 @@ class EnvironmentModel(object):
 
             admin.start()
             logger.info('Admin node started second time.')
-            self.d_env.nodes().admin.await(self.d_env.admin_net)
+            self.d_env.nodes().admin.await('admin')
             self.set_admin_ssh_password()
             self.docker_actions.wait_for_ready_containers(timeout=600)
 
@@ -469,7 +465,8 @@ class EnvironmentModel(object):
             nessus_node = self.d_env.get_node(name='slave-nessus')
             nessus_node.start()
         # wait while installation complete
-
+        admin.await('admin', timeout=10 * 60)
+        self.set_admin_ssh_password()
         self.admin_actions.modify_configs(self.d_env.router())
         self.kill_wait_for_external_config()
         self.wait_bootstrap()
@@ -534,7 +531,7 @@ class EnvironmentModel(object):
         wait_pass(lambda: tcp_ping_(
             self.d_env.nodes(
             ).admin.get_ip_address_by_network_name
-            (self.d_env.admin_net), 22), timeout=timeout)
+            ('admin'), 22), timeout=timeout)
 
     @logwrap
     def wait_for_external_config(self, timeout=120):
@@ -820,31 +817,15 @@ class EnvironmentModel(object):
         return result['stdout']
 
     @logwrap
-    def describe_other_admin_interfaces(self, admin):
-        admin_networks = [iface.network.name for iface in admin.interfaces]
-        iface_name = None
-        for i, network_name in enumerate(admin_networks):
-            if 'admin' in network_name and 'admin' != network_name:
-                # This will be replaced with actual interface labels
-                # form fuel-devops
-                iface_name = 'enp0s' + str(i + 3)
-                logger.info("Describe Fuel admin node interface {0} for "
-                            "network {1}".format(iface_name, network_name))
-                self.describe_admin_interface(iface_name, network_name)
-
-        if iface_name:
-            return self.ssh_manager.execute(
-                ip=self.ssh_manager.admin_ip,
-                cmd="dockerctl shell cobbler cobbler sync")
-
-    @logwrap
-    def describe_admin_interface(self, admin_if, network_name):
-        admin_net_object = self.d_env.get_network(name=network_name)
-        admin_network = admin_net_object.ip.network
-        admin_netmask = admin_net_object.ip.netmask
-        admin_ip = str(self.d_env.nodes(
-        ).admin.get_ip_address_by_network_name(network_name))
-        logger.info(('Parameters for admin interface configuration: '
+    def describe_second_admin_interface(self):
+        remote = self.d_env.get_admin_remote()
+        admin_net2_object = self.d_env.get_network(name='admin2')
+        second_admin_network = admin_net2_object.ip.network
+        second_admin_netmask = admin_net2_object.ip.netmask
+        second_admin_if = settings.INTERFACES.get('admin2')
+        second_admin_ip = str(self.d_env.nodes(
+        ).admin.get_ip_address_by_network_name('admin2'))
+        logger.info(('Parameters for second admin interface configuration: '
                      'Network - {0}, Netmask - {1}, Interface - {2}, '
                      'IP Address - {3}').format(admin_network,
                                                 admin_netmask,
