@@ -4,7 +4,6 @@ nose==1.2.1
 anyjson>=0.3.3  # BSD
 paramiko>=1.16.0  # LGPL
 proboscis==1.2.6.0
-ipaddr
 junitxml>=0.7.0
 python-glanceclient>=0.14.0,<0.15.0
 python-keystoneclient>=0.10.0,<1.2.0

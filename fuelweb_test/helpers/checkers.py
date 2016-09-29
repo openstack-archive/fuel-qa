@@ -17,8 +17,9 @@ import os
 import re
 import traceback
 
-from ipaddr import IPAddress
-from ipaddr import IPNetwork
+from devops.error import TimeoutError
+from devops.helpers.helpers import wait_pass
+from devops.helpers.helpers import wait
 
 from fuelweb_test import logger
 from fuelweb_test import logwrap
@@ -28,21 +29,20 @@ from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.settings import POOLS
 from fuelweb_test.settings import PUBLIC_TEST_IP
+
+from netaddr import IPAddress
+from netaddr import IPNetwork
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_true
-from devops.error import TimeoutError
-from devops.helpers.helpers import wait
-from devops.helpers.helpers import wait_pass
 
 from time import sleep
 
 
 @logwrap
 def check_cinder_status(remote):
-    """Parse output and return False
-       if any enabled service is down.
-       'cinder service-list' stdout example:
+    """Parse output and return False if any enabled service is down.
+    'cinder service-list' stdout example:
     | cinder-scheduler | node-1.test.domain.local | nova | enabled |   up  |
     | cinder-scheduler | node-2.test.domain.local | nova | enabled |  down |
     """
@@ -176,7 +176,7 @@ def get_ceph_partitions(remote, device, type="xfs"):
     if not ret:
         logger.error("Partition not present! {partitions}: ".format(
                      remote.check_call("parted {device} print")))
-        raise Exception
+        raise Exception()
     logger.debug("Partitions: {part}".format(part=ret))
     return ret
 
@@ -217,6 +217,7 @@ def check_unallocated_space(disks, contr_img_ceph=False):
 
 @logwrap
 def check_upgraded_containers(remote, version_from, version_to):
+    logger.info('Checking of containers')
     containers = remote.execute("docker ps | tail -n +2 |"
                                 "awk '{ print $NF;}'")['stdout']
     symlink = remote.execute("readlink /etc/supervisord.d/current")['stdout']
@@ -241,8 +242,9 @@ def upload_tarball(node_ssh, tar_path, tar_target):
                 "please check test settings!")
     check_archive_type(tar_path)
     try:
-        logger.debug("Start to upload tar file")
+        logger.info("Start to upload tar file")
         node_ssh.upload(tar_path, tar_target)
+        logger.info('File {} was uploaded on master'.format(tar_path))
     except Exception:
         logger.error('Failed to upload file')
         logger.error(traceback.format_exc())
@@ -275,7 +277,7 @@ def run_script(node_ssh, script_path, script_name, password='admin',
                rollback=False, exit_code=0):
     path = os.path.join(script_path, script_name)
     c_res = node_ssh.execute('chmod 755 {0}'.format(path))
-    logger.debug("Result of cmod is {0}".format(c_res))
+    logger.debug("Result of chmod is {0}".format(c_res))
     if rollback:
         path = "UPGRADERS='host-system docker openstack" \
                " raise-error' {0}/{1}" \
@@ -298,6 +300,7 @@ def run_script(node_ssh, script_path, script_name, password='admin',
 
 @logwrap
 def wait_upgrade_is_done(node_ssh, timeout, phrase):
+    logger.info('Waiting while upgrade is done')
     cmd = "grep '{0}' /var/log/fuel_upgrade.log".format(phrase)
     try:
         wait(
@@ -310,7 +313,7 @@ def wait_upgrade_is_done(node_ssh, timeout, phrase):
 
 @logwrap
 def wait_rollback_is_done(node_ssh, timeout):
-    logger.debug('start waiting for rollback done')
+    logger.info('Waiting while rollback is done')
     wait(
         lambda: not node_ssh.execute(
             "grep 'UPGRADE FAILED' /var/log/fuel_upgrade.log"
@@ -357,7 +360,7 @@ def find_backup(remote):
         return arch_path
     except Exception as e:
         logger.error('exception is {0}'.format(e))
-        raise e
+        raise
 
 
 @logwrap
@@ -462,8 +465,7 @@ def restore_check_sum(remote):
         "Checksum is not equal:\n"
         "\tOLD: {0}\n"
         "\tNEW: {1}".format(
-            md5sum_backup.stdout_str, md5sum_restore.stdout_str
-        )
+            md5sum_backup.stdout_str, md5sum_restore.stdout_str)
     )
 
 
@@ -475,7 +477,7 @@ def iptables_check(remote):
                                      " /etc/fuel/iptables-backup")
     iptables_restore = remote.execute("sed -e '/^:/d; /^#/d' "
                                       " /etc/fuel/iptables-restore")
-    assert_equal(iptables_backup, iptables_restore,
+    assert_equal(iptables_backup.stdout_str, iptables_restore.stdout_str,
                  "list of iptables rules are not equal")
 
 
@@ -497,9 +499,10 @@ def check_mysql(remote, node_name):
         logger.error('MySQL daemon is down on {0}'.format(node_name))
         raise
     wait_pass(
-        lambda: assert_equal(remote.execute(check_crm_cmd)['exit_code'], 0,
-                             'MySQL resource is NOT running on {0}'.format(
-                                 node_name)), timeout=60)
+        lambda: assert_equal(
+            remote.execute(check_crm_cmd)['exit_code'], 0,
+            'MySQL resource is NOT running on {0}'.format(node_name)),
+        timeout=60)
     try:
         wait(lambda: ''.join(remote.execute(
             check_galera_cmd)['stdout']).rstrip() == 'Synced', timeout=600)
@@ -732,7 +735,7 @@ def check_stats_private_info(collector_remote, postgres_actions,
         _has_private_data = False
         # Check that stats doesn't contain private data (e.g.
         # specific passwords, settings, emails)
-        for _private in private_data.keys():
+        for _private in private_data:
             _regex = r'(?P<key>"\S+"): (?P<value>[^:]*"{0}"[^:]*)'.format(
                 private_data[_private])
             for _match in re.finditer(_regex, data):
@@ -748,7 +751,7 @@ def check_stats_private_info(collector_remote, postgres_actions,
                 _has_private_data = True
         # Check that stats doesn't contain private types of data (e.g. any kind
         # of passwords)
-        for _data_type in secret_data_types.keys():
+        for _data_type in secret_data_types:
             _regex = (r'(?P<secret>"[^"]*{0}[^"]*": (\{{[^\}}]+\}}|\[[^\]+]\]|'
                       r'"[^"]+"))').format(secret_data_types[_data_type])
 
@@ -766,7 +769,7 @@ def check_stats_private_info(collector_remote, postgres_actions,
         return _has_private_data
 
     def _contain_public_ip(data, _used_networks):
-        _has_puplic_ip = False
+        _has_public_ip = False
         _ip_regex = (r'\b((\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\.){3}'
                      r'(\d|[1-9]\d|1\d{2}|2[0-4]\d|25[0-5])\b')
         _not_public_regex = [
@@ -781,15 +784,16 @@ def check_stats_private_info(collector_remote, postgres_actions,
             # If IP address isn't public and doesn't belong to defined for
             # deployment pools (e.g. admin, public, storage), then skip it
             if any(re.search(_r, _match.group()) for _r in _not_public_regex) \
-                    and not any(IPAddress(_match.group()) in IPNetwork(net) for
+                    and not any(IPAddress(str(_match.group())) in
+                                IPNetwork(str(net)) for
                                 net in _used_networks):
                 continue
-            logger.debug('Usage statistics with piblic IP(s):\n {0}'.
+            logger.debug('Usage statistics with public IP(s):\n {0}'.
                          format(data))
             logger.error('Found public IP in usage statistics: "{0}"'.format(
                 _match.group()))
-            _has_puplic_ip = True
-        return _has_puplic_ip
+            _has_public_ip = True
+        return _has_public_ip
 
     private_data = {
         'hostname': _settings['HOSTNAME'],
@@ -1001,8 +1005,7 @@ def get_file_size(remote, file_name, file_path):
 
 @logwrap
 def check_ping(remote, host, deadline=10, size=56, timeout=1, interval=1):
-    """Check network connectivity from
-     remote to host using ICMP (ping)
+    """Check network connectivity from remote to host using ICMP (ping)
     :param remote: SSHClient
     :param host: string IP address or host/domain name
     :param deadline: time in seconds before ping exits
@@ -1061,22 +1064,22 @@ def check_auto_mode(remote):
 
 def is_ntpd_active(remote, ntpd_ip):
     cmd = 'ntpdate -d -p 4 -t 0.2 -u {0}'.format(ntpd_ip)
-    return (not remote.execute(cmd)['exit_code'])
+    return not remote.execute(cmd)['exit_code']
 
 
 def check_repo_managment(remote):
-    """Check repo managment
+    """Check repo management
 
     run 'yum -y clean all && yum check-update' or
         'apt-get clean all && apt-get update' exit code should be 0
 
-    :type devops_node: Node
-        :rtype True or False
+    :type remote: SSHClient
+        :rtype Dict
     """
     if OPENSTACK_RELEASE == OPENSTACK_RELEASE_UBUNTU:
-        cmd = "apt-get clean all && apt-get update > /dev/null 2>&1"
+        cmd = "apt-get clean all && apt-get update > /dev/null"
     else:
-        cmd = "yum -y clean all && yum check-update > /dev/null 2>&1"
+        cmd = "yum -y clean all && yum check-update > /dev/null"
     remote.check_call(cmd)
 
 
@@ -1125,7 +1128,7 @@ def check_haproxy_backend(remote,
     all nodes. Ignoring has a bigger priority.
 
     :type remote: SSHClient
-    :type service: List
+    :type services: List
     :type nodes: List
     :type ignore_services: List
     :type ignore_nodes: List
