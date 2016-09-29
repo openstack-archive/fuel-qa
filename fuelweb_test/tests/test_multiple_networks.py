@@ -50,15 +50,13 @@ class TestMultipleClusterNets(TestBasic):
         self.env.revert_snapshot("ready_with_5_slaves")
 
         # Get network parts of IP addresses with /24 netmask
-        admin_net = self.env.d_env.admin_net
-        admin_net2 = self.env.d_env.admin_net2
 
         def get_network(x):
             return self.env.d_env.get_network(name=x).ip_network
 
         # This should be refactored
         networks = ['.'.join(get_network(n).split('.')[0:-1])
-                    for n in [admin_net, admin_net2]]
+                    for n in ['admin', 'admin2']]
         nodes_addresses = ['.'.join(node['ip'].split('.')[0:-1]) for node in
                            self.fuel_web.client.list_nodes()]
 
