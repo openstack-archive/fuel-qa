@@ -14,17 +14,18 @@
 
 import re
 import time
-from warnings import warn
 
 from devops.error import TimeoutError
 from devops.helpers.helpers import tcp_ping_
 from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
+from devops.helpers.metaclasses import SingletonMeta
 from devops.helpers.ntp import sync_time
 from devops.models import Environment
 from keystoneclient import exceptions
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
+import six
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import revert_info
@@ -51,16 +52,8 @@ from fuelweb_test import logwrap
 from fuelweb_test import logger
 
 
-class EnvironmentModel(object):
+class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
     """EnvironmentModel."""  # TODO documentation
-
-    _instance = None
-
-    def __new__(cls, *args, **kwargs):
-        if not cls._instance:
-            cls._instance = super(EnvironmentModel, cls).__new__(
-                cls, *args, **kwargs)
-        return cls._instance
 
     def __init__(self, config=None):
         if not hasattr(self, "_virt_env"):
@@ -160,9 +153,7 @@ class EnvironmentModel(object):
     @logwrap
     def get_admin_node_ip(self):
         return str(
-            self.d_env.nodes(
-            ).admin.get_ip_address_by_network_name(
-                self.d_env.admin_net))
+            self.d_env.nodes().admin.get_ip_address_by_network_name('admin'))
 
     @logwrap
     def get_ebtables(self, cluster_id, devops_nodes):
@@ -175,14 +166,12 @@ class EnvironmentModel(object):
             'ks': 'hd:LABEL=Mirantis_Fuel:/ks.cfg' if iso_connect_as == 'usb'
             else 'cdrom:/ks.cfg',
             'repo': 'hd:LABEL=Mirantis_Fuel:/',  # only required for USB boot
-            'ip': node.get_ip_address_by_network_name(
-                self.d_env.admin_net),
-            'mask': self.d_env.get_network(
-                name=self.d_env.admin_net).ip.netmask,
+            'ip': node.get_ip_address_by_network_name('admin'),
+            'mask': self.d_env.get_network(name='admin').ip.netmask,
             'gw': self.d_env.router(),
             'hostname': ''.join((settings.FUEL_MASTER_HOSTNAME,
                                  settings.DNS_SUFFIX)),
-            'nat_interface': self.d_env.nat_interface,
+            'nat_interface': '',
             'dns1': settings.DNS,
             'showmenu': 'no',
             'wait_for_external_config': 'yes',
@@ -297,7 +286,7 @@ class EnvironmentModel(object):
         admin = self.d_env.nodes().admin
 
         try:
-            admin.await(self.d_env.admin_net, timeout=30, by_port=8000)
+            admin.await('admin', timeout=30, by_port=8000)
         except Exception as e:
             logger.warning("From first time admin isn't reverted: "
                            "{0}".format(e))
@@ -307,7 +296,7 @@ class EnvironmentModel(object):
 
             admin.start()
             logger.info('Admin node started second time.')
-            self.d_env.nodes().admin.await(self.d_env.admin_net)
+            self.d_env.nodes().admin.await('admin')
             self.set_admin_ssh_password()
             self.docker_actions.wait_for_ready_containers(timeout=600)
 
@@ -541,7 +530,7 @@ class EnvironmentModel(object):
         wait_pass(lambda: tcp_ping_(
             self.d_env.nodes(
             ).admin.get_ip_address_by_network_name
-            (self.d_env.admin_net), 22), timeout=timeout)
+            ('admin'), 22), timeout=timeout)
 
     @logwrap
     def wait_for_external_config(self, timeout=120):
@@ -761,20 +750,6 @@ class EnvironmentModel(object):
                      'Executing "{0}" on the admin node has failed with: {1}'
                      .format(echo_cmd, echo_result['stderr']))
         return resolv_conf['stdout']
-
-    @staticmethod
-    @logwrap
-    def execute_remote_cmd(remote, cmd, exit_code=0):
-        warn(
-            'execute_remote_cmd(remote, cmd) is deprecated in favor of '
-            'SSHClient().check_call()',
-            DeprecationWarning
-        )
-        result = remote.execute(cmd)
-        assert_equal(result['exit_code'], exit_code,
-                     'Failed to execute "{0}" on remote host: {1}'.
-                     format(cmd, result))
-        return result['stdout']
 
     @logwrap
     def describe_other_admin_interfaces(self, admin):

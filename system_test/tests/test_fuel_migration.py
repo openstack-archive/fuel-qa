@@ -99,7 +99,7 @@ class FuelMasterMigrate(ActionsBase, FuelMasterActions):
 
         logger.info('Wait for Master node become online')
         self.env.d_env.nodes().admin.await(
-            network_name=self.env.d_env.admin_net,
+            network_name='admin',
             timeout=60 * 10)
 
         logger.info('Second reboot of Master node...')
@@ -116,7 +116,7 @@ class FuelMasterMigrate(ActionsBase, FuelMasterActions):
 
         logger.info('Wait for Master node become online')
         self.env.d_env.nodes().admin.await(
-            network_name=self.env.d_env.admin_net,
+            network_name='admin',
             timeout=60 * 10)
 
         logger.info("Wait for file 'migration-done' appears")

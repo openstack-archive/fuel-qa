@@ -48,7 +48,7 @@ doc/_build/
 
 # Logs
 /logs
-sys_test.log
+*.log
 
 # Certs
 /ca.crt
@@ -56,3 +56,4 @@ sys_test.log
 
 # Cache
 /.cache
+__pycache__

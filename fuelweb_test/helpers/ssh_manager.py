@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
 import os
 import posixpath
 import re
@@ -20,28 +19,15 @@ import traceback
 from warnings import warn
 
 from devops.helpers.helpers import wait
+from devops.helpers.metaclasses import SingletonMeta
 from devops.helpers.ssh_client import SSHClient
 from paramiko import RSAKey
+import six
 
 from fuelweb_test import logger
 
 
-class SingletonMeta(type):
-    def __init__(cls, name, bases, dict):
-        super(SingletonMeta, cls).__init__(name, bases, dict)
-        cls.instance = None
-
-    def __call__(self, *args, **kw):
-        if self.instance is None:
-            self.instance = super(SingletonMeta, self).__call__(*args, **kw)
-        return self.instance
-
-    def __getattr__(cls, name):
-        return getattr(cls(), name)
-
-
-class SSHManager(object):
-    __metaclass__ = SingletonMeta
+class SSHManager(six.with_metaclass(SingletonMeta, object)):
 
     def __init__(self):
         logger.debug('SSH_MANAGER: Run constructor SSHManager')
@@ -98,7 +84,7 @@ class SSHManager(object):
         :rtype: SSHClient
         """
         if (ip, port) not in self.connections:
-            logger.debug('SSH_MANAGER:Create new connection for '
+            logger.debug('SSH_MANAGER: Create new connection for '
                          '{ip}:{port}'.format(ip=ip, port=port))
 
             keys = self._get_keys() if ip != self.admin_ip else []
@@ -127,10 +113,10 @@ class SSHManager(object):
         :return: None
         """
         if (ip, port) in self.connections:
-            logger.info('SSH_MANAGER:Close connection for {ip}:{port}'.format(
+            logger.info('SSH_MANAGER: Close connection for {ip}:{port}'.format(
                 ip=ip, port=port))
             self.connections[(ip, port)].clear()
-            logger.info('SSH_MANAGER:Create new connection for '
+            logger.info('SSH_MANAGER: Create new connection for '
                         '{ip}:{port}'.format(ip=ip, port=port))
 
         self.connections[(ip, port)] = SSHClient(
@@ -183,11 +169,18 @@ class SSHManager(object):
         :param port: ssh port
         :param cmd: command to execute on remote host
         :param err_msg: custom error message
+        :param jsonify: bool
         :param assert_ec_equal: list of expected exit_code
         :param raise_on_assert: Boolean
         :return: dict
         :raise: Exception
         """
+        warn(
+            'SSHManager().execute_on_remote is deprecated in favor of '
+            'SSHManager().check_call.\n'
+            'Please, do not use this method in any new tests. '
+            'Old code will be updated later.', DeprecationWarning
+        )
         if assert_ec_equal is None:
             assert_ec_equal = [0]
 
@@ -214,29 +207,6 @@ class SSHManager(object):
             result['stdout_json'] = orig_result.stdout_json
 
         return result
-
-    def _json_deserialize(self, json_string):
-        """ Deserialize json_string and return object
-
-        :param json_string: string or list with json
-        :return: obj
-        :raise: Exception
-        """
-        warn(
-            '_json_deserialize is not used anymore and will be removed later',
-            DeprecationWarning)
-
-        if isinstance(json_string, list):
-            json_string = ''.join(json_string).strip()
-
-        try:
-            obj = json.loads(json_string)
-        except Exception:
-            log_msg = "Unable to deserialize"
-            logger.error("{0}. Actual string:\n{1}".format(log_msg,
-                                                           json_string))
-            raise Exception(log_msg)
-        return obj
 
     def open_on_remote(self, ip, path, mode='r', port=22):
         remote = self._get_remote(ip=ip, port=port)
