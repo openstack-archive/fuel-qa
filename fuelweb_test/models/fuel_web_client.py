@@ -37,6 +37,7 @@ from keystoneauth1 import exceptions
 from keystoneauth1.identity import V2Password
 from keystoneauth1.session import Session as KeystoneSession
 import netaddr
+import six
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_is_not_none
@@ -1026,12 +1027,28 @@ class FuelWebClient29(object):
 
     @logwrap
     def get_last_task_id(self, cluster_id, task_name):
-        tasks = self.client.get_tasks()
-        tasks_ids = []
+        filtered_tasks = self.filter_tasks(self.client.get_tasks(),
+                                           cluster=cluster_id,
+                                           name=task_name)
+        return max([task['id'] for task in filtered_tasks])
+
+    @staticmethod
+    @logwrap
+    def filter_tasks(tasks, **filters):
+        res = []
         for task in tasks:
-            if task['cluster'] == cluster_id and task['name'] == task_name:
-                tasks_ids.append(task['id'])
-        return min(tasks_ids)
+            for f_key, f_value in six.iteritems(filters):
+                if task.get(f_key) != f_value:
+                    break
+            else:
+                res.append(task)
+        return res
+
+    @logwrap
+    def wait_for_tasks_presence(self, get_tasks, **filters):
+        wait(lambda: self.filter_tasks(get_tasks(), **filters),
+             timeout=300,
+             timeout_msg="Timeout exceeded while waiting for tasks.")
 
     def deploy_cluster_wait_progress(self, cluster_id, progress,
                                      return_task=None):
@@ -1388,14 +1405,15 @@ class FuelWebClient29(object):
                                          timeout=timeout)
 
     @logwrap
-    def task_wait(self, task, timeout, interval=5):
+    def task_wait(self, task, timeout, interval=5, states=None):
+        # check task is finished by default
+        states = states or ('ready', 'error')
         logger.info('Wait for task {0} seconds: {1}'.format(
                     timeout, pretty_log(task, indent=1)))
         start = time.time()
 
         wait(
-            lambda: (self.client.get_task(task['id'])['status']
-                     not in ('pending', 'running')),
+            lambda: (self.client.get_task(task['id'])['status'] in states),
             interval=interval,
             timeout=timeout,
             timeout_msg='Waiting task {0!r} timeout {1} sec '
@@ -1403,9 +1421,8 @@ class FuelWebClient29(object):
 
         took = time.time() - start
         task = self.client.get_task(task['id'])
-        logger.info('Task finished. Took {0} seconds. {1}'.format(
-                    took,
-                    pretty_log(task, indent=1)))
+        logger.info('Task changed its state to one of {}. Took {} seconds.'
+                    ' {}'.format(states, took, pretty_log(task, indent=1)))
         return task
 
     @logwrap
