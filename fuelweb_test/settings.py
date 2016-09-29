@@ -747,6 +747,9 @@ IRONIC_USER_IMAGE_URL = os.environ.get(
 
 NOVA_QUOTAS_ENABLED = get_var_as_bool("NOVA_QUOTAS_ENABLED", False)
 
+AUTH_S3_KEYSTONE_CEPH_ENABLED = get_var_as_bool(
+    "AUTH_S3_KEYSTONE_CEPH_ENABLED", False)
+
 DISABLE_OFFLOADING = get_var_as_bool("DISABLE_OFFLOADING", True)
 
 GERRIT_PROJECT = os.environ.get("GERRIT_PROJECT")

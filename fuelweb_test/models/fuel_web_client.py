@@ -81,6 +81,7 @@ from fuelweb_test.settings import KEYSTONE_CREDS
 from fuelweb_test.settings import KVM_USE
 from fuelweb_test.settings import MULTIPLE_NETWORKS
 from fuelweb_test.settings import NOVA_QUOTAS_ENABLED
+from fuelweb_test.settings import AUTH_S3_KEYSTONE_CEPH_ENABLED
 from fuelweb_test.settings import NETWORK_PROVIDERS
 from fuelweb_test.settings import NEUTRON
 from fuelweb_test.settings import NEUTRON_SEGMENT
@@ -689,6 +690,14 @@ class FuelWebClient29(object):
                 logger.info('Enable Nova quotas')
                 nova_quotas = attributes['editable']['common']['nova_quota']
                 nova_quotas['value'] = True
+
+            if AUTH_S3_KEYSTONE_CEPH_ENABLED:
+                logger.info(
+                    'Enable S3 API Authentication \
+                    via Keystone in Ceph RadosGW')
+                auth_s3_keystone_ceph = \
+                    attributes['editable']['common']['auth_s3_keystone_ceph']
+                auth_s3_keystone_ceph['value'] = True
 
             if not help_data.TASK_BASED_ENGINE:
                 logger.info('Switch to Granular deploy')
