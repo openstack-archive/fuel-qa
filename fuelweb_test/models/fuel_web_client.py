@@ -48,6 +48,7 @@ from fuelweb_test.settings import ATTEMPTS
 from fuelweb_test.settings import BONDING
 from fuelweb_test.settings import DEPLOYMENT_MODE_SIMPLE
 from fuelweb_test.settings import DEPLOYMENT_MODE_HA
+from fuelweb_test.settings import DNS_SUFFIX
 from fuelweb_test.settings import KVM_USE
 from fuelweb_test.settings import MULTIPLE_NETWORKS
 from fuelweb_test.settings import NOVA_QUOTAS_ENABLED
@@ -299,8 +300,8 @@ class FuelWebClient(object):
         task = self.task_wait(task, timeout, interval)
         assert_equal(
             'error', task['status'],
-            "Task '{name}' has incorrect status. {} != {}".format(
-                task['status'], 'error', name=task["name"]
+            "Task '{name}' has incorrect status. {status} != {exp}".format(
+                status=task['status'], exp='error', name=task["name"]
             )
         )
 
@@ -425,9 +426,9 @@ class FuelWebClient(object):
                     section = 'access'
                 if option == 'assign_to_all_nodes':
                     section = 'public_network_assignment'
-                if option in ('dns_list'):
+                if option in 'dns_list':
                     section = 'external_dns'
-                if option in ('ntp_list'):
+                if option in 'ntp_list':
                     section = 'external_ntp'
                 if section:
                     attributes['editable'][section][option]['value'] =\
@@ -919,7 +920,7 @@ class FuelWebClient(object):
     def get_devops_nodes_by_nailgun_nodes(self, nailgun_nodes):
         """Return devops node by nailgun node
 
-        :type nailgun_node: List
+        :type nailgun_nodes: List
             :rtype: list of Nodes or None
         """
         d_nodes = [self.get_devops_node_by_nailgun_node(n) for n
@@ -1655,7 +1656,7 @@ class FuelWebClient(object):
         test_path = map_ostf.OSTF_TEST_MAPPING.get(test_nama_to_ran)
         logger.info('Test path is {0}'.format(test_path))
 
-        for i in range(0, retr):
+        for _ in range(retr):
             result = self.run_single_ostf_test(
                 cluster_id=cluster_id, test_sets=['smoke', 'sanity'],
                 test_name=test_path,
@@ -1710,7 +1711,7 @@ class FuelWebClient(object):
             if ceph.is_clock_skew(remote):
                 skewed = ceph.get_node_fqdns_w_clock_skew(remote)
                 logger.warning("Time on nodes {0} are to be "
-                               "re-syncronized".format(skewed))
+                               "re-synchronized".format(skewed))
                 nodes_to_sync = [
                     n for n in online_ceph_nodes
                     if n['fqdn'].split('.')[0] in skewed]
@@ -2021,8 +2022,8 @@ class FuelWebClient(object):
 
     @logwrap
     def get_fqdn_by_hostname(self, hostname):
-        if self.environment.d_env.domain not in hostname:
-            hostname += "." + self.environment.d_env.domain
+        if DNS_SUFFIX not in hostname:
+            hostname += DNS_SUFFIX
             return hostname
         else:
             return hostname
