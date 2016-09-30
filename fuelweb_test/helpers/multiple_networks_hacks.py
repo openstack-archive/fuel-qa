@@ -30,12 +30,11 @@ from fuelweb_test import logwrap
 def configure_second_admin_cobbler(self):
     dhcp_template = '/etc/cobbler/dnsmasq.template'
     remote = self.d_env.get_admin_remote()
-    admin_net2 = self.d_env.admin_net2
-    second_admin_if = settings.INTERFACES.get(admin_net2)
+    second_admin_if = settings.INTERFACES.get('admin2')
     second_admin_ip = str(
-        self.d_env.nodes().admin.get_ip_address_by_network_name(admin_net2))
+        self.d_env.nodes().admin.get_ip_address_by_network_name('admin2'))
 
-    admin_net2_object = self.d_env.get_network(name=admin_net2)
+    admin_net2_object = self.d_env.get_network(name='admin2')
     second_admin_network = admin_net2_object.ip.ip
     second_admin_netmask = admin_net2_object.ip.netmask
     network = IPNetwork('{0}/{1}'.format(second_admin_network,
@@ -64,7 +63,7 @@ def configure_second_admin_firewall(self, network, netmask):
     # Allow input/forwarding for nodes from the second admin network
     rules = [
         ('-I INPUT -i {0} -m comment --comment "input from 2nd admin network" '
-         '-j ACCEPT').format(settings.INTERFACES.get(self.d_env.admin_net2)),
+         '-j ACCEPT').format(settings.INTERFACES.get('admin2')),
         ('-t nat -I POSTROUTING -s {0}/{1} -o eth+ -m comment --comment '
          '"004 forward_admin_net2" -j MASQUERADE').
         format(network, netmask)
