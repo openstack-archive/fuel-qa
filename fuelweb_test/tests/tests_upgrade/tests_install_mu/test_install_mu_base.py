@@ -36,6 +36,7 @@ class MUInstallBase(test_cli_base.CommandLine):
         repos_attr = attributes['editable']['repo_setup']['repos']
         repos_attr['value'].append(repo)
         self.fuel_web.client.update_cluster_attributes(cluster_id, attributes)
+        self.fuel_web.deploy_cluster_changes_wait(cluster_id, attributes)
 
     @staticmethod
     def check_env_var():
