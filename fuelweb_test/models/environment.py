@@ -127,13 +127,15 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
         else:
             wait(lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout)
 
+        wait_pass(
+            lambda: checkers.validate_minimal_amount_nodes(
+                nodes=self.nailgun_nodes(devops_nodes),
+                expected_amount=len(devops_nodes)
+            ),
+            timeout=30)
+
         if not skip_timesync:
             self.sync_time()
-
-        checkers.validate_minimal_amount_nodes(
-            nodes=self.nailgun_nodes(devops_nodes),
-            expected_amount=len(devops_nodes)
-        )
 
         return self.nailgun_nodes(devops_nodes)
 
