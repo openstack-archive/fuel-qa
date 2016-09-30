@@ -115,13 +115,15 @@ class EnvironmentModel(object):
         with timestat("wait_for_nodes_to_start_and_register_in_nailgun"):
             wait(lambda: all(self.nailgun_nodes(devops_nodes)), 15, timeout)
 
+        wait_pass(
+            lambda: checkers.validate_minimal_amount_nodes(
+                nodes=self.nailgun_nodes(devops_nodes),
+                expected_amount=len(devops_nodes)
+            ),
+            timeout=15)
+
         if not skip_timesync:
             self.sync_time()
-
-        checkers.validate_minimal_amount_nodes(
-            nodes=self.nailgun_nodes(devops_nodes),
-            expected_amount=len(devops_nodes)
-        )
 
         return self.nailgun_nodes(devops_nodes)
 
