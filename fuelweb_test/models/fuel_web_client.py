@@ -2223,29 +2223,34 @@ class FuelWebClient29(object):
     @logwrap
     def wait_mysql_galera_is_up(self, node_names, timeout=60 * 4):
         def _get_galera_status(_remote):
-            cmd = ("mysql --connect_timeout=5 -sse \"SELECT VARIABLE_VALUE "
-                   "FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME"
-                   " = 'wsrep_ready';\"")
-            result = _remote.execute(cmd)
-            if result['exit_code'] == 0:
-                return ''.join(result['stdout']).strip()
-            else:
-                return ''.join(result['stderr']).strip()
+            get_request = (
+                "mysql --connect_timeout=5 -sse "
+                "\"SELECT VARIABLE_VALUE "
+                "FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME"
+                " = '{}';\"").format
+            result = _remote.execute(get_request('wsrep_ready'))
+            if result.exit_code != 0 or u'ON' not in result.stdout_str:
+                return False
+            result = _remote.execute(get_request('wsrep_connected'))
+            if result.exit_code != 0 or u'ON' not in result.stdout_str:
+                return False
+            result = _remote.execute(get_request('wsrep_cluster_size'))
+            if result.exit_code != 0 or\
+                    int(result.stdout_str) >= len(node_names):
+                return False  # Nodes not connected
+            result = _remote.execute(get_request('wsrep_cluster_status'))
+            return result.exit_code == 0 and\
+                u'Primary'.upper() in result.stdout_str.upper()
+            # PRIMARY (primary group configuration, quorum present)
 
         for node_name in node_names:
             with self.get_ssh_for_node(node_name) as remote:
-                try:
-                    wait(lambda: _get_galera_status(remote) == 'ON',
-                         timeout=timeout)
-                    logger.info("MySQL Galera is up on {host} node.".format(
-                                host=node_name))
-                except TimeoutError:
-                    logger.error("MySQL Galera isn't ready on {0}: {1}"
-                                 .format(node_name,
-                                         _get_galera_status(remote)))
-                    raise TimeoutError(
-                        "MySQL Galera isn't ready on {0}: {1}".format(
-                            node_name, _get_galera_status(remote)))
+                wait(lambda: _get_galera_status(remote),
+                     timeout=timeout,
+                     timeout_msg="MySQL Galera isn't ready on "
+                                 "{0}".format(node_name))
+                logger.info("MySQL Galera is up on {host} node.".format(
+                    host=node_name))
         return True
 
     @logwrap
