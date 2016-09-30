@@ -114,7 +114,7 @@ HARDWARE = {
     "numa_nodes": int(os.environ.get("NUMA_NODES", 0)),
 }
 if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
-    slave_mem_default = 2560
+    slave_mem_default = 3584
 else:
     slave_mem_default = 2048
 HARDWARE["slave_node_memory"] = int(
