@@ -36,7 +36,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
         self.env.d_env.nodes().admin.resume()
         try:
             self.env.d_env.nodes().admin.await(
-                self.env.d_env.admin_net, timeout=60, by_port=8000)
+                'admin', timeout=60, by_port=8000)
         except Exception as e:
             logger.warning(
                 "From first time admin isn't reverted: {0}".format(e))
@@ -45,7 +45,7 @@ class DeployHAOneControllerMasterNodeFail(base_test_case.TestBasic):
             time.sleep(10)
             self.env.d_env.nodes().admin.start()
             logger.info('Admin node started second time.')
-            self.env.d_env.nodes().admin.await(self.env.d_env.admin_net)
+            self.env.d_env.nodes().admin.await('admin')
             self.env.set_admin_ssh_password()
             self.env.admin_actions.wait_for_fuel_ready(
                 timeout=600)
