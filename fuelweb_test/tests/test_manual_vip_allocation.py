@@ -72,8 +72,8 @@ class ChangeVipManually(TestBasic):
             }
         )
         self.show_step(4)
-        ip_to_set = str(
-            self.env.d_env.get_network(name='public').ip.subnet()[0][5])
+        net = self.env.d_env.get_network(name='public').ip
+        ip_to_set = str(list(net.subnet(net.prefixlen + 1))[0][5])
         logger.debug("public vip is going to be set to {}".format(ip_to_set))
         public_vip_data = {'network': 2,
                            'vip_name': 'public',
