@@ -191,40 +191,7 @@ class TestBasic(object):
             )
 
         elif settings.UPDATE_MASTER:
-            logger.warning("Restore online mos repos")
-            backup_path = "/var/astute.yaml"
-            admin_ip = self.env.get_admin_node_ip()
-            backup = YamlEditor(backup_path,
-                                ip=admin_ip
-                                ).get_content()
-            with YamlEditor(settings.FUEL_SETTINGS_YAML,
-                            ip=admin_ip) as editor:
-                editor.content['BOOTSTRAP']['repos'] = backup['BOOTSTRAP'][
-                    'repos']
-
-            if settings.UPDATE_FUEL_MIRROR:
-                for i, url in enumerate(settings.UPDATE_FUEL_MIRROR):
-                    conf_file = '/etc/yum.repos.d/temporary-{}.repo'.format(i)
-                    cmd = ("echo -e"
-                           " '[temporary-{0}]\nname="
-                           "temporary-{0}\nbaseurl={1}/"
-                           "\ngpgcheck=0\npriority="
-                           "1' > {2}").format(i, url, conf_file)
-
-                    self.ssh_manager.execute(
-                        ip=self.ssh_manager.admin_ip,
-                        cmd=cmd
-                    )
-            if settings.EXTRA_DEB_REPOS:
-                path = settings.FUEL_SETTINGS_YAML
-                with YamlEditor(
-                        path,
-                        ip=admin_ip) as editor:
-                    editor.content['BOOTSTRAP']['repos'] = \
-                        replace_repos.replace_ubuntu_repos(
-                            {'value': editor.content['BOOTSTRAP']['repos']},
-                            upstream_host='archive.ubuntu.com')
-            self.env.admin_install_updates()
+            logger.warning("SPIKE SPIKE SPIKE SPIKE")
         if settings.MULTIPLE_NETWORKS:
             self.env.describe_other_admin_interfaces(
                 self.env.d_env.nodes().admin)
