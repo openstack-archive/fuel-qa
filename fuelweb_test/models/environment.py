@@ -643,6 +643,10 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
             command=install_command)
+        spike = """sed -i "s/rpm -qa | grep '\^fuel-nailgun'/rpm -qa | grep '\^fuel-nailgun-9'/" /usr/bin/update-prepare"""
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=spike)
 
         logger.info('prepare Fuel node for updating')
         prepare_command = 'update-prepare prepare master'
