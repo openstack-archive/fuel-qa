@@ -155,9 +155,7 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
     @logwrap
     def get_admin_node_ip(self):
         return str(
-            self.d_env.nodes(
-            ).admin.get_ip_address_by_network_name(
-                self.d_env.admin_net))
+            self.d_env.nodes().admin.get_ip_address_by_network_name('admin'))
 
     @logwrap
     def get_ebtables(self, cluster_id, devops_nodes):
@@ -169,14 +167,12 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
         params = {
             'device_label': settings.ISO_LABEL,
             'iface': iface_alias('eth0'),
-            'ip': node.get_ip_address_by_network_name(
-                self.d_env.admin_net),
-            'mask': self.d_env.get_network(
-                name=self.d_env.admin_net).ip.netmask,
+            'ip': node.get_ip_address_by_network_name('admin'),
+            'mask': self.d_env.get_network(name='admin').ip.netmask,
             'gw': self.d_env.router(),
             'hostname': ''.join((settings.FUEL_MASTER_HOSTNAME,
                                  settings.DNS_SUFFIX)),
-            'nat_interface': self.d_env.nat_interface,
+            'nat_interface': '',
             'nameserver': settings.DNS,
             'showmenu': 'yes' if settings.SHOW_FUELMENU else 'no',
             'wait_for_external_config': 'yes',
@@ -248,7 +244,7 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
         self.ssh_manager.clean_all_connections()
 
         try:
-            admin.await(self.d_env.admin_net, timeout=30, by_port=8000)
+            admin.await('admin', timeout=30, by_port=8000)
         except Exception as e:
             logger.warning("From first time admin isn't reverted: "
                            "{0}".format(e))
@@ -258,7 +254,7 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
 
             admin.start()
             logger.info('Admin node started second time.')
-            self.d_env.nodes().admin.await(self.d_env.admin_net)
+            self.d_env.nodes().admin.await('admin')
             self.set_admin_ssh_password()
             self.admin_actions.wait_for_fuel_ready(timeout=600)
 
@@ -486,7 +482,7 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
         wait_pass(lambda: tcp_ping_(
             self.d_env.nodes(
             ).admin.get_ip_address_by_network_name
-            (self.d_env.admin_net), 22), timeout=timeout)
+            ('admin'), 22), timeout=timeout)
 
     @logwrap
     def wait_for_fuelmenu(self,
@@ -496,9 +492,9 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
             """Try to close fuelmenu and check ssh connection"""
             try:
                 tcp_ping_(
-                    self.d_env.nodes(
-                    ).admin.get_ip_address_by_network_name
-                    (self.d_env.admin_net), 22)
+                    self.d_env.nodes().admin.get_ip_address_by_network_name(
+                        'admin'),
+                    22)
             except Exception:
                 #  send F8 trying to exit fuelmenu
                 self.d_env.nodes().admin.send_keys("<F8>\n")
