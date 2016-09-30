@@ -319,7 +319,7 @@ def revert_info(snapshot_name, master_ip, description=""):
 
 
 def create_diagnostic_snapshot(env, status, name=""):
-    task = env.fuel_web.task_wait(env.fuel_web.client.generate_logs(), 60 * 10)
+    task = env.fuel_web.task_wait(env.fuel_web.client.generate_logs(), 60 * 30)
     assert_true(task['status'] == 'ready',
                 "Generation of diagnostic snapshot failed: {}".format(task))
     url = "http://{}:8000{}".format(env.get_admin_node_ip(), task['message'])
