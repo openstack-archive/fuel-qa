@@ -372,8 +372,8 @@ class FuelWebClient29(object):
         task = self.task_wait(task, timeout, interval)
         assert_equal(
             'error', task['status'],
-            "Task '{name}' has incorrect status. {} != {}".format(
-                task['status'], 'error', name=task["name"]
+            "Task '{name}' has incorrect status. {status} != {exp}".format(
+                status=task['status'], exp='error', name=task["name"]
             )
         )
 
@@ -538,7 +538,7 @@ class FuelWebClient29(object):
         :param settings:
         :param port:
         :param configure_ssl:
-        :param cgroup_data:
+        :param release_id:
         :return: cluster_id
         """
         logger.info('Create cluster with name %s', name)
@@ -1465,9 +1465,7 @@ class FuelWebClient29(object):
 
             node_group, node_roles = self.get_node_group_and_role(node_name,
                                                                   nodes_dict)
-            wait(lambda:
-                 self.get_nailgun_node_by_devops_node(devops_node)['online'],
-                 timeout=60 * 2)
+            self.wait_node_is_online(devops_node, timeout=60 * 2)
             node = self.get_nailgun_node_by_devops_node(devops_node)
             assert_true(node['online'],
                         'Node {0} is offline'.format(node['mac']))
@@ -2085,7 +2083,7 @@ class FuelWebClient29(object):
                 cmd = 'ip netns exec {0} ip -4 ' \
                       '-o address show {1}'.format(namespace, interface)
             else:
-                cmd = 'ip -4 -o address show {1}'.format(interface)
+                cmd = 'ip -4 -o address show {0}'.format(interface)
 
             with self.get_ssh_for_node(node_name) as remote:
                 ret = remote.check_call(cmd)
@@ -2196,30 +2194,39 @@ class FuelWebClient29(object):
 
     @logwrap
     def wait_mysql_galera_is_up(self, node_names, timeout=60 * 4):
+        get_request = (
+            "mysql --connect_timeout=5 -sse "
+            "\"SELECT VARIABLE_VALUE "
+            "FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME"
+            " = '{}';\"").format
+
         def _get_galera_status(_remote):
-            cmd = ("mysql --connect_timeout=5 -sse \"SELECT VARIABLE_VALUE "
-                   "FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME"
-                   " = 'wsrep_ready';\"")
-            result = _remote.execute(cmd)
-            if result['exit_code'] == 0:
-                return ''.join(result['stdout']).strip()
-            else:
-                return ''.join(result['stderr']).strip()
+            # wsrep service status
+            result = _remote.execute(get_request('wsrep_ready'))
+            if result.exit_code != 0 or u'ON' not in result.stdout_str:
+                return False
+            # connectivity status
+            result = _remote.execute(get_request('wsrep_connected'))
+            if result.exit_code != 0 or u'ON' not in result.stdout_str:
+                return False
+            # minimal amount of nodes is connected
+            result = _remote.execute(get_request('wsrep_cluster_size'))
+            return result.exit_code == 0 and\
+                int(result.stdout_str) >= len(node_names)
 
         for node_name in node_names:
-            with self.get_ssh_for_node(node_name) as remote:
-                try:
-                    wait(lambda: _get_galera_status(remote) == 'ON',
-                         timeout=timeout)
-                    logger.info("MySQL Galera is up on {host} node.".format(
-                                host=node_name))
-                except TimeoutError:
-                    logger.error("MySQL Galera isn't ready on {0}: {1}"
-                                 .format(node_name,
-                                         _get_galera_status(remote)))
-                    raise TimeoutError(
-                        "MySQL Galera isn't ready on {0}: {1}".format(
-                            node_name, _get_galera_status(remote)))
+            remote = self.get_ssh_for_node(node_name)
+            wait(lambda: _get_galera_status(remote),
+                 timeout=timeout,
+                 timeout_msg="MySQL Galera isn't ready on "
+                             "{0}".format(node_name))
+            # cluster status: only log, allow negative scenarios
+            cls_status = remote.execute(get_request('wsrep_cluster_status'))
+            logger.info(
+                u"MySQL Galera is up on {host} node.\n"
+                u"Cluster status: {status}".format(
+                    host=node_name,
+                    status=cls_status.stdout_str))
         return True
 
     @logwrap
