@@ -43,8 +43,8 @@ class HaScaleGroup2(TestBasic):
             6. Remove offline controller from cluster
             7. Add 1 new controller
             8. Deploy changes
-            9. Run OSTF
-            10. Verify networks
+            9. Verify networks
+            10. Run OSTF
 
         Duration 120m
         Snapshot replace_primary_controller
@@ -96,9 +96,9 @@ class HaScaleGroup2(TestBasic):
         )
         self.show_step(8)
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        self.show_step(10)
-        self.fuel_web.verify_network(cluster_id)
         self.show_step(9)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(10)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
         self.env.make_snapshot("replace_primary_controller")
 
@@ -115,8 +115,8 @@ class HaScaleGroup2(TestBasic):
             3. Deploy the cluster
             4. Remove 2 controllers
             5. Deploy changes
-            6. Run OSTF
-            7. Verify networks
+            6. Verify networks
+            7. Run OSTF
             8. Check /etc/hosts that removed nodes aren't present
             9. Check corosync.conf that removed nodes aren't present
 
@@ -160,9 +160,9 @@ class HaScaleGroup2(TestBasic):
         )
         self.show_step(5)
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        self.show_step(7)
-        self.fuel_web.verify_network(cluster_id)
         self.show_step(6)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(7)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         node = self.fuel_web.get_nailgun_node_by_devops_node(
@@ -171,12 +171,15 @@ class HaScaleGroup2(TestBasic):
         self.show_step(9)
         for host in hosts:
             result = self.ssh_manager.execute_on_remote(
-                ip=node['ip'], cmd="grep '{}' /etc/hosts".format(host))
+                ip=node['ip'],
+                cmd="grep '{}' /etc/hosts".format(host),
+                assert_ec_equal=[1])
             assert_equal(result['exit_code'], 1,
                          "host {} is present in /etc/hosts".format(host))
             result = self.ssh_manager.execute_on_remote(
-                ip=node['ip'], cmd="grep '{}' /etc/corosync/"
-                                   "corosync.conf".format(host))
+                ip=node['ip'],
+                cmd="grep '{}' /etc/corosync/corosync.conf".format(host),
+                assert_ec_equal=[1])
             assert_equal(result['exit_code'], 1,
                          "host {} is present in"
                          " /etc/corosync/corosync.conf".format(host))
