@@ -516,8 +516,7 @@ class ServicesReconfiguration(TestBasic):
             1. Revert snapshot "basic_env_for_reconfiguration"
             2. Upload a new openstack configuration
             3. Try to apply a new keystone configuration
-            4. Wait for failing of deployment task
-            5. Verify configuration file on primary controller
+            4. Verify configuration file on primary controller
 
         Snapshot: reconfigure_keystone_to_use_ldap
 
@@ -543,15 +542,6 @@ class ServicesReconfiguration(TestBasic):
             cluster_id)
 
         self.show_step(4)
-        try:
-            self.fuel_web.assert_task_success(task, timeout=3600, interval=30)
-        except AssertionError as e:
-            logger.warning('Ignoring exception: {!r}'.format(e))
-            logger.debug(traceback.format_exc())
-        else:
-            raise Exception("New configuration was not applied")
-
-        self.show_step(5)
         self.check_config_on_remote([pr_controller], structured_config)
         logger.info("New configuration was applied")
 
