@@ -43,8 +43,8 @@ class HaScaleGroup2(TestBasic):
             6. Remove offline controller from cluster
             7. Add 1 new controller
             8. Deploy changes
-            9. Run OSTF
-            10. Verify networks
+            9. Verify networks
+            10. Run OSTF
 
         Duration 120m
         Snapshot replace_primary_controller
@@ -96,9 +96,9 @@ class HaScaleGroup2(TestBasic):
         )
         self.show_step(8)
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        self.show_step(10)
-        self.fuel_web.verify_network(cluster_id)
         self.show_step(9)
+        self.fuel_web.verify_network(cluster_id)
+        self.show_step(10)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
         self.env.make_snapshot("replace_primary_controller")
 
