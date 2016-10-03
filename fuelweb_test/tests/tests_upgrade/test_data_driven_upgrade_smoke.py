@@ -191,17 +191,15 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         Scenario:
         1. Revert 'upgrade_smoke_restore' snapshot
         2. Add to existing cluster 3 nodes with controller role
-        3. Add to existing cluster 1 node with compute+cinder roles
-        4. Verify network
-        5. Deploy changes
-        6. Run OSTF
-        7. Remove from the cluster 1 node with controller role
-        8. Remove from the cluster 1 node with compute+cinder roles
-        9. Deploy changes
-        10. Wait until nodes are discovered
-        11. Verify that bootstrapped nodes are using ubuntu bootstrap
-        12. Verify network
-        13. Run OSTF
+        3. Verify network
+        4. Deploy changes
+        5. Run OSTF
+        6. Remove from the cluster 1 node with controller role
+        7. Deploy changes
+        8. Wait until nodes are discovered
+        9. Verify that bootstrapped nodes are using ubuntu bootstrap
+        10. Verify network
+        11. Run OSTF
 
         Snapshot: upgrade_smoke_scale
         Duration: TODO
@@ -210,7 +208,6 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.show_step(1)
         self.revert_restore()
         self.show_step(2)
-        self.show_step(3)
         cluster_id = self.fuel_web.get_last_created_cluster()
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[3:6])
         self.fuel_web.update_nodes(
@@ -218,36 +215,35 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
             {'slave-04': ['controller'],
              'slave-05': ['controller'],
              'slave-06': ['controller']})
-        self.show_step(4)
+        self.show_step(3)
         self.fuel_web.verify_network(cluster_id)
-        self.show_step(5)
+        self.show_step(4)
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        self.show_step(6)
+        self.show_step(5)
         self.check_ostf(cluster_id, ignore_known_issues=True)
 
         cluster_id = self.fuel_web.get_last_created_cluster()
-        self.show_step(7)
-        self.show_step(8)
+        self.show_step(6)
         nodes_to_remove = {'slave-06': ['controller']}
 
         nailgun_nodes = self.fuel_web.update_nodes(
             cluster_id, nodes_to_remove, False, True)
 
         pending_nodes = [x for x in nailgun_nodes if x["pending_deletion"]]
-        self.show_step(9)
+        self.show_step(7)
         self.fuel_web.deploy_cluster_wait(cluster_id, check_services=False)
-        self.show_step(10)
-        self.show_step(11)
+        self.show_step(8)
+        self.show_step(9)
         for node in pending_nodes:
             wait(lambda: self.fuel_web.is_node_discovered(node),
                  timeout=6 * 60)
             with self.fuel_web.get_ssh_for_node(
                 self.fuel_web.get_devops_node_by_nailgun_node(
-                    node).name) as slave_remote:
+                        node).name) as slave_remote:
                 self.verify_bootstrap_on_node(slave_remote, "ubuntu")
-        self.show_step(12)
+        self.show_step(10)
         self.fuel_web.verify_network(cluster_id)
-        self.show_step(13)
+        self.show_step(11)
         self.check_ostf(cluster_id, ignore_known_issues=True)
         self.env.make_snapshot("upgrade_smoke_scale", is_make=True)
 
