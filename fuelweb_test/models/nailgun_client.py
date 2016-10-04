@@ -55,6 +55,7 @@ class NailgunClient(object):
             kwargs.update(endpoint_filter={'service_type': 'fuel'})
         return self.session.post(url=url, connect_retries=1, **kwargs)
 
+    @logwrap
     def _put(self, url, **kwargs):
         if 'endpoint_filter' not in kwargs:
             kwargs.update(endpoint_filter={'service_type': 'fuel'})
