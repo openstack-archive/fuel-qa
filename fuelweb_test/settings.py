@@ -111,14 +111,8 @@ HARDWARE = {
     "admin_node_memory": int(os.environ.get("ADMIN_NODE_MEMORY", 3072)),
     "admin_node_cpu": int(os.environ.get("ADMIN_NODE_CPU", 2)),
     "slave_node_cpu": int(os.environ.get("SLAVE_NODE_CPU", 1)),
-    "numa_nodes": int(os.environ.get("NUMA_NODES", 0)),
-}
-if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
-    slave_mem_default = 3584
-else:
-    slave_mem_default = 2048
-HARDWARE["slave_node_memory"] = int(
-    os.environ.get("SLAVE_NODE_MEMORY", slave_mem_default))
+    "slave_node_memory": int(os.environ.get("SLAVE_NODE_MEMORY", 3584)),
+    "numa_nodes": int(os.environ.get("NUMA_NODES", 0))}
 NODE_VOLUME_SIZE = int(os.environ.get('NODE_VOLUME_SIZE', 50))
 NODES_COUNT = int(os.environ.get('NODES_COUNT', 10))
 

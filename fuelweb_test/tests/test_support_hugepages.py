@@ -118,7 +118,7 @@ class SupportHugepages(TestBasic):
             raise exceptions.FuelQAVariableNotSet(
                 'SLAVE_NODE_CPU', 4)
 
-        if not settings.HARDWARE['slave_node_memory'] == 5120:
+        if settings.HARDWARE['slave_node_memory'] != 5120:
             raise exceptions.FuelQAVariableNotSet(
                 'SLAVE_NODE_MEMORY', 5120)
 
