@@ -12,9 +12,11 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from settings import logger
-from testrail import APIClient
-from testrail import APIError
+from __future__ import unicode_literals
+
+from fuelweb_test.testrail.settings import logger
+from fuelweb_test.testrail.testrail import APIClient
+from fuelweb_test.testrail.testrail import APIError
 
 
 class TestRailProject(object):
@@ -171,25 +173,30 @@ class TestRailProject(object):
         add_case_uri = 'add_case/{section_id}'.format(section_id=section_id)
         return self.client.send_post(add_case_uri, case)
 
+    def update_case(self, case_id, fields):
+        return self.client.send_post('update_case/{0}'.format(case_id), fields)
+
     def delete_case(self, case_id):
         return self.client.send_post('delete_case/' + str(case_id), None)
 
     def get_case_fields(self):
         return self.client.send_get('get_case_fields')
 
-    def get_plans(self):
+    def get_plans(self, milestone_ids=None, limit=None, offset=None):
         plans_uri = 'get_plans/{project_id}'.format(
             project_id=self.project['id'])
+        if milestone_ids:
+            plans_uri += '&milestone_id=' + ','.join([str(m)
+                                                      for m in milestone_ids])
+        if limit:
+            plans_uri += '&limit={0}'.format(limit)
+        if offset:
+            plans_uri += '&offset={0}'.format(offset)
         return self.client.send_get(plans_uri)
 
     def get_plan(self, plan_id):
         plan_uri = 'get_plan/{plan_id}'.format(plan_id=plan_id)
         return self.client.send_get(plan_uri)
-
-    def get_plans_by_milestone(self, milestone_id):
-        plans = self.get_plans()
-        return [self.get_plan(plan['id']) for plan in plans
-                if plan['milestone_id'] == milestone_id]
 
     def get_plan_by_name(self, name):
         for plan in self.get_plans():
@@ -253,15 +260,27 @@ class TestRailProject(object):
             if run['name'] == name:
                 return self.get_run(run_id=run['id'])
 
-    def get_previous_runs(self, milestone_id, suite_id, config_id):
-        all_runs = []
-        for plan in self.get_plans_by_milestone(milestone_id=milestone_id):
-            for entry in plan['entries']:
-                if entry['suite_id'] == suite_id:
-                    run_ids = [run for run in entry['runs'] if
-                               config_id in run['config_ids']]
-                    all_runs.extend(run_ids)
-        return all_runs
+    def get_previous_runs(self, milestone_id, suite_id, config_id, limit=None):
+        previous_runs = []
+        offset = 0
+
+        while len(previous_runs) < limit:
+            existing_plans = self.get_plans(milestone_ids=[milestone_id],
+                                            limit=limit,
+                                            offset=offset)
+            if not existing_plans:
+                break
+
+            for plan in existing_plans:
+                for entry in self.get_plan(plan['id'])['entries']:
+                    if entry['suite_id'] == suite_id:
+                        run_ids = [run for run in entry['runs'] if
+                                   config_id in run['config_ids']]
+                        previous_runs.extend(run_ids)
+
+            offset += limit
+
+        return previous_runs
 
     def add_run(self, new_run):
         add_run_uri = 'add_run/{project_id}'.format(
@@ -433,8 +452,7 @@ class TestRailProject(object):
                 custom_step_results = []
                 steps = case.get('custom_test_case_steps', None)
                 if steps and len(steps) == len(results.steps):
-                    steps = zip(steps, results.steps)
-                    for s in steps:
+                    for s in zip(steps, results.steps):
                         custom_step_results.append({
                             "content": s[0]["content"],
                             "expected": s[0]["expected"],

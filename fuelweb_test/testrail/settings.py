@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import unicode_literals
+
 import logging
 import os
 
@@ -26,11 +28,12 @@ LOGS_DIR = os.environ.get('LOGS_DIR', os.getcwd())
 
 os.environ["ENV_NAME"] = "some_environment"
 os.environ["ISO_PATH"] = "./fuel.iso"
+os.environ["CENTOS_CLOUD_IMAGE_PATH"] = "./centos-cloud-image.img"
 
 JENKINS = {
     'url': os.environ.get('JENKINS_URL', 'http://localhost/'),
-    'version_artifact': os.environ.get('JENKINS_VERSION_ARTIFACT',
-                                       'version.yaml.txt')
+    'magnet_link_artifact': os.environ.get('JENKINS_MAGNET_LINK_ARTIFACT',
+                                           'magnet_link.txt')
 }
 
 GROUPS_TO_EXPAND = [
@@ -42,7 +45,7 @@ class LaunchpadSettings(object):
     """LaunchpadSettings."""  # TODO documentation
 
     project = os.environ.get('LAUNCHPAD_PROJECT', 'fuel')
-    milestone = os.environ.get('LAUNCHPAD_MILESTONE', '8.0')
+    milestone = os.environ.get('LAUNCHPAD_MILESTONE', '9.0')
     closed_statuses = [
         os.environ.get('LAUNCHPAD_RELEASED_STATUS', 'Fix Released'),
         os.environ.get('LAUNCHPAD_INVALID_STATUS', 'Invalid')
@@ -52,11 +55,11 @@ class LaunchpadSettings(object):
 class TestRailSettings(object):
     """TestRailSettings."""  # TODO documentation
 
-    url = os.environ.get('TESTRAIL_URL', 'https://mirantis.testrail.com')
+    url = os.environ.get('TESTRAIL_URL')
     user = os.environ.get('TESTRAIL_USER', 'user@example.com')
     password = os.environ.get('TESTRAIL_PASSWORD', 'password')
-    project = os.environ.get('TESTRAIL_PROJECT', 'Mirantis OpenStack')
-    milestone = os.environ.get('TESTRAIL_MILESTONE', '8.0')
+    project = os.environ.get('TESTRAIL_PROJECT', 'Fuel')
+    milestone = os.environ.get('TESTRAIL_MILESTONE', '9.0')
     tests_description = os.environ.get('TESTRAIL_DESCRIPTION', None)
     tests_suite = os.environ.get('TESTRAIL_TEST_SUITE',
                                  '[{0}] Swarm'.format(milestone))
@@ -79,3 +82,6 @@ class TestRailSettings(object):
         'blocked': ['blocked']
     }
     max_results_per_request = 250
+
+    extra_factor_of_tc_definition = os.environ.get(
+        'EXTRA_FACTOR_OF_TC_DEFINITION', None)
