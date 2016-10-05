@@ -180,8 +180,11 @@ class HaVlanGroup5(TestBasic):
             get_nailgun_cluster_nodes_by_roles(cluster_id, ['ceph-osd'],
                                                role_status='pending_roles')
         for ceph_node in ceph_nodes:
+            disk = self.ssh_manager.execute_on_remote(
+                ip=ceph_node['ip'],
+                cmd="grep 'ceph-3' /proc/mounts | cut -c 6-8")
             ceph_image_size = self.fuel_web.\
-                update_node_partitioning(ceph_node, node_role='ceph')
+                update_node_partitioning(ceph_node, node_role='ceph', disk=disk)
 
         cinder_nodes = self.fuel_web.\
             get_nailgun_cluster_nodes_by_roles(cluster_id, ['cinder'],
