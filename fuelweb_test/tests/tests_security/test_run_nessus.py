@@ -17,10 +17,11 @@ from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
 import netaddr
 from proboscis import test
+from proboscis.asserts import fail
 
 from fuelweb_test.helpers import decorators
 from fuelweb_test.helpers import nessus
-from fuelweb_test import settings
+from fuelweb_test import settings, logger
 from fuelweb_test.tests import base_test_case
 from fuelweb_test.tests.test_neutron_tun_base import NeutronTunHaBase
 
@@ -61,9 +62,15 @@ class TestNessus(NeutronTunHaBase):
         admin_net_cidr = \
             self.env.d_env.get_network(name=nessus_net_name).ip_network
 
+        logger.info(
+            "Scanning network '%s' (%s) for nessus service on port %d" %
+            (nessus_net_name, admin_net_cidr, nessus_port))
+
         for address in netaddr.IPNetwork(admin_net_cidr).iter_hosts():
             if tcp_ping(address.format(), nessus_port, timeout=1):
                 return address.format()
+
+        fail("No running nessus service found!")
 
     @staticmethod
     def get_check_scan_complete(nessus_client, scan_id, history_id):
