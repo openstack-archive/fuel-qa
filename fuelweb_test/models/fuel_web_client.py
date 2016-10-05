@@ -2887,7 +2887,7 @@ class FuelWebClient29(object):
         return [s['id'] for s in sets]
 
     @logwrap
-    def update_network_cidr(self, cluster_id, network_name):
+    def update_network_cidr(self, cluster_id, network_name, maskcount=1):
         """Simple method for changing default network cidr
         (just use its subnet with 2x smaller network mask)
 
@@ -2901,7 +2901,7 @@ class FuelWebClient29(object):
             if network['name'] != network_name:
                 continue
             old_cidr = netaddr.IPNetwork(str(network['cidr']))
-            new_cidr = list(old_cidr.subnet(old_cidr.prefixlen + 1))[0]
+            new_cidr = list(old_cidr.subnet(old_cidr.prefixlen + maskcount))[0]
             assert_not_equal(old_cidr, new_cidr,
                              'Can\t create a subnet using default cidr {0} '
                              'for {1} network!'.format(old_cidr, network_name))
