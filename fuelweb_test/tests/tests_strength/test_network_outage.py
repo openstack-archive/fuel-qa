@@ -181,9 +181,9 @@ class NetworkOutage(TestBasic):
             logger.debug(benchmark_results[tag].show())
 
         self.show_step(5)
-        nodes = [node for node in self.env.d_env.get_nodes()
+        nodes = [node for node in self.env.d_env.get_nodes(role='fuel_slave')
                  if node.driver.node_active(node)]
-        for interface in nodes[1].interfaces:
+        for interface in nodes[0].interfaces:
             if interface.is_blocked:
                 raise Exception('Interface {0} is blocked'.format(interface))
             else:
@@ -193,7 +193,7 @@ class NetworkOutage(TestBasic):
         time.sleep(60 * 5)
 
         self.show_step(7)
-        for interface in nodes[1].interfaces:
+        for interface in nodes[0].interfaces:
             if interface.network.is_blocked:
                 interface.network.unblock()
             else:
@@ -201,7 +201,7 @@ class NetworkOutage(TestBasic):
                     'Interface {0} was not blocked'.format(interface))
 
         self.show_step(8)
-        self.fuel_web.wait_nodes_get_online_state(nodes[1:])
+        self.fuel_web.wait_nodes_get_online_state(nodes)
 
         self.show_step(9)
         self.fuel_web.verify_network(cluster_id)
@@ -363,9 +363,9 @@ class NetworkOutage(TestBasic):
             logger.debug(benchmark_results[tag].show())
 
         self.show_step(5)
-        nodes = [node for node in self.env.d_env.get_nodes()
+        nodes = [node for node in self.env.d_env.get_nodes(role='fuel_slave')
                  if node.driver.node_active(node)]
-        for interface in nodes[1].interfaces:
+        for interface in nodes[0].interfaces:
             if interface.is_blocked:
                 raise Exception('Interface {0} is blocked'.format(interface))
             else:
@@ -374,7 +374,7 @@ class NetworkOutage(TestBasic):
         self.show_step(6)
         time.sleep(60 * 5)
         self.show_step(7)
-        for interface in nodes[1].interfaces:
+        for interface in nodes[0].interfaces:
             if interface.network.is_blocked:
                 interface.network.unblock()
             else:
@@ -382,7 +382,7 @@ class NetworkOutage(TestBasic):
                     'Interface {0} was not blocked'.format(interface))
 
         self.show_step(8)
-        self.fuel_web.wait_nodes_get_online_state(nodes[1:])
+        self.fuel_web.wait_nodes_get_online_state(nodes)
 
         self.show_step(9)
         self.fuel_web.verify_network(cluster_id)
