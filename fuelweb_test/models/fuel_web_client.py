@@ -1123,6 +1123,14 @@ class FuelWebClient(object):
                 node['mac'] == nailgun_node['mac'] and
                 node['status'] == 'discover', self.client.list_nodes()))
 
+    def wait_node_is_discovered(self, nailgun_node, timeout=6 * 60):
+        logger.info('Wait for node {!r} to become discovered'
+                    ''.format(nailgun_node['name']))
+        wait(lambda: self.is_node_discovered(nailgun_node),
+             timeout=timeout,
+             timeout_msg='Node {!r} failed to become discovered'
+                         ''.format(nailgun_node['name']))
+
     @logwrap
     def run_network_verify(self, cluster_id):
         logger.info('Run network verification on the cluster %s', cluster_id)
