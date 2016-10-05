@@ -139,7 +139,7 @@ class EnvironmentModel(object):
             'ip': node.get_ip_address_by_network_name('admin'),
             'mask': self.d_env.get_network(name='admin').ip.netmask,
             'gw': self.d_env.router(),
-            'hostname': '.'.join(('nailgun', settings.DNS_SUFFIX)),
+            'hostname': ''.join(('nailgun', settings.DNS_SUFFIX)),
             'nat_interface': '',
             'dns1': settings.DNS,
             'showmenu': 'yes' if custom else 'no',
