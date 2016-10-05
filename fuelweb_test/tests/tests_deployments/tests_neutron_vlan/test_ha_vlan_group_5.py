@@ -171,7 +171,8 @@ class HaVlanGroup5(TestBasic):
             }
         )
         self.show_step(8)
-        self.fuel_web.update_network_cidr(cluster_id, 'public')
+        #self.fuel_web.update_network_cidr(cluster_id,
+        #                                  network_name='public')
 
         self.show_step(9)
         self.show_step(10)
@@ -180,15 +181,23 @@ class HaVlanGroup5(TestBasic):
             get_nailgun_cluster_nodes_by_roles(cluster_id, ['ceph-osd'],
                                                role_status='pending_roles')
         for ceph_node in ceph_nodes:
-            ceph_image_size = self.fuel_web.\
-                update_node_partitioning(ceph_node, node_role='ceph')
+            ceph_disks = self.fuel_web.get_node_disks_by_volume_name(
+                node=ceph_node['id'],
+                volume_name='ceph')
+            for disk in ceph_disks:
+                ceph_image_size = self.fuel_web.update_node_partitioning(
+                    ceph_node, node_role='ceph', disk=disk)
 
         cinder_nodes = self.fuel_web.\
             get_nailgun_cluster_nodes_by_roles(cluster_id, ['cinder'],
                                                role_status='pending_roles')
         for cinder_node in cinder_nodes:
-            cinder_image_size = self.fuel_web.\
-                update_node_partitioning(cinder_node, node_role='cinder')
+            cinder_disks = self.fuel_web.get_node_disks_by_volume_name(
+                node=cinder_node['id'],
+                volume_name='cinder')
+            for disk in cinder_disks:
+                cinder_image_size = self.fuel_web.update_node_partitioning(
+                    cinder_node, node_role='cinder', disk=disk)
 
         self.show_step(12)
         self.fuel_web.verify_network(cluster_id)
@@ -199,7 +208,12 @@ class HaVlanGroup5(TestBasic):
         self.fuel_web.verify_network(cluster_id)
 
         for ceph in ceph_nodes:
-            checkers.check_ceph_image_size(ceph['ip'], ceph_image_size)
+            disk = self.ssh_manager.execute_on_remote(
+                ip=ceph['ip'],
+                cmd="grep 'ceph-3' /proc/mounts | cut -c 6-8")
+            checkers.check_ceph_image_size(ceph['ip'],
+                                           ceph_image_size,
+                                           device=disk)
 
         for cinder in cinder_nodes:
             checkers.check_cinder_image_size(cinder['ip'], cinder_image_size)
