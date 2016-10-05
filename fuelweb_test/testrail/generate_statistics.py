@@ -14,6 +14,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import unicode_literals
+
 import json
 import os
 import re
@@ -25,14 +27,14 @@ from collections import OrderedDict
 from logging import CRITICAL
 from logging import DEBUG
 
-from builds import Build
-from launchpad_client import LaunchpadBug
-from report import get_version
-from settings import GROUPS_TO_EXPAND
-from settings import LaunchpadSettings
-from settings import logger
-from settings import TestRailSettings
-from testrail_client import TestRailProject
+from fuelweb_test.testrail.builds import Build
+from fuelweb_test.testrail.launchpad_client import LaunchpadBug
+from fuelweb_test.testrail.report import get_version
+from fuelweb_test.testrail.settings import GROUPS_TO_EXPAND
+from fuelweb_test.testrail.settings import LaunchpadSettings
+from fuelweb_test.testrail.settings import logger
+from fuelweb_test.testrail.settings import TestRailSettings
+from fuelweb_test.testrail.testrail_client import TestRailProject
 
 
 def inspect_bug(bug):
@@ -52,8 +54,13 @@ def generate_test_plan_name(job_name, build_number):
     # taken from Jenkins job build parameters
     runner_build = Build(job_name, build_number)
     milestone, iso_number, prefix = get_version(runner_build.build_data)
-    return ' '.join(filter(lambda x: bool(x),
-                           (milestone, prefix, 'iso', '#' + str(iso_number))))
+    if 'snapshot' not in prefix:
+        return ' '.join(filter(lambda x: bool(x), (milestone,
+                                                   prefix, 'iso',
+                                                   '#' + str(iso_number))))
+    else:
+        return ' '.join(filter(lambda x: bool(x), (milestone,
+                                                   prefix)))
 
 
 def get_testrail():
@@ -107,6 +114,11 @@ class TestRunStatistics(object):
             if m:
                 tests_thread = m.group(1)
                 group = '{0}_{1}'.format(group, tests_thread)
+        elif TestRailSettings.extra_factor_of_tc_definition:
+            group = '{}_{}'.format(
+                group,
+                TestRailSettings.extra_factor_of_tc_definition
+            )
         for test in self.tests:
             if test['custom_test_group'] == group:
                 return test
@@ -115,14 +127,14 @@ class TestRunStatistics(object):
     def handle_blocked(self, test, result):
         if result['custom_launchpad_bug']:
             return False
-        m = re.search(r'Blocked by "(\S+)" test.', result['comment'])
+        m = re.search(r'Blocked by "(\S+)" test.', result['comment'] or '')
         if m:
             blocked_test_group = m.group(1)
         else:
-            logger.debug('Blocked result #{0} for test {1} does '
-                         'not have upstream test name in its '
-                         'comments!'.format(result['id'],
-                                            test['custom_test_group']))
+            logger.warning('Blocked result #{0} for test {1} does '
+                           'not have upstream test name in its '
+                           'comments!'.format(result['id'],
+                                              test['custom_test_group']))
             return False
 
         if not result['version']:
@@ -181,8 +193,7 @@ class TestRunStatistics(object):
             self.run['name'], self.run['config'] or 'default config'))
 
         for test in self.tests:
-            logger.debug('Checking "{0}" test...'.format(
-                test['title'].encode('utf8')))
+            logger.debug('Checking "{0}" test...'.format(test['title']))
             test_results = sorted(
                 self.project.get_results_for_test(test['id'], self.results),
                 key=lambda x: x['id'], reverse=True)
@@ -332,7 +343,7 @@ class StatisticsGenerator(object):
             if test_run:
                 html += '<h4>TestRun: "{0}"</h4>\n'.format(test_run[0]['name'])
 
-        for bug, values in stats.items():
+        for values in stats.values():
             if values['status'].lower() in ('invalid',):
                 color = 'gray'
             elif values['status'].lower() in ('new', 'confirmed', 'triaged'):
@@ -359,7 +370,7 @@ class StatisticsGenerator(object):
             index = 1
             for tid, params in values['tests'].items():
                 if index > 1:
-                    link_text = str(index)
+                    link_text = '{}'.format(index)
                 else:
                     link_text = '{0} on {1}'.format(params['group'],
                                                     params['config'])
@@ -381,7 +392,7 @@ class StatisticsGenerator(object):
         bugs_table = ('|||:Failed|:Blocked|:Project|:Priority'
                       '|:Status|:Bug link|:Tests\n')
 
-        for bug_id, values in stats.items():
+        for values in stats.values():
             title = re.sub(r'(Bug\s+#\d+\s+)(in\s+[^:]+:\s+)', '\g<1>',
                            values['title'])
             title = re.sub(r'(.{100}).*', '\g<1>...', title)
@@ -396,7 +407,7 @@ class StatisticsGenerator(object):
             index = 1
             for tid, params in values['tests'].items():
                 if index > 1:
-                    link_text = str(index)
+                    link_text = '{}'.format(index)
                 else:
                     link_text = '{0} on {1}'.format(params['group'],
                                                     params['config'])
@@ -408,7 +419,7 @@ class StatisticsGenerator(object):
         return self.update_desription(header + bugs_table)
 
 
-def save_stats_to_file(stats, file_name, html=False):
+def save_stats_to_file(stats, file_name, html=''):
     def warn_file_exists(file_path):
         if os.path.exists(file_path):
             logger.warning('File {0} exists and will be '
@@ -489,7 +500,8 @@ def main():
         logger.error('There is no TestPlan to process, exiting...')
         return 1
 
-    run_ids = () if not args.run_ids else map(int, args.run_ids.split(','))
+    run_ids = () if not args.run_ids else tuple(
+        int(arg) for arg in args.run_ids.split(','))
 
     generator = StatisticsGenerator(testrail_project,
                                     args.plan_id,

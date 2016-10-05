@@ -14,19 +14,20 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
-import urllib2
+from __future__ import unicode_literals
 
 from logging import DEBUG
 from optparse import OptionParser
 
-from builds import Build
-from settings import JENKINS
-from settings import logger
-from settings import TestRailSettings
-from testrail_client import TestRailProject
-from report import get_tests_results
-from report import publish_results
+import requests
+
+from fuelweb_test.testrail.builds import Build
+from fuelweb_test.testrail.report import get_tests_results
+from fuelweb_test.testrail.report import publish_results
+from fuelweb_test.testrail.settings import JENKINS
+from fuelweb_test.testrail.settings import logger
+from fuelweb_test.testrail.settings import TestRailSettings
+from fuelweb_test.testrail.testrail_client import TestRailProject
 
 
 def find_run_by_name(test_plan, run_name):
@@ -41,7 +42,7 @@ def find_run_by_name(test_plan, run_name):
 def get_job_info(url):
     job_url = "/".join([url, 'api/json'])
     logger.debug("Request job info from %s", job_url)
-    return json.load(urllib2.urlopen(job_url))
+    return requests.get(job_url).json()
 
 
 def main():
@@ -60,7 +61,7 @@ def main():
                       action="store_true", dest="verbose", default=False,
                       help="Enable debug output")
 
-    (options, args) = parser.parse_args()
+    (options, _) = parser.parse_args()
 
     if options.verbose:
         logger.setLevel(DEBUG)
@@ -120,9 +121,9 @@ def main():
             if os['distro'] in tests_job['name'].lower() and\
                     os['name'] in os_mile[tests_job['mile']]:
                 if os['id'] not in test_iso:
-                    (test_iso[os['id']]) = []
+                    test_iso[os['id']] = []
                 test_os_id = test_iso[os['id']]
-                test_os_id.extend(get_tests_results(tests_job))
+                test_os_id.extend(get_tests_results(tests_job, os['distro']))
 
     # STEP #3
     # Create new TestPlan in TestRail (or get existing) and add TestRuns

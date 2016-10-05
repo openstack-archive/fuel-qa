@@ -14,15 +14,20 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import unicode_literals
+
 import optparse
-import urlparse
 from xml.etree import ElementTree
 
-import report
-from settings import JENKINS
-from settings import logger
-from settings import TestRailSettings
-from testrail_client import TestRailProject
+# pylint: disable=import-error
+from six.moves import urllib
+# pylint: enable=import-error
+
+from fuelweb_test.testrail import report
+from fuelweb_test.testrail.settings import JENKINS
+from fuelweb_test.testrail.settings import logger
+from fuelweb_test.testrail.settings import TestRailSettings
+from fuelweb_test.testrail.testrail_client import TestRailProject
 
 
 LOG = logger
@@ -170,7 +175,7 @@ def main():
                       dest='prefix', action='store_true', default='',
                       help='Add some prefix to test run')
 
-    (options, args) = parser.parse_args()
+    (options, _) = parser.parse_args()
 
     if options.run_name is None:
         raise optparse.OptionValueError('No run name was specified!')
@@ -220,7 +225,7 @@ def main():
     if not test_plan:
         LOG.info('The test plan not found. Creating one...')
         url = '/job/{0}.all/{1}'.format(milestone['name'], options.iso_number)
-        description = urlparse.urljoin(JENKINS['url'], url)
+        description = urllib.parse.urljoin(JENKINS['url'], url)
         test_plan = client.add_plan(test_plan_name,
                                     description=description,
                                     milestone_id=milestone['id'],

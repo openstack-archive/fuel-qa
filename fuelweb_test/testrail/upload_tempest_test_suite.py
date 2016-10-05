@@ -12,12 +12,14 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import unicode_literals
+
 import subprocess
 
 from joblib import Parallel, delayed
 
-from settings import TestRailSettings
-from testrail_client import TestRailProject
+from fuelweb_test.testrail.settings import TestRailSettings
+from fuelweb_test.testrail.testrail_client import TestRailProject
 
 
 TEST_GROUPS = ["API", "CLI", "Scenario", "ThirdParty"]
