@@ -239,8 +239,7 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.show_step(10)
         self.show_step(11)
         for node in pending_nodes:
-            wait(lambda: self.fuel_web.is_node_discovered(node),
-                 timeout=6 * 60)
+            self.fuel_web.wait_node_is_discovered(node)
             with self.fuel_web.get_ssh_for_node(
                 self.fuel_web.get_devops_node_by_nailgun_node(
                     node).name) as slave_remote:
@@ -248,14 +247,6 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
         self.show_step(12)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(13)
-        # nova services is not cleaning up after controller
-        # removal - fixed in 9.0
-        self.check_ostf(
-            cluster_id, ignore_known_issues=True,
-            additional_ignored_issues=[
-                'Check that required services are running'
-            ])
-        self.env.make_snapshot("upgrade_smoke_scale")
         self.check_ostf(cluster_id, ignore_known_issues=True)
         self.env.make_snapshot("upgrade_smoke_scale", is_make=True)
 
@@ -294,11 +285,9 @@ class UpgradeSmoke(DataDrivenUpgradeBase):
             self.fuel_web.delete_node(node['id'])
 
         self.show_step(4)
-        slaves = self.env.d_env.nodes().slaves[:2]
-        wait(lambda: all(self.env.nailgun_nodes(slaves)), timeout=10 * 60)
-        for node in self.fuel_web.client.list_cluster_nodes(
-                cluster_id=cluster_id):
-            wait(lambda: self.fuel_web.is_node_discovered(node), timeout=60)
+        nodes = self.fuel_web.client.list_cluster_nodes(cluster_id=cluster_id)
+        for node in nodes:
+            self.fuel_web.wait_node_is_discovered(node, timeout=10 * 60)
 
         self.show_step(5)
         self.fuel_web.update_nodes(
