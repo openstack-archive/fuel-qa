@@ -14,24 +14,26 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from __future__ import division
+from __future__ import unicode_literals
+
 import functools
 import re
 import time
-import yaml
 
 from logging import DEBUG
 from optparse import OptionParser
-from builds import Build
-from builds import get_build_artifact
-from builds import get_downstream_builds_from_html
-from builds import get_jobs_for_view
-from launchpad_client import LaunchpadBug
-from settings import JENKINS
-from settings import GROUPS_TO_EXPAND
-from settings import LaunchpadSettings
-from settings import logger
-from settings import TestRailSettings
-from testrail_client import TestRailProject
+from fuelweb_test.testrail.builds import Build
+from fuelweb_test.testrail.builds import get_build_artifact
+from fuelweb_test.testrail.builds import get_downstream_builds_from_html
+from fuelweb_test.testrail.builds import get_jobs_for_view
+from fuelweb_test.testrail.launchpad_client import LaunchpadBug
+from fuelweb_test.testrail.settings import JENKINS
+from fuelweb_test.testrail.settings import GROUPS_TO_EXPAND
+from fuelweb_test.testrail.settings import LaunchpadSettings
+from fuelweb_test.testrail.settings import logger
+from fuelweb_test.testrail.settings import TestRailSettings
+from fuelweb_test.testrail.testrail_client import TestRailProject
 
 
 class TestResult(object):
@@ -49,9 +51,6 @@ class TestResult(object):
         self.description = description
         self.comments = comments
         self.launchpad_bug = launchpad_bug
-        self.launchpad_bug_status = None
-        self.launchpad_bug_importance = None
-        self.launchpad_bug_title = None
         self.available_statuses = {
             'passed': ['passed', 'fixed'],
             'failed': ['failed', 'regression'],
@@ -74,7 +73,7 @@ class TestResult(object):
 
     @property
     def status(self):
-        for s in self.available_statuses.keys():
+        for s in self.available_statuses:
             if self._status in self.available_statuses[s]:
                 return s
         logger.error('Unsupported result status: "{0}"!'.format(self._status))
@@ -153,8 +152,13 @@ def get_version_from_upstream_job(jenkins_build_data):
 
 
 def get_job_parameter(jenkins_build_data, parameter):
-    parameters = [a['parameters'] for a in jenkins_build_data['actions']
-                  if 'parameters' in a.keys()][0]
+    parameters_arr = [a['parameters'] for a in jenkins_build_data['actions']
+                      if 'parameters' in a.keys()]
+    # NOTE(akostrikov) LP #1603088 The root job is a snapshot job without
+    # parameters. It has fullDisplayName, which is parse-able.
+    if len(parameters_arr) == 0:
+        return jenkins_build_data['fullDisplayName']
+    parameters = parameters_arr[0]
     target_params = [p['value'] for p in parameters
                      if p['name'].lower() == str(parameter).lower()]
     if len(target_params) > 0:
@@ -164,7 +168,7 @@ def get_job_parameter(jenkins_build_data, parameter):
 def get_version_from_parameters(jenkins_build_data):
     custom_version = get_job_parameter(jenkins_build_data, 'CUSTOM_VERSION')
     if custom_version:
-        swarm_timestamp = jenkins_build_data['timestamp'] / 1000 \
+        swarm_timestamp = jenkins_build_data['timestamp'] // 1000 \
             if 'timestamp' in jenkins_build_data else None
         return (TestRailSettings.milestone,
                 time.strftime("%D %H:%M", time.localtime(swarm_timestamp)),
@@ -177,13 +181,12 @@ def get_version_from_parameters(jenkins_build_data):
 
 def get_version_from_artifacts(jenkins_build_data):
     if not any([artifact for artifact in jenkins_build_data['artifacts']
-                if artifact['fileName'] == JENKINS['version_artifact']]):
+               if artifact['fileName'] == JENKINS['magnet_link_artifact']]):
         return
-    version = yaml.load(get_build_artifact(
-        url=jenkins_build_data['url'], artifact=JENKINS['version_artifact']))
-    return version['VERSION']['release'], \
-        int(version['VERSION']['build_number']), \
-        ''
+    iso_link = (get_build_artifact(url=jenkins_build_data['url'],
+                                   artifact=JENKINS['magnet_link_artifact']))
+    if iso_link:
+        return get_version_from_iso_name(iso_link)
 
 
 def get_version_from_iso_name(iso_link):
@@ -213,6 +216,11 @@ def expand_test_group(group, systest_build_name, os):
 
         if systest_group_name:
             group = '_'.join([group, systest_group_name])
+    elif TestRailSettings.extra_factor_of_tc_definition:
+        group = '{}_{}'.format(
+            group,
+            TestRailSettings.extra_factor_of_tc_definition
+        )
     return group
 
 
@@ -244,28 +252,55 @@ def check_untested(test):
     return False
 
 
+def get_test_build(build_name, build_number, check_rebuild=False):
+    """Get test data from Jenkins job build
+    :param build_name: string
+    :param build_number: string
+    :param check_rebuild: bool, if True then look for newer job rebuild(s)
+    :return: dict
+    """
+    test_build = Build(build_name, build_number)
+    if test_build.test_data()['suites'][0]['cases'].pop()['name'] == 'jenkins':
+        if not check_rebuild:
+            return test_build
+        iso_magnet = get_job_parameter(test_build.build_data, 'MAGNET_LINK')
+        if not iso_magnet:
+            return test_build
+        latest_build_number = Build(build_name, 'latest').number
+        for n in range(build_number, latest_build_number):
+            test_rebuild = Build(build_name, n + 1)
+            if get_job_parameter(test_rebuild.build_data, 'MAGNET_LINK') \
+                    == iso_magnet:
+                logger.debug("Found test job rebuild: "
+                             "{0}".format(test_rebuild.url))
+                return test_rebuild
+    return test_build
+
+
 @retry(count=3)
 def get_tests_results(systest_build, os):
     tests_results = []
-    test_build = Build(systest_build['name'], systest_build['number'])
+    test_build = get_test_build(systest_build['name'],
+                                systest_build['number'],
+                                check_rebuild=True)
     run_test_data = test_build.test_data()
     test_classes = {}
     for one in run_test_data['suites'][0]['cases']:
-        className = one['className']
-        if className not in test_classes:
-            test_classes[className] = {}
-            test_classes[className]['child'] = []
-            test_classes[className]['duration'] = 0
-            test_classes[className]["failCount"] = 0
-            test_classes[className]["passCount"] = 0
-            test_classes[className]["skipCount"] = 0
+        class_name = one['className']
+        if class_name not in test_classes:
+            test_classes[class_name] = {}
+            test_classes[class_name]['child'] = []
+            test_classes[class_name]['duration'] = 0
+            test_classes[class_name]["failCount"] = 0
+            test_classes[class_name]["passCount"] = 0
+            test_classes[class_name]["skipCount"] = 0
         else:
             if one['className'] == one['name']:
                 logger.warning("Found duplicate test in run - {}".format(
                     one['className']))
                 continue
 
-        test_class = test_classes[className]
+        test_class = test_classes[class_name]
         test_class['child'].append(one)
         test_class['duration'] += float(one['duration'])
         if one['status'].lower() in ('failed', 'error'):
@@ -358,9 +393,13 @@ def publish_results(project, milestone_id, test_plan,
     logger.debug('Looking for previous tests runs on "{0}" using tests suite '
                  '"{1}"...'.format(project.get_config(config_id)['name'],
                                    project.get_suite(suite_id)['name']))
-    previous_tests_runs = project.get_previous_runs(milestone_id=milestone_id,
-                                                    suite_id=suite_id,
-                                                    config_id=config_id)
+    previous_tests_runs = project.get_previous_runs(
+        milestone_id=milestone_id,
+        suite_id=suite_id,
+        config_id=config_id,
+        limit=TestRailSettings.previous_results_depth)
+    logger.debug('Found next test runs: {0}'.format(
+        [test_run['description'] for test_run in previous_tests_runs]))
     cases = project.get_cases(suite_id=suite_id)
     tests = project.get_tests(run_id=test_run_ids[0])
     results_to_publish = []
@@ -375,22 +414,12 @@ def publish_results(project, milestone_id, test_plan,
             continue
         existing_results_versions = [r['version'] for r in
                                      project.get_results_for_test(test['id'])]
-        case_id = project.get_case_by_group(suite_id=suite_id,
-                                            group=result.group,
-                                            cases=cases)['id']
-        if result.version in existing_results_versions or not result.status:
-            if result.status != 'passed':
-                previous_results = project.get_all_results_for_case(
-                    run_ids=[test_run_ids[0]],
-                    case_id=case_id)
-                lp_bug = get_existing_bug_link(previous_results)
-                if lp_bug:
-                    result.launchpad_bug = lp_bug['bug_link']
-                    result.launchpad_bug_status = lp_bug['status']
-                    result.launchpad_bug_importance = lp_bug['importance']
-                    result.launchpad_bug_title = lp_bug['title']
+        if result.version in existing_results_versions:
             continue
-        if result.status != 'passed':
+        if result.status not in ('passed', 'blocked'):
+            case_id = project.get_case_by_group(suite_id=suite_id,
+                                                group=result.group,
+                                                cases=cases)['id']
             run_ids = [run['id'] for run in previous_tests_runs[0:
                        int(TestRailSettings.previous_results_depth)]]
             previous_results = project.get_all_results_for_case(
@@ -399,9 +428,6 @@ def publish_results(project, milestone_id, test_plan,
             lp_bug = get_existing_bug_link(previous_results)
             if lp_bug:
                 result.launchpad_bug = lp_bug['bug_link']
-                result.launchpad_bug_status = lp_bug['status']
-                result.launchpad_bug_importance = lp_bug['importance']
-                result.launchpad_bug_title = lp_bug['title']
         results_to_publish.append(result)
 
     try:
@@ -415,78 +441,6 @@ def publish_results(project, milestone_id, test_plan,
         ))
         raise
     return results_to_publish
-
-
-def make_bug_statistics(test_results, test_plan, tests_suite,
-                        project, operation_systems):
-    bugs = {}
-    cases = project.get_cases(suite_id=tests_suite['id'])
-
-    for os in operation_systems:
-        test_run_ids = [run['id'] for entry in test_plan['entries']
-                        for run in entry['runs']
-                        if tests_suite['id'] == run['suite_id'] and
-                        os['id'] in run['config_ids']]
-
-        for result in test_results[os['distro']]:
-            try:
-                case_id = project.get_case_by_group(suite_id=tests_suite['id'],
-                                                    group=result.group,
-                                                    cases=cases)['id']
-            except:
-                logger.info("group {} has no test".format(result.group))
-                continue
-            case_result = project.get_all_results_for_case(
-                run_ids=test_run_ids, case_id=case_id)
-            lp_bug = get_existing_bug_link(case_result)
-            bug = lp_bug['bug_link'] if lp_bug else None
-            if not bug:
-                continue    # Bug is not linked to the test case result.
-            distro = os['distro']
-            if bug not in bugs:
-                bugs[bug] = {}
-                bugs[bug]['distro'] = {}
-                bugs[bug]['count'] = 0
-                bugs[bug]['status'] = lp_bug['status']
-                bugs[bug]['importance'] = lp_bug['importance']
-                bugs[bug]['title'] = lp_bug['title']
-            if distro not in bugs[bug]['distro']:
-                bugs[bug]['distro'][distro] = {}
-            bugs[bug]['count'] += 1
-            bugs[bug]['distro'][distro][result.url] = {}
-            bugs[bug]['distro'][distro][result.url]['status'] = result.status
-            bugs[bug]['distro'][distro][result.url]['group'] = result.group
-
-    bugs_sorted = sorted(bugs.keys(), key=lambda x: bugs[x]['count'],
-                         reverse=True)
-
-    if bugs_sorted:
-        bugs_string = ''
-        bugs_string += "Summary of bugs in TestRail at" \
-                       " {0}\n".format(time.strftime("%c"))
-        for bug in bugs_sorted:
-            jresults = ""
-            for distro in bugs[bug]['distro'].keys():
-                jresults += " {0}: ".format(distro)
-                bugs_distro = bugs[bug]['distro'][distro]
-                for res in bugs_distro:
-                    jresults += (
-                        '[{hint}]({res}) '
-                        .format(res=res,
-                                hint=bugs_distro[res]['group']))
-            line = ('[{affected} TC(s)] [{importance}] [{status}] '
-                    '[{title}]({link}) [{jresults}]\n'
-                    .format(affected=bugs[bug]['count'],
-                            importance=bugs[bug]['importance'],
-                            status=bugs[bug]['status'],
-                            link=bug,
-                            title=bugs[bug]['title'],
-                            jresults=jresults))
-            bugs_string += line
-        return bugs_string
-    else:
-        logger.info("No linked to test cases bugs found")
-        return ''
 
 
 @retry(count=3)
@@ -545,10 +499,6 @@ def main():
                       help="Get tests results from running swarm")
     parser.add_option("-m", "--manual", dest="manual_run", action="store_true",
                       help="Manually add tests cases to TestRun (tested only)")
-    parser.add_option("-s", "--statistics", action="store_true",
-                      dest="bug_statistics", default=False,
-                      help="Make a statistics for bugs linked to TestRail for "
-                      "the test run")
     parser.add_option('-c', '--create-plan-only', action="store_true",
                       dest="create_plan_only", default=False,
                       help='Jenkins swarm runner job name')
@@ -556,7 +506,7 @@ def main():
                       action="store_true", dest="verbose", default=False,
                       help="Enable debug output")
 
-    (options, args) = parser.parse_args()
+    (options, _) = parser.parse_args()
 
     if options.verbose:
         logger.setLevel(DEBUG)
@@ -599,8 +549,6 @@ def main():
                      " or Jenkins view with system tests jobs (-w). Exiting..")
         return
 
-    is_running_builds = False
-
     for systest_build in tests_jobs:
         if (options.one_job_name and
                 options.one_job_name != systest_build['name']):
@@ -618,7 +566,6 @@ def main():
                 logger.debug("Skipping '{0}' job (build #{1}) because it's sti"
                              "ll running...".format(systest_build['name'],
                                                     systest_build['number'],))
-                is_running_builds = True
                 continue
         for os in tests_results.keys():
             if os in systest_build['name'].lower():
@@ -629,13 +576,23 @@ def main():
     milestone, iso_number, prefix = get_version(runner_build.build_data)
     milestone = project.get_milestone_by_name(name=milestone)
 
-    test_plan_name = ' '.join(
-        filter(lambda x: bool(x),
-               (milestone['name'], prefix, 'iso', '#' + str(iso_number))))
+    # NOTE(akostrikov) LP #1603088 When there is a snapshot word in prefix,
+    # we can skip timestamp part of a test plan name.
+    if 'snapshot' in prefix:
+        test_plan_name = ' '.join(
+            filter(lambda x: bool(x),
+                   (milestone['name'], prefix.replace('9.x.', ''))))
+    else:
+        test_plan_name = ' '.join(
+            filter(lambda x: bool(x),
+                   (milestone['name'], prefix, 'iso', '#' + str(iso_number))))
 
     test_plan = project.get_plan_by_name(test_plan_name)
-    iso_link = '/'.join([JENKINS['url'], 'job',
-                         '{0}.all'.format(milestone['name']), str(iso_number)])
+
+    iso_job_name = '{0}{1}.all'.format(milestone['name'],
+                                       '-{0}'.format(prefix) if prefix
+                                       else '')
+    iso_link = '/'.join([JENKINS['url'], 'job', iso_job_name, str(iso_number)])
     test_run = TestRailSettings.tests_description
     description = test_run if test_run else iso_link
     if not test_plan:
@@ -711,20 +668,6 @@ def main():
 
     logger.info('Report URL: {0}'.format(test_plan['url']))
 
-    # STEP #5
-    # Provide the bugs linked in TestRail for current run as a short statistics
-    if options.bug_statistics:
-        if is_running_builds:
-            logger.info("Some jobs are still running. "
-                        "Skipping bug statistics report, please try later.")
-        else:
-            logger.info("Generating a bug statistics report...")
-            bug_results = make_bug_statistics(tests_results, test_plan,
-                                              tests_suite, project,
-                                              operation_systems)
-            project.update_plan(plan_id=test_plan['id'],
-                                description=test_plan['description'] + '\n' +
-                                bug_results)
 
 if __name__ == "__main__":
     main()

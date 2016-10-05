@@ -12,12 +12,18 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import json
-import re
-import urllib2
+from __future__ import unicode_literals
 
-from settings import JENKINS
-from settings import logger
+import re
+
+import requests
+from requests.packages.urllib3 import disable_warnings
+
+from fuelweb_test.testrail.settings import JENKINS
+from fuelweb_test.testrail.settings import logger
+
+
+disable_warnings()
 
 
 def get_jobs_for_view(view):
@@ -25,11 +31,7 @@ def get_jobs_for_view(view):
     """
     view_url = "/".join([JENKINS["url"], 'view', view, 'api/json'])
     logger.debug("Request view data from {}".format(view_url))
-    req = urllib2.Request(view_url)
-    opener = urllib2.build_opener(urllib2.HTTPHandler)
-    s = opener.open(req).read()
-    opener.close()
-    view_data = json.loads(s)
+    view_data = requests.get(view_url).json()
     jobs = [job["name"] for job in view_data["jobs"]]
     return jobs
 
@@ -39,13 +41,10 @@ def get_downstream_builds_from_html(url):
     """
     url = "/".join([url, 'downstreambuildview/'])
     logger.debug("Request downstream builds data from {}".format(url))
-    req = urllib2.Request(url)
-    opener = urllib2.build_opener(urllib2.HTTPHandler)
-    s = opener.open(req).read()
-    opener.close()
+    response = requests.get(url).text
     jobs = []
     raw_downstream_builds = re.findall(
-        '.*downstream-buildview.*href="(/job/\S+/[0-9]+/).*', s)
+        '.*downstream-buildview.*href="(/job/\S+/[0-9]+/).*', response)
     for raw_build in raw_downstream_builds:
         sub_job_name = raw_build.split('/')[2]
         sub_job_build = raw_build.split('/')[3]
@@ -66,11 +65,7 @@ def get_build_artifact(url, artifact):
     """
     url = "/".join([url, 'artifact', artifact])
     logger.debug("Request artifact content from {}".format(url))
-    req = urllib2.Request(url)
-    opener = urllib2.build_opener(urllib2.HTTPHandler)
-    s = opener.open(req).read()
-    opener.close()
-    return s
+    return requests.get(url).text
 
 
 class Build(object):
@@ -99,13 +94,13 @@ class Build(object):
         job_url = "/".join([JENKINS["url"], 'job', self.name,
                             'api/json?depth={depth}'.format(depth=depth)])
         logger.debug("Request job info from {}".format(job_url))
-        return json.load(urllib2.urlopen(job_url))
+        return requests.get(job_url).json()
 
     def get_job_console(self):
         job_url = "/".join([JENKINS["url"], 'job', self.name,
                             str(self.number), 'consoleText'])
         logger.debug("Request job console from {}".format(job_url))
-        return urllib2.urlopen(job_url)
+        return requests.get(job_url).text
 
     def get_build_data(self, depth=1):
         build_url = "/".join([JENKINS["url"], 'job',
@@ -113,9 +108,10 @@ class Build(object):
                               str(self.number),
                               'api/json?depth={depth}'.format(depth=depth)])
         logger.debug("Request build data from {}".format(build_url))
-        return json.load(urllib2.urlopen(build_url))
+        return requests.get(build_url).json()
 
-    def get_test_data(self, url, result_path=None):
+    @staticmethod
+    def get_test_data(url, result_path=None):
         if result_path:
             test_url = "/".join(
                 [url.rstrip("/"), 'testReport'] + result_path + ['api/json'])
@@ -123,8 +119,7 @@ class Build(object):
             test_url = "/".join([url.rstrip("/"), 'testReport', 'api/json'])
 
         logger.debug("Request test data from {}".format(test_url))
-        response = urllib2.urlopen(test_url)
-        return json.load(response)
+        return requests.get(test_url).json()
 
     def test_data(self, result_path=None):
         try:
