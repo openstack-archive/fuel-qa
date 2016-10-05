@@ -19,6 +19,7 @@ import logging
 import unittest
 
 # pylint: disable=import-error
+import mock
 from mock import call
 from mock import Mock
 from mock import patch
@@ -29,48 +30,182 @@ from core.helpers import log_helpers
 # pylint: disable=no-self-use
 
 
-@patch('core.helpers.log_helpers.logger', autospec=True)
+@mock.patch('core.helpers.log_helpers.logger', autospec=True)
 class TestLogWrap(unittest.TestCase):
-    def test_positive(self, logger):
+    def test_no_args(self, logger):
+        @log_helpers.logwrap
+        def func():
+            return 'No args'
+
+        result = func()
+        self.assertEqual(result, 'No args')
+        logger.assert_has_calls((
+            mock.call.log(
+                level=logging.DEBUG,
+                msg="Calling: \n'func'()"
+            ),
+            mock.call.log(
+                level=logging.DEBUG,
+                msg="Done: 'func' with result:\n{}".format(repr(result))
+            ),
+        ))
+
+    def test_args_simple(self, logger):
+        arg = 'test arg'
+
+        @log_helpers.logwrap
+        def func(tst):
+            return tst
+
+        result = func(arg)
+        self.assertEqual(result, arg)
+        logger.assert_has_calls((
+            mock.call.log(
+                level=logging.DEBUG,
+                msg="Calling: \n'func'(\n    'tst'={},\n)".format(
+                    log_helpers.pretty_repr(
+                        arg, indent=8, no_indent_start=True)
+                )
+            ),
+            mock.call.log(
+                level=logging.DEBUG,
+                msg="Done: 'func' with result:\n{}".format(repr(result))
+            ),
+        ))
+
+    def test_args_defaults(self, logger):
+        arg = 'test arg'
+
+        @log_helpers.logwrap
+        def func(tst=arg):
+            return tst
+
+        result = func()
+        self.assertEqual(result, arg)
+        logger.assert_has_calls((
+            mock.call.log(
+                level=logging.DEBUG,
+                msg="Calling: \n'func'(\n    'tst'={},\n)".format(
+                    log_helpers.pretty_repr(
+                        arg, indent=8, no_indent_start=True))
+            ),
+            mock.call.log(
+                level=logging.DEBUG,
+                msg="Done: 'func' with result:\n{}".format(repr(result))
+            ),
+        ))
+
+    def test_args_complex(self, logger):
+        string = 'string'
+        dictionary = {'key': 'dictionary'}
+
+        @log_helpers.logwrap
+        def func(param_string, param_dictionary):
+            return param_string, param_dictionary
+
+        result = func(string, dictionary)
+        self.assertEqual(result, (string, dictionary))
+        # raise ValueError(logger.mock_calls)
+        logger.assert_has_calls((
+            mock.call.log(
+                level=logging.DEBUG,
+                msg="Calling: \n'func'("
+                    "\n    'param_string'={string},"
+                    "\n    'param_dictionary'={dictionary},\n)".format(
+                        string=log_helpers.pretty_repr(
+                            string,
+                            indent=8, no_indent_start=True),
+                        dictionary=log_helpers.pretty_repr(
+                            dictionary,
+                            indent=8, no_indent_start=True)
+                    )
+            ),
+            mock.call.log(
+                level=logging.DEBUG,
+                msg="Done: 'func' with result:\n{}".format(
+                    log_helpers.pretty_repr(result))
+            ),
+        ))
+
+    def test_args_kwargs(self, logger):
+        targs = ['string1', 'string2']
+        tkwargs = {'key': 'tkwargs'}
+
         @log_helpers.logwrap
         def func(*args, **kwargs):
-            return 'complete with {} {}'.format(args, kwargs)
+            return tuple(args), kwargs
 
-        call_args = 't', 'e'
-        call_kwargs = dict(s='s', t='t')
-
-        result = func(*call_args, **call_kwargs)
-        self.assertEqual(
-            result,
-            'complete with {} {}'.format(call_args, call_kwargs)
-        )
-
+        result = func(*targs, **tkwargs)
+        self.assertEqual(result, (tuple(targs), tkwargs))
+        # raise ValueError(logger.mock_calls)
         logger.assert_has_calls((
-            call.debug(
-                "Calling: 'func' with args: {!r} {!r}".format(
-                    call_args, call_kwargs)),
-            call.debug(
-                "Done: 'func' with result: {!r}".format(result))
+            mock.call.log(
+                level=logging.DEBUG,
+                msg="Calling: \n'func'("
+                    "\n    'args'={args},"
+                    "\n    'kwargs'={kwargs},\n)".format(
+                        args=log_helpers.pretty_repr(
+                            tuple(targs),
+                            indent=8, no_indent_start=True),
+                        kwargs=log_helpers.pretty_repr(
+                            tkwargs,
+                            indent=8, no_indent_start=True)
+                    )
+            ),
+            mock.call.log(
+                level=logging.DEBUG,
+                msg="Done: 'func' with result:\n{}".format(
+                    log_helpers.pretty_repr(result))
+            ),
         ))
 
     def test_negative(self, logger):
         @log_helpers.logwrap
-        def func(*args, **kwargs):
-            raise ValueError(args, kwargs)
-
-        call_args = 't', 'e'
-        call_kwargs = dict(s='s', t='t')
+        def func():
+            raise ValueError('as expected')
 
         with self.assertRaises(ValueError):
-            func(*call_args, **call_kwargs)
+            func()
 
         logger.assert_has_calls((
-            call.debug(
-                "Calling: 'func' with args: {!r} {!r}".format(
-                    call_args, call_kwargs)),
-            call.exception(
-                "'func' raised: ValueError({}, {})\n".format(
-                    call_args, call_kwargs))
+            mock.call.log(
+                level=logging.DEBUG,
+                msg="Calling: \n'func'()"
+            ),
+            mock.call.log(
+                level=logging.ERROR,
+                msg="Failed: \n'func'()",
+                exc_info=True
+            ),
+        ))
+
+    def test_negative_substitutions(self, logger):
+        new_logger = mock.Mock(spec=logging.Logger, name='logger')
+        log = mock.Mock(name='log')
+        new_logger.attach_mock(log, 'log')
+
+        @log_helpers.logwrap(
+            log=new_logger,
+            log_level=logging.INFO,
+            exc_level=logging.WARNING
+        )
+        def func():
+            raise ValueError('as expected')
+
+        with self.assertRaises(ValueError):
+            func()
+
+        self.assertEqual(len(logger.mock_calls), 0)
+        log.assert_has_calls((
+            mock.call(
+                level=logging.INFO,
+                msg="Calling: \n'func'()"
+            ),
+            mock.call(
+                level=logging.WARNING,
+                msg="Failed: \n'func'()",
+                exc_info=True
+            ),
         ))
 
 
