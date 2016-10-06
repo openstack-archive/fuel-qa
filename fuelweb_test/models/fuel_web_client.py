@@ -1581,13 +1581,15 @@ class FuelWebClient29(object):
         self.client.put_node_disks(node_id, disks)
 
     @logwrap
-    def get_node_disk_size(self, node_id, disk_name):
+    def get_node_disk_size(self, node_id, disk_name, v_name=None):
         disks = self.client.get_node_disks(node_id)
         size = 0
         for disk in disks:
             if disk['name'] == disk_name:
                 for volume in disk['volumes']:
-                    size += volume['size']
+                    if v_name:
+                        if volume['name'] == v_name:
+                            size += volume['size']
         return size
 
     def get_node_partition_size(self, node_id, partition_name):
@@ -1602,9 +1604,17 @@ class FuelWebClient29(object):
         return size
 
     @logwrap
+    def get_node_disks_by_volume_name(self, node, volume_name):
+        disks_volumes = {disk['name']: volume['name'] for disk in
+                         self.client.get_node_disks(node) for volume in
+                         disk['volumes'] if volume['size'] > 0}
+        return [disk for disk in disks_volumes
+                if disks_volumes[disk] == volume_name]
+
+    @logwrap
     def update_node_partitioning(self, node, disk='vdc',
                                  node_role='cinder', unallocated_size=11116):
-        node_size = self.get_node_disk_size(node['id'], disk)
+        node_size = self.get_node_disk_size(node['id'], disk, v_name=node_role)
         disk_part = {
             disk: {
                 node_role: node_size - unallocated_size
