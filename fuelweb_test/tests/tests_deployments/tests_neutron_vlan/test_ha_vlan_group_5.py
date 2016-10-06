@@ -17,6 +17,7 @@ from proboscis import test
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import settings
+from fuelweb_test import logger
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -171,24 +172,36 @@ class HaVlanGroup5(TestBasic):
             }
         )
         self.show_step(8)
-        self.fuel_web.update_network_cidr(cluster_id, 'public')
+        ceph_nodes = self.fuel_web.\
+            get_nailgun_cluster_nodes_by_roles(cluster_id, ['ceph-osd'],
+                                               role_status='pending_roles')
+        if checkers.check_baremetal(ceph_nodes[0]['ip']):
+            self.fuel_web.update_network_cidr(cluster_id, network_name='public')
+        else:
+            logger.info('Detect baremetal deploy, skipping network change')
 
         self.show_step(9)
         self.show_step(10)
         self.show_step(11)
-        ceph_nodes = self.fuel_web.\
-            get_nailgun_cluster_nodes_by_roles(cluster_id, ['ceph-osd'],
-                                               role_status='pending_roles')
+
         for ceph_node in ceph_nodes:
-            ceph_image_size = self.fuel_web.\
-                update_node_partitioning(ceph_node, node_role='ceph')
+            ceph_disks = self.fuel_web.get_node_disks_by_volume_name(
+                node=ceph_node['id'],
+                volume_name='ceph')
+            for disk in ceph_disks:
+                ceph_image_size = self.fuel_web.update_node_partitioning(
+                    ceph_node, node_role='ceph', disk=disk)
 
         cinder_nodes = self.fuel_web.\
             get_nailgun_cluster_nodes_by_roles(cluster_id, ['cinder'],
                                                role_status='pending_roles')
         for cinder_node in cinder_nodes:
-            cinder_image_size = self.fuel_web.\
-                update_node_partitioning(cinder_node, node_role='cinder')
+            cinder_disks = self.fuel_web.get_node_disks_by_volume_name(
+                node=cinder_node['id'],
+                volume_name='cinder')
+            for disk in cinder_disks:
+                cinder_image_size = self.fuel_web.update_node_partitioning(
+                    cinder_node, node_role='cinder', disk=disk)
 
         self.show_step(12)
         self.fuel_web.verify_network(cluster_id)
