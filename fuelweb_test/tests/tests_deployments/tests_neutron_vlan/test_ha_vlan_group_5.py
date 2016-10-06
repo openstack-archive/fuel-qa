@@ -17,6 +17,7 @@ from proboscis import test
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import settings
+from fuelweb_test import logger
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -126,7 +127,8 @@ class HaVlanGroup5(TestBasic):
             12. Verify networks
             13. Deploy cluster
             14. Verify networks
-            15. Run OSTF
+            15. Checking size of partitions
+            16. Run OSTF
 
         Duration 180m
         Snapshot cinder_ceph_for_images_ephemeral_rados
@@ -171,24 +173,50 @@ class HaVlanGroup5(TestBasic):
             }
         )
         self.show_step(8)
-        self.fuel_web.update_network_cidr(cluster_id, 'public')
+
+        if self.fuel_web.get_public_gw().startswith('10.109.'):
+            self.fuel_web.update_network_cidr(cluster_id,
+                                              network_name='public')
+        else:
+            logger.info('Skipping change net mask from /24 to /25')
 
         self.show_step(9)
         self.show_step(10)
         self.show_step(11)
+
+        ceph_image_size = {}
+        cinder_image_size = {}
         ceph_nodes = self.fuel_web.\
             get_nailgun_cluster_nodes_by_roles(cluster_id, ['ceph-osd'],
                                                role_status='pending_roles')
         for ceph_node in ceph_nodes:
-            ceph_image_size = self.fuel_web.\
-                update_node_partitioning(ceph_node, node_role='ceph')
+            ceph_image_size[ceph_node['ip']] = {}
+            ceph_disks = self.fuel_web.get_node_disks_by_volume_name(
+                node=ceph_node['id'],
+                volume_name='ceph')
+            for disk in ceph_disks:
+                ceph_image_size[ceph_node['ip']][disk] = \
+                    self.fuel_web.update_node_partitioning(
+                        ceph_node,
+                        node_role='ceph',
+                        disk=disk,
+                        by_vol_name=True)
 
         cinder_nodes = self.fuel_web.\
             get_nailgun_cluster_nodes_by_roles(cluster_id, ['cinder'],
                                                role_status='pending_roles')
         for cinder_node in cinder_nodes:
-            cinder_image_size = self.fuel_web.\
-                update_node_partitioning(cinder_node, node_role='cinder')
+            cinder_image_size[cinder_node['ip']] = {}
+            cinder_disks = self.fuel_web.get_node_disks_by_volume_name(
+                node=cinder_node['id'],
+                volume_name='cinder')
+            for disk in cinder_disks:
+                cinder_image_size[cinder_node['ip']][disk] = \
+                    self.fuel_web.update_node_partitioning(
+                        cinder_node,
+                        node_role='cinder',
+                        disk=disk,
+                        by_vol_name=True)
 
         self.show_step(12)
         self.fuel_web.verify_network(cluster_id)
@@ -198,13 +226,28 @@ class HaVlanGroup5(TestBasic):
         self.show_step(14)
         self.fuel_web.verify_network(cluster_id)
 
-        for ceph in ceph_nodes:
-            checkers.check_ceph_image_size(ceph['ip'], ceph_image_size)
-
-        for cinder in cinder_nodes:
-            checkers.check_cinder_image_size(cinder['ip'], cinder_image_size)
-
         self.show_step(15)
+        for ceph_node in ceph_nodes:
+            ceph_disks = self.fuel_web.get_node_disks_by_volume_name(
+                node=ceph_node['id'],
+                volume_name='ceph')
+            for disk in ceph_disks:
+                exp_size = ceph_image_size[ceph_node['ip']][disk]
+                checkers.check_ceph_image_size(ceph_node['ip'],
+                                               expected_size=exp_size,
+                                               device=disk)
+
+        for cinder_node in cinder_nodes:
+            cinder_disks = self.fuel_web.get_node_disks_by_volume_name(
+                node=cinder_node['id'],
+                volume_name='cinder')
+            for disk in cinder_disks:
+                exp_size = cinder_image_size[cinder_node['ip']][disk]
+                checkers.check_partition_exists(cinder_node['ip'],
+                                                disk=disk,
+                                                size_in_mb=exp_size)
+
+        self.show_step(16)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.env.make_snapshot("cinder_ceph_for_images_ephemeral_rados")
