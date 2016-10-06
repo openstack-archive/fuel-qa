@@ -1590,21 +1590,41 @@ class FuelWebClient29(object):
                     size += volume['size']
         return size
 
-    def get_node_partition_size(self, node_id, partition_name):
+    def get_node_partition_size(self, node_id, partition_name, v_name=None):
         disks = self.client.get_node_disks(node_id)
         size = 0
         logger.debug('Disks of node-{}: \n{}'.format(node_id,
                                                      pretty_log(disks)))
         for disk in disks:
-            for volume in disk['volumes']:
-                if volume['name'] == partition_name:
-                    size += volume['size']
+            if v_name:
+                if disk['name'] == partition_name:
+                    for volume in disk['volumes']:
+                        if volume['name'] == v_name:
+                            size += volume['size']
+            else:
+                for volume in disk['volumes']:
+                    if volume['name'] == partition_name:
+                        size += volume['size']
         return size
 
     @logwrap
+    def get_node_disks_by_volume_name(self, node, volume_name):
+        disks_volumes = {disk['name']: volume['name'] for disk in
+                         self.client.get_node_disks(node) for volume in
+                         disk['volumes'] if volume['size'] > 0}
+        return [disk for disk in disks_volumes
+                if disks_volumes[disk] == volume_name]
+
+    @logwrap
     def update_node_partitioning(self, node, disk='vdc',
-                                 node_role='cinder', unallocated_size=11116):
-        node_size = self.get_node_disk_size(node['id'], disk)
+                                 node_role='cinder',
+                                 unallocated_size=11116,
+                                 by_vol_name=False):
+        if by_vol_name:
+            node_size = self.get_node_partition_size(node['id'], disk,
+                                                v_name=node_role)
+        else:
+            node_size = self.get_node_disk_size(node['id'], disk)
         disk_part = {
             disk: {
                 node_role: node_size - unallocated_size
