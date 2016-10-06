@@ -1188,6 +1188,10 @@ class ServicesReconfiguration(TestBasic):
 
         self.show_step(3)
         task = self.fuel_web.deploy_cluster(cluster_id)
+        # wait for creation of child 'deployment' task
+        self.fuel_web.wait_for_tasks_presence(self.fuel_web.client.get_tasks,
+                                              name='deployment',
+                                              parent_id=task.get('id'))
 
         self.show_step(4)
         self.show_step(5)
