@@ -48,6 +48,18 @@ ssh_manager = SSHManager()
 
 
 @logwrap
+def check_baremetal(ip):
+    logger.info("Baremetal check")
+    hypervisor = ssh_manager.execute(ip, "virt-what")["stdout"]
+    if len(hypervisor) > 0:
+        logger.info('Baremetal check: {0}'.format('baremetal'))
+        return True
+    else:
+        logger.info('Baremetal check: {0}'.format(hypervisor))
+        return False
+
+
+@logwrap
 def validate_minimal_amount_nodes(
         nodes, expected_amount,
         state='discover', online=True):
