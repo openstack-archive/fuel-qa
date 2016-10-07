@@ -134,16 +134,14 @@ class TestMultiRackDeployment(DataDrivenUpgradeBase):
             yaml.dump(netconf_all_groups, file_obj,
                       default_flow_style=False, default_style='"')
 
-        custom_group2 = self.fuel_web.get_nodegroup(
-            cluster_id, name=NODEGROUPS[2]['name'])
         wait(lambda: not self.is_update_dnsmasq_running(
             self.fuel_web.client.get_tasks()), timeout=60,
             timeout_msg="Timeout exceeded while waiting for task "
                         "'update_dnsmasq' is finished!")
-        self.fuel_web.client.delete_nodegroup(custom_group2['id'])
 
         self.show_step(5)
         self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[3:5])
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[5:9])
 
         self.show_step(6)
         self.show_step(7)
@@ -155,8 +153,12 @@ class TestMultiRackDeployment(DataDrivenUpgradeBase):
                 'slave-01': [['controller'], nodegroup_default],
                 'slave-02': [['controller'], nodegroup_default],
                 'slave-03': [['controller'], nodegroup_default],
-                'slave-04': [['compute', 'cinder'], nodegroup_custom1],
-                'slave-05': [['compute', 'cinder'], nodegroup_custom1],
+                'slave-04': [['compute'], nodegroup_custom1],
+                'slave-05': [['compute'], nodegroup_custom1],
+                'slave-06': [['compute'], nodegroup_custom1],
+                'slave-07': [['ceph-osd'], nodegroup_custom1],
+                'slave-08': [['ceph-osd'], nodegroup_custom1],
+                'slave-09': [['ceph-osd'], nodegroup_custom1],
             }
         )
 
