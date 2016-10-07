@@ -404,3 +404,9 @@ groups:
     - name: slave-07
       role: fuel_slave
       params: *rack-03-slave-node-params
+    - name: slave-08
+      role: fuel_slave
+      params: *rack-03-slave-node-params
+    - name: slave-09
+      role: fuel_slave
+      params: *rack-03-slave-node-params
