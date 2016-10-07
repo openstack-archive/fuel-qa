@@ -360,8 +360,7 @@ class EnvironmentModel(object):
                     cmd = ("echo -e"
                            " '[temporary-{0}]\nname="
                            "temporary-{0}\nbaseurl={1}/"
-                           "\ngpgcheck=0\npriority="
-                           "1' > {2}").format(i, url, conf_file)
+                           "\ngpgcheck=0 > {2}").format(i, url, conf_file)
                     with self.d_env.get_admin_remote() as remote:
                         remote.execute(cmd)
             self.admin_install_updates()
