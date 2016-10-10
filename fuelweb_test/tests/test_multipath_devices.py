@@ -129,9 +129,9 @@ class TestMultipath(base_test_case.TestBasic):
         Duration 30m
 
         """
-        if not MULTIPATH:
-            raise exceptions.FuelQAVariableNotSet(
-                'MULTIPATH', 'true')
+        #if not MULTIPATH:
+        #    raise exceptions.FuelQAVariableNotSet(
+        #        'MULTIPATH', 'true')
         if not MULTIPATH_TEMPLATE:
             raise exceptions.FuelQAVariableNotSet(
                 'MULTIPATH_TEMPLATE',
@@ -142,7 +142,7 @@ class TestMultipath(base_test_case.TestBasic):
                 'SLAVE_MULTIPATH_DISKS_COUNT', '2')
 
         self.show_step(1)
-        self._devops_config = load_yaml(MULTIPATH_TEMPLATE)
+        #self._devops_config = load_yaml(MULTIPATH_TEMPLATE)
         with TimeStat("setup_environment", is_uniq=True):
             self.env.setup_environment()
             self.fuel_post_install_actions()
