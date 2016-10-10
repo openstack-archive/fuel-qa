@@ -3213,23 +3213,24 @@ class FuelWebClient30(FuelWebClient29):
 
         node = [n for n in self.client.list_nodes() if n['id'] == node_id][0]
         d_node = self.get_devops_node_by_nailgun_node(node)
-        bonds = [n for n in d_node.network_configs
-                 if n.aggregation is not None]
-        for bond in bonds:
-            macs = [i.mac_address.lower() for i in
-                    d_node.interface_set.filter(label__in=bond.parents)]
-            parents = [{'name': iface['name']} for iface in interfaces
-                       if iface['mac'].lower() in macs]
-            bond_config = {
-                'mac': None,
-                'mode': bond.aggregation,
-                'name': bond.label,
-                'slaves': parents,
-                'state': None,
-                'type': 'bond',
-                'assigned_networks': []
-            }
-            interfaces.append(bond_config)
+        if d_node:
+            bonds = [n for n in d_node.network_configs
+                     if n.aggregation is not None]
+            for bond in bonds:
+                macs = [i.mac_address.lower() for i in
+                        d_node.interface_set.filter(label__in=bond.parents)]
+                parents = [{'name': iface['name']} for iface in interfaces
+                           if iface['mac'].lower() in macs]
+                bond_config = {
+                    'mac': None,
+                    'mode': bond.aggregation,
+                    'name': bond.label,
+                    'slaves': parents,
+                    'state': None,
+                    'type': 'bond',
+                    'assigned_networks': []
+                }
+                interfaces.append(bond_config)
 
         if raw_data is not None:
             interfaces.extend(raw_data)
