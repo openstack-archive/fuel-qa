@@ -22,7 +22,7 @@ from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import MULTIPATH
-from fuelweb_test.settings import MULTIPATH_TEMPLATE
+#from fuelweb_test.settings import MULTIPATH_TEMPLATE
 from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.settings import SLAVE_MULTIPATH_DISKS_COUNT
 from fuelweb_test.settings import SSH_FUEL_CREDENTIALS
@@ -30,7 +30,8 @@ from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS_ONLY_ONCE
 from fuelweb_test.tests import base_test_case
 from gates_tests.helpers import exceptions
-from system_test.core.discover import load_yaml
+#from system_test.core.discover import load_yaml
+from fuelweb_test.tests.base_test_case import SetupEnvironment
 
 
 @test
@@ -132,17 +133,17 @@ class TestMultipath(base_test_case.TestBasic):
         if not MULTIPATH:
             raise exceptions.FuelQAVariableNotSet(
                 'MULTIPATH', 'true')
-        if not MULTIPATH_TEMPLATE:
-            raise exceptions.FuelQAVariableNotSet(
-                'MULTIPATH_TEMPLATE',
-                'system_test/tests_templates/tests_configs/'
-                'multipath_3_nodes.yaml')
+        #if not MULTIPATH_TEMPLATE:
+        #    raise exceptions.FuelQAVariableNotSet(
+        #        'MULTIPATH_TEMPLATE',
+        #        'system_test/tests_templates/tests_configs/'
+        #        'multipath_3_nodes.yaml')
         if int(SLAVE_MULTIPATH_DISKS_COUNT) < 1:
             raise exceptions.FuelQAVariableNotSet(
                 'SLAVE_MULTIPATH_DISKS_COUNT', '2')
 
         self.show_step(1)
-        self._devops_config = load_yaml(MULTIPATH_TEMPLATE)
+        #self._devops_config = load_yaml(MULTIPATH_TEMPLATE)
         with TimeStat("setup_environment", is_uniq=True):
             self.env.setup_environment()
             self.fuel_post_install_actions()
@@ -159,7 +160,7 @@ class TestMultipath(base_test_case.TestBasic):
         for ip in [node['ip'] for node in self.fuel_web.client.list_nodes()]:
             self.check_multipath_devices(ip, SLAVE_MULTIPATH_DISKS_COUNT)
 
-    @test(depends_on_groups=["bootstrap_multipath"],
+    @test(depends_on_groups=[SetupEnvironment.prepare_slaves_5],
           groups=["deploy_multipath"])
     @log_snapshot_after_test
     def deploy_multipath(self):
@@ -176,6 +177,19 @@ class TestMultipath(base_test_case.TestBasic):
         Duration 50m
 
         """
+        if not MULTIPATH:
+            raise exceptions.FuelQAVariableNotSet(
+                'MULTIPATH', 'true')
+
+        if int(SLAVE_MULTIPATH_DISKS_COUNT) < 1:
+            raise exceptions.FuelQAVariableNotSet(
+                'SLAVE_MULTIPATH_DISKS_COUNT', '2')
+
+        self.env.revert_snapshot('ready_with_5_slaves')
+
+        for ip in [node['ip'] for node in self.fuel_web.client.list_nodes()]:
+            self.check_multipath_devices(ip, SLAVE_MULTIPATH_DISKS_COUNT)
+
         self.show_step(1)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
