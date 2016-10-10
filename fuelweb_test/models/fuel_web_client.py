@@ -18,6 +18,7 @@ import logging
 import re
 import time
 import traceback
+from warnings import warn
 
 import distutils
 import devops
@@ -102,7 +103,6 @@ from fuelweb_test.settings import VCENTER_DATASTORE
 from fuelweb_test.settings import VCENTER_IP
 from fuelweb_test.settings import VCENTER_PASSWORD
 from fuelweb_test.settings import VCENTER_USERNAME
-from fuelweb_test.settings import UBUNTU_SERVICE_PROVIDER
 
 
 class FuelWebClient29(object):
@@ -423,16 +423,14 @@ class FuelWebClient29(object):
 
         checkers.fail_deploy(not_ready_transactions)
 
-    def wait_node_is_online(self, node, timeout=60 * 5):
-        # transform devops node to nailgun node
-        if isinstance(node, Node):
-            node = self.get_nailgun_node_by_devops_node(node)
+    def wait_node_is_online(self, devops_node, timeout=60 * 5):
         logger.info(
-            'Wait for node {!r} online status'.format(node['name']))
-        wait(lambda: self.get_nailgun_node_online_status(node),
+            'Wait for node {!r} online status'.format(devops_node.name))
+        wait(lambda: self.get_nailgun_node_by_devops_node(
+             devops_node)['online'],
              timeout=timeout,
              timeout_msg='Node {!r} failed to become online'
-                         ''.format(node['name']))
+                         ''.format(devops_node.name))
 
     def wait_node_is_offline(self, devops_node, timeout=60 * 5):
         logger.info(
@@ -560,7 +558,7 @@ class FuelWebClient29(object):
         if not cluster_id:
             data = {
                 "name": name,
-                "release": release_id,
+                "release": str(release_id),
                 "mode": mode
             }
 
@@ -610,7 +608,7 @@ class FuelWebClient29(object):
                 elif option == 'assign_to_all_nodes':
                     section = 'public_network_assignment'
                 elif option in {'neutron_l3_ha', 'neutron_dvr',
-                                'neutron_l2_pop', 'neutron_qos'}:
+                                'neutron_l2_pop'}:
                     section = 'neutron_advanced_configuration'
                 elif option in {'dns_list'}:
                     section = 'external_dns'
@@ -917,7 +915,7 @@ class FuelWebClient29(object):
                 node_name = node.name
                 with self.get_ssh_for_node(node_name) as remote:
                     free = node_freemem(remote)
-                    hiera_roles = get_node_hiera_roles(remote, n['fqdn'])
+                    hiera_roles = get_node_hiera_roles(remote)
                 node_status = {
                     node_name:
                     {
@@ -945,8 +943,12 @@ class FuelWebClient29(object):
     @custom_repo
     def deploy_cluster_wait(self, cluster_id, is_feature=False,
                             timeout=help_data.DEPLOYMENT_TIMEOUT, interval=30,
-                            check_services=True, check_tasks=True,
+                            check_services=True, check_tasks=False,
                             allow_partially_deploy=False):
+        warn_txt = ('Temporary: flag check_tasks is set to False, '
+                    'until bugs LP#1578218 and LP#1578257 fixed')
+        logger.warning(warn_txt)
+        warn(warn_txt, UserWarning)
         cluster_attributes = self.client.get_cluster_attributes(cluster_id)
         self.client.assign_ip_address_before_deploy_start(cluster_id)
         network_settings = self.client.get_networks(cluster_id)
@@ -1482,6 +1484,8 @@ class FuelWebClient29(object):
                                                                   nodes_dict)
             self.wait_node_is_online(devops_node, timeout=60 * 2)
             node = self.get_nailgun_node_by_devops_node(devops_node)
+            assert_true(node['online'],
+                        'Node {0} is offline'.format(node['mac']))
 
             if custom_names:
                 name = custom_names.get(node_name,
@@ -2034,14 +2038,6 @@ class FuelWebClient29(object):
 
         return ip_ranges, expected_ips
 
-    @logwrap
-    def get_nailgun_node_online_status(self, node):
-        return self.client.get_node_by_id(node['id'])['online']
-
-    def get_devops_node_online_status(self, devops_node):
-        return self.get_nailgun_node_online_status(
-            self.get_nailgun_node_by_devops_node(devops_node))
-
     def warm_shutdown_nodes(self, devops_nodes, timeout=10 * 60):
         logger.info('Shutting down (warm) nodes %s',
                     [n.name for n in devops_nodes])
@@ -2214,53 +2210,41 @@ class FuelWebClient29(object):
             self.wait_node_is_online(node, timeout=timeout)
 
     @logwrap
-    def wait_cluster_nodes_get_online_state(self, cluster_id,
-                                            timeout=4 * 60):
-        self.wait_nodes_get_online_state(
-            self.client.list_cluster_nodes(cluster_id),
-            timeout=timeout)
-
-    @logwrap
     def wait_mysql_galera_is_up(self, node_names, timeout=60 * 4):
+        get_request = (
+            "mysql --connect_timeout=5 -sse "
+            "\"SELECT VARIABLE_VALUE "
+            "FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME"
+            " = '{}';\"").format
+
         def _get_galera_status(_remote):
-            cmd = ("mysql --connect_timeout=5 -sse \"SELECT VARIABLE_VALUE "
-                   "FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME"
-                   " = 'wsrep_ready';\"")
-            result = _remote.execute(cmd)
-            if result['exit_code'] == 0:
-                return ''.join(result['stdout']).strip()
-            else:
-                return ''.join(result['stderr']).strip()
+            # wsrep service status
+            result = _remote.execute(get_request('wsrep_ready'))
+            if result.exit_code != 0 or u'ON' not in result.stdout_str:
+                return False
+            # connectivity status
+            result = _remote.execute(get_request('wsrep_connected'))
+            if result.exit_code != 0 or u'ON' not in result.stdout_str:
+                return False
+            # minimal amount of nodes is connected
+            result = _remote.execute(get_request('wsrep_cluster_size'))
+            return result.exit_code == 0 and\
+                int(result.stdout_str) >= len(node_names)
 
         for node_name in node_names:
-            with self.get_ssh_for_node(node_name) as remote:
-                try:
-                    wait(lambda: _get_galera_status(remote) == 'ON',
-                         timeout=timeout)
-                    logger.info("MySQL Galera is up on {host} node.".format(
-                                host=node_name))
-                except TimeoutError:
-                    logger.error("MySQL Galera isn't ready on {0}: {1}"
-                                 .format(node_name,
-                                         _get_galera_status(remote)))
-                    raise TimeoutError(
-                        "MySQL Galera isn't ready on {0}: {1}".format(
-                            node_name, _get_galera_status(remote)))
+            remote = self.get_ssh_for_node(node_name)
+            wait(lambda: _get_galera_status(remote),
+                 timeout=timeout,
+                 timeout_msg="MySQL Galera isn't ready on "
+                             "{0}".format(node_name))
+            # cluster status: only log, allow negative scenarios
+            cls_status = remote.execute(get_request('wsrep_cluster_status'))
+            logger.info(
+                u"MySQL Galera is up on {host} node.\n"
+                u"Cluster status: {status}".format(
+                    host=node_name,
+                    status=cls_status.stdout_str))
         return True
-
-    @logwrap
-    def mcollective_nodes_online(self, cluster_id):
-        nodes_uids = set([str(n['id']) for n in
-                          self.client.list_cluster_nodes(cluster_id)])
-        # 'mco find' returns '1' exit code if rabbitmq is not ready
-        out = self.ssh_manager.execute_on_remote(
-            ip=self.ssh_manager.admin_ip,
-            cmd='mco find', assert_ec_equal=[0, 1])['stdout_str']
-        ready_nodes_uids = set(out.split('\n'))
-        unavailable_nodes = nodes_uids - ready_nodes_uids
-        logger.debug('Nodes {0} are not reachable via'
-                     ' mcollective'.format(unavailable_nodes))
-        return not unavailable_nodes
 
     @logwrap
     def wait_cinder_is_up(self, node_names):
@@ -2308,8 +2292,10 @@ class FuelWebClient29(object):
             return failed_count
 
     def get_nailgun_version(self):
+        response = self.client.get_api_version()
         logger.info("ISO version: {}".format(pretty_log(
-            self.client.get_api_version(), indent=1)))
+            response, indent=1)))
+        return response
 
     @logwrap
     def run_ceph_task(self, cluster_id, offline_nodes):
@@ -2701,21 +2687,6 @@ class FuelWebClient29(object):
         attr = self.client.get_cluster_attributes(cluster_id)[section]
         return plugin_name in attr
 
-    @logwrap
-    def list_cluster_enabled_plugins(self, cluster_id):
-        enabled_plugins = []
-        all_plugins = self.client.plugins_list()
-        cl_attrib = self.client.get_cluster_attributes(cluster_id)
-        for plugin in all_plugins:
-            plugin_name = plugin['name']
-            if plugin_name in cl_attrib['editable']:
-                if cl_attrib['editable'][plugin_name]['metadata']['enabled']:
-                    enabled_plugins.append(plugin)
-                    logger.info('{} plugin is enabled '
-                                'in cluster id={}'.format(plugin_name,
-                                                          cluster_id))
-        return enabled_plugins
-
     def update_plugin_data(self, cluster_id, plugin_name, data):
         attr = self.client.get_cluster_attributes(cluster_id)
         # Do not re-upload anything, except selected plugin data
@@ -2808,12 +2779,7 @@ class FuelWebClient29(object):
              timeout_msg='ceph helth ok timeout')
         for osd_id in ids:
             if OPENSTACK_RELEASE_UBUNTU in OPENSTACK_RELEASE:
-                if UBUNTU_SERVICE_PROVIDER == 'systemd':
-                    remote_ceph.execute("systemctl stop ceph-osd@{}"
-                                        .format(osd_id))
-                else:
-                    remote_ceph.execute("stop ceph-osd id={}"
-                                        .format(osd_id))
+                remote_ceph.execute("stop ceph-osd id={}".format(osd_id))
             else:
                 remote_ceph.execute("service ceph stop osd.{}".format(osd_id))
             remote_ceph.execute("ceph osd crush remove osd.{}".format(osd_id))
@@ -3069,12 +3035,13 @@ class FuelWebClient30(FuelWebClient29):
                     'networks': {
                         r.name: r.address_pool.name
                         for r in rack.get_network_pools(
-                            name__in=[
-                                'fuelweb_admin',
-                                'public',
-                                'management',
-                                'storage',
-                                'private'])}}
+                            name__in=['fuelweb_admin',
+                                      'public',
+                                      'management',
+                                      'storage',
+                                      'private'])
+                    }
+                }
                 ng_nets.append(nets)
             self.update_nodegroups(cluster_id=cluster_id,
                                    node_groups=ng)
@@ -3082,6 +3049,10 @@ class FuelWebClient30(FuelWebClient29):
                                                          ng_nets)
 
     def change_default_network_settings(self):
+        api_version = self.client.get_api_version()
+        if int(api_version["release"][0]) < 6:
+            return
+
         def fetch_networks(networks):
             """Parse response from api/releases/1/networks and return dict with
             networks' settings - need for avoiding hardcode"""
@@ -3225,6 +3196,12 @@ class FuelWebClient30(FuelWebClient29):
                         node_iface.mac_address]['name']] = net.networks
                 else:
                     assigned_networks[net.label] = net.networks
+            logger.info(
+                'Assigned networks for node {node} are: {networks}'.format(
+                    node=node['name'],
+                    networks=pretty_log(assigned_networks, indent=4)
+                )
+            )
 
             self.update_node_networks(node['id'], assigned_networks)
 
@@ -3236,23 +3213,24 @@ class FuelWebClient30(FuelWebClient29):
 
         node = [n for n in self.client.list_nodes() if n['id'] == node_id][0]
         d_node = self.get_devops_node_by_nailgun_node(node)
-        bonds = [n for n in d_node.network_configs
-                 if n.aggregation is not None]
-        for bond in bonds:
-            macs = [i.mac_address.lower() for i in
-                    d_node.interface_set.filter(label__in=bond.parents)]
-            parents = [{'name': iface['name']} for iface in interfaces
-                       if iface['mac'].lower() in macs]
-            bond_config = {
-                'mac': None,
-                'mode': bond.aggregation,
-                'name': bond.label,
-                'slaves': parents,
-                'state': None,
-                'type': 'bond',
-                'assigned_networks': []
-            }
-            interfaces.append(bond_config)
+        if d_node:
+            bonds = [n for n in d_node.network_configs
+                     if n.aggregation is not None]
+            for bond in bonds:
+                macs = [i.mac_address.lower() for i in
+                        d_node.interface_set.filter(label__in=bond.parents)]
+                parents = [{'name': iface['name']} for iface in interfaces
+                           if iface['mac'].lower() in macs]
+                bond_config = {
+                    'mac': None,
+                    'mode': bond.aggregation,
+                    'name': bond.label,
+                    'slaves': parents,
+                    'state': None,
+                    'type': 'bond',
+                    'assigned_networks': []
+                }
+                interfaces.append(bond_config)
 
         if raw_data is not None:
             interfaces.extend(raw_data)
