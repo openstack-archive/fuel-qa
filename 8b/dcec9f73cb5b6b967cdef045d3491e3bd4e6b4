@@ -1,0 +1,9 @@
+Code-Review+2: Alexey Stepanov <astepanov@mirantis.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Workflow+1: Dennis Dmitriev <ddmitriev@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 10 Oct 2016 12:14:24 +0000
+Reviewed-on: https://review.openstack.org/381051
+Project: openstack/fuel-qa
+Branch: refs/heads/stable/mitaka
