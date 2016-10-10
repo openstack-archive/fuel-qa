@@ -173,7 +173,7 @@ class TestMultipath(base_test_case.TestBasic):
             5. Deploy the cluster
             6. Run OSTF
 
-        Duration 50m
+        Duration 50m.
 
         """
         self.show_step(1)
