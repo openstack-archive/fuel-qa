@@ -59,17 +59,17 @@ class TestCustomGraph(TestBasic):
         """
         move_img_cmd = (
             'cp /var/www/nailgun/targetimages/env_release_{release_id}'
-            '_ubuntu_1404_amd64-boot.img.gz /var/www/nailgun/targetimages/'
-            'env_{cluster_id}_ubuntu_1404_amd64-boot.img.gz;'
+            '_ubuntu_1604_amd64-boot.img.gz /var/www/nailgun/targetimages/'
+            'env_{cluster_id}_ubuntu_1604_amd64-boot.img.gz;'
             'cp /var/www/nailgun/targetimages/env_release_{release_id}'
-            '_ubuntu_1404_amd64.img.gz /var/www/nailgun/targetimages/'
-            'env_{cluster_id}_ubuntu_1404_amd64.img.gz;'
+            '_ubuntu_1604_amd64.img.gz /var/www/nailgun/targetimages/'
+            'env_{cluster_id}_ubuntu_1604_amd64.img.gz;'
             'cp /var/www/nailgun/targetimages/env_release_{release_id}'
-            '_ubuntu_1404_amd64.yaml /var/www/nailgun/targetimages/'
-            'env_{cluster_id}_ubuntu_1404_amd64.yaml;'
+            '_ubuntu_1604_amd64.yaml /var/www/nailgun/targetimages/'
+            'env_{cluster_id}_ubuntu_1604_amd64.yaml;'
             'sed -i -- "s/release_2/{cluster_id}/g" '
             '/var/www/nailgun/targetimages/env_release_{release_id}'
-            '_ubuntu_1404_amd64.yaml').format(release_id=release_id,
+            '_ubuntu_1604_amd64.yaml').format(release_id=release_id,
                                               cluster_id=cluster_id)
 
         self.ssh_manager.execute_on_remote(
