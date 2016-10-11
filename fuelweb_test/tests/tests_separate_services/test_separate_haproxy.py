@@ -18,7 +18,11 @@ from proboscis import asserts
 from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers.replace_repos import parse_ubuntu_repo
 from fuelweb_test.helpers import utils
+from fuelweb_test.helpers.utils import YamlEditor
+from fuelweb_test.settings import EXTRA_DEB_REPOS
+from fuelweb_test.settings import EXTRA_DEB_REPOS_PRIORITY
 from fuelweb_test.settings import NEUTRON
 from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.settings import NODEGROUPS
@@ -115,6 +119,31 @@ class TestSeparateHaproxy(TestNetworkTemplatesBase):
                     ubuntu_url)
             self.ssh_manager.execute_on_remote(ip=admin_ip,
                                                cmd=replace_cmd)
+
+            # replace mos-base-url to snapshot url
+            extra_deb_repo = EXTRA_DEB_REPOS.split('|')[0]
+            mos_url = parse_ubuntu_repo(extra_deb_repo, None, EXTRA_DEB_REPOS_PRIORITY)['uri']
+            replace_cmd =\
+                "sed -i 's,http://mirror.fuel-infra.org/mos-repos/ubuntu/$mos_version,{0},g'"\
+                " /usr/share/fuel-mirror/ubuntu.yaml".format(
+                    mos_url)
+            self.ssh_manager.execute_on_remote(ip=admin_ip,
+                                               cmd=replace_cmd)
+
+        # add proposed repository
+        with YamlEditor("/usr/share/fuel-mirror/ubuntu.yaml", ip=admin_ip) as editor:
+            proposed_desc = {
+                str("name"): "mos-proposed",
+                "uri": editor.content['mos_baseurl'],
+                "suite": "mos$mos_version-proposed",
+                "section": "main restricted",
+                "type": "deb",
+                "priority": 1050
+            }
+            editor.content["groups"]["mos"].append(proposed_desc)
+            editor.content["repos"].append(proposed_desc)
+
+
         create_mirror_cmd = 'fuel-mirror create -P ubuntu -G mos ubuntu'
         self.ssh_manager.execute_on_remote(ip=admin_ip, cmd=create_mirror_cmd)
         apply_mirror_cmd = 'fuel-mirror apply -P ubuntu -G mos ubuntu ' \
