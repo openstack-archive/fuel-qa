@@ -31,6 +31,7 @@ from fuelweb_test.helpers.regenerate_repo import regenerate_ubuntu_repo
 from fuelweb_test.helpers import replace_repos
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.utils import dict_merge
+from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_FROM_GIT
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
 from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
 from fuelweb_test.settings import KEYSTONE_CREDS
@@ -337,20 +338,18 @@ class FuelPluginBuilder(BaseActions):
     """
     def fpb_install(self):
         """
-        Installs fuel plugin builder from sources
-        on master node
+        Installs fuel plugin builder on master node
 
         :return: nothing
         """
-        fpb_cmd = """bash -c 'yum -y install git tar createrepo \
-                    rpm dpkg-devel dpkg-dev rpm-build python-pip;
-                    git clone {0};
-                    cd fuel-plugins;
-                    python setup.py sdist;
-                    cd dist;
-                    pip install *.tar.gz'""".format(FUEL_PLUGIN_BUILDER_REPO)
+        fpb_packet = "git+{}".format(FUEL_PLUGIN_BUILDER_REPO)\
+            if FUEL_PLUGIN_BUILDER_FROM_GIT else "fuel-plugin-builder"
 
-        self.ssh_manager.execute_on_remote(ip=self.admin_ip, cmd=fpb_cmd)
+        cmd = ("bash -c 'yum -y install tar createrepo rpm dpkg-devel "
+               "dpkg-dev rpm-build python-pip git;"
+               "pip install {}'").format(fpb_packet)
+
+        self.ssh_manager.check_call(self.admin_ip, cmd)
 
     def fpb_create_plugin(self, name, package_version=PLUGIN_PACKAGE_VERSION):
         """
