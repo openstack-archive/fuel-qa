@@ -32,6 +32,7 @@ from fuelweb_test.helpers.regenerate_repo import regenerate_centos_repo
 from fuelweb_test.helpers.regenerate_repo import regenerate_ubuntu_repo
 from fuelweb_test.helpers.utils import cond_upload
 from fuelweb_test.helpers.utils import run_on_remote_get_results
+from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_FROM_GIT
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
 from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
 from fuelweb_test.settings import KEYSTONE_CREDS
@@ -404,20 +405,20 @@ class FuelPluginBuilder(BaseActions):
 
     def fpb_install(self):
         """
-        Installs fuel plugin builder from sources
-        in nailgun container on master node
+        Installs fuel plugin builder on master node
 
         :return: nothing
         """
-        fpb_cmd = """bash -c 'yum -y install git tar createrepo \
-                    rpm dpkg-devel rpm-build;
-                    git clone {0};
-                    cd fuel-plugins/fuel_plugin_builder;
-                    python setup.py sdist;
-                    cd dist;
-                    pip install *.tar.gz'""".format(FUEL_PLUGIN_BUILDER_REPO)
+        rpms = "createrepo dpkg-devel dpkg-dev rpm-build python-pip"
+        fpb_package = "fuel-plugin-builder"
+        if FUEL_PLUGIN_BUILDER_FROM_GIT:
+            rpms += " tar git"
+            fpb_package = "git+{}".format(FUEL_PLUGIN_BUILDER_REPO)
 
-        self.execute_in_container(fpb_cmd, self.container, 0)
+        self.execute_in_container("yum -y install {}".format(rpms),
+                                  self.container, 0)
+        self.execute_in_container("pip install {}".format(fpb_package),
+                                  self.container, 0)
 
     def fpb_create_plugin(self, name):
         """
