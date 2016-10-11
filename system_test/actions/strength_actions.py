@@ -229,18 +229,25 @@ class FillRootActions(object):
             int(controller_space_on_root) - self.rabbit_disk_free_limit - 1
         )
 
-        logger.info("Need to fill space on root - {}".format(
-            controller_space_to_filled))
+        if int(controller_space_to_filled) > 0:
+            logger.info("Need to fill space on root - {}".format(
+                controller_space_to_filled))
 
-        self.ssh_manager.execute_on_remote(
-            ip=node['ip'],
-            cmd='fallocate -l {}M /root/bigfile2 && sync'.format(
-                controller_space_to_filled)
-        )
-        self.ssh_manager.execute_on_remote(
-            ip=node['ip'],
-            cmd='ls /root/bigfile2',
-            assert_ec_equal=[0])
+            self.ssh_manager.execute_on_remote(
+                ip=node['ip'],
+                cmd='fallocate -l {}M /root/bigfile2 && sync'.format(
+                    controller_space_to_filled)
+            )
+            self.ssh_manager.execute_on_remote(
+                ip=node['ip'],
+                cmd='ls /root/bigfile2',
+                assert_ec_equal=[0])
+        else:
+            logger.info(
+                "Nothing to do."
+                " Free space in root partition already less than {}.".format(
+                    self.rabbit_disk_free_limit)
+            )
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
