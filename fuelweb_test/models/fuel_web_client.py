@@ -18,7 +18,6 @@ import logging
 import re
 import time
 import traceback
-from warnings import warn
 
 import distutils
 import devops
@@ -943,12 +942,8 @@ class FuelWebClient29(object):
     @custom_repo
     def deploy_cluster_wait(self, cluster_id, is_feature=False,
                             timeout=help_data.DEPLOYMENT_TIMEOUT, interval=30,
-                            check_services=True, check_tasks=False,
+                            check_services=True, check_tasks=True,
                             allow_partially_deploy=False):
-        warn_txt = ('Temporary: flag check_tasks is set to False, '
-                    'until bugs LP#1578218 and LP#1578257 fixed')
-        logger.warning(warn_txt)
-        warn(warn_txt, UserWarning)
         cluster_attributes = self.client.get_cluster_attributes(cluster_id)
         self.client.assign_ip_address_before_deploy_start(cluster_id)
         network_settings = self.client.get_networks(cluster_id)
