@@ -390,7 +390,10 @@ TIMESTAT_PATH_YAML = os.environ.get(
     'TIMESTAT_PATH_YAML', os.path.join(
         LOGS_DIR, 'timestat_{}.yaml'.format(time.strftime("%Y%m%d"))))
 
-FUEL_PLUGIN_BUILDER_REPO = 'https://github.com/stackforge/fuel-plugins.git'
+FUEL_PLUGIN_BUILDER_FROM_GIT = get_var_as_bool('FUEL_PLUGIN_BUILDER_FROM_GIT',
+                                               False)
+FUEL_PLUGIN_BUILDER_REPO = ('https://github.com/stackforge/fuel-plugins.git '
+                            '--branch stable/6.0')
 
 # MIRROR_UBUNTU and EXTRA_DEB_REPOS - lists of repositories, separated by '|',
 # for example:
