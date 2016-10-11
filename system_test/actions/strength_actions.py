@@ -229,6 +229,13 @@ class FillRootActions(object):
             int(controller_space_on_root) - self.rabbit_disk_free_limit - 1
         )
 
+        if int(controller_space_to_filled) < 1:
+            logger.info(
+                "Nothing to do."
+                " Free space in root partition already less than {}.".format(
+                    self.rabbit_disk_free_limit))
+            return
+
         logger.info("Need to fill space on root - {}".format(
             controller_space_to_filled))
 
