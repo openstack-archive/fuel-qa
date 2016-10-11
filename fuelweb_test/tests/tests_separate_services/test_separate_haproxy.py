@@ -18,7 +18,10 @@ from proboscis import asserts
 from proboscis import test
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers.replace_repos import parse_ubuntu_repo
 from fuelweb_test.helpers import utils
+from fuelweb_test.settings import EXTRA_DEB_REPOS
+from fuelweb_test.settings import EXTRA_DEB_REPOS_PRIORITY
 from fuelweb_test.settings import NEUTRON
 from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.settings import NODEGROUPS
@@ -107,14 +110,34 @@ class TestSeparateHaproxy(TestNetworkTemplatesBase):
             }
         )
         self.show_step(5)
+        config_path = "/usr/share/fuel-mirror/ubuntu.yaml"
         if MIRROR_UBUNTU != '':
             ubuntu_url = MIRROR_UBUNTU.split()[1]
             replace_cmd = \
                 "sed -i 's,http://archive.ubuntu.com/ubuntu,{0},g'" \
-                " /usr/share/fuel-mirror/ubuntu.yaml".format(
-                    ubuntu_url)
+                " {1}".format(ubuntu_url, config_path)
             self.ssh_manager.execute_on_remote(ip=admin_ip,
                                                cmd=replace_cmd)
+        if EXTRA_DEB_REPOS != '':
+            # replace mos-base-url to snapshot url from mos-proposed repo
+            for extra_deb_repo in EXTRA_DEB_REPOS.split('|'):
+                parsed_repo = parse_ubuntu_repo(extra_deb_repo, None,
+                                                EXTRA_DEB_REPOS_PRIORITY)
+                if parsed_repo['name'] == 'mos-proposed':
+                    url = "http://mirror.fuel-infra.org/mos-repos" \
+                          "/ubuntu/$mos_version"
+                    replace_cmd = "sed -i 's," \
+                                  "{0},{1},g' {2}".format(url,
+                                                          parsed_repo['uri'],
+                                                          config_path)
+                    self.ssh_manager.execute_on_remote(ip=admin_ip,
+                                                       cmd=replace_cmd)
+
+                    # add proposed repository
+                    with utils.YamlEditor(config_path, ip=admin_ip) as editor:
+                        editor.content["groups"]["mos"].append(parsed_repo)
+                        editor.content["repos"].append(parsed_repo)
+
         create_mirror_cmd = 'fuel-mirror create -P ubuntu -G mos ubuntu'
         self.ssh_manager.execute_on_remote(ip=admin_ip, cmd=create_mirror_cmd)
         apply_mirror_cmd = 'fuel-mirror apply -P ubuntu -G mos ubuntu ' \
