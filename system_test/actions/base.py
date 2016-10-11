@@ -306,6 +306,9 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions,
             "neutron_qos": self.env_config['network'].get(
                 'neutron-qos', False),
         }
+        if self.env_config['network'].get('dns_list'):
+            cluster_settings['dns_list'] = self.env_config['network'].get(
+                'dns_list')
 
         self.cluster_id = self.fuel_web.create_cluster(
             name=self.env_config['name'],
