@@ -111,7 +111,8 @@ class Load(TestLoadBase):
                 'slave-02',
                 'slave-03',
                 'slave-04',
-                'slave-05']))
+                'slave-05',
+                'slave-06']))
 
         self.show_step(9)
         self.fuel_web.assert_ha_services_ready(cluster_id)
