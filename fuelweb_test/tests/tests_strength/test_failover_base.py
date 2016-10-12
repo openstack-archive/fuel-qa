@@ -110,11 +110,11 @@ class TestHaFailoverBase(TestBasic):
         self.fuel_web.update_nodes(
             cluster_id,
             {
-                'slave-01': ['controller', 'ceph-osd'],
+                'slave-01': ['controller'],
                 'slave-02': ['controller'],
                 'slave-03': ['controller'],
                 'slave-04': ['compute', 'ceph-osd'],
-                'slave-05': ['compute']
+                'slave-05': ['compute', 'ceph-osd']
             }
         )
         self.fuel_web.deploy_cluster_wait(cluster_id, timeout=150 * 60)
