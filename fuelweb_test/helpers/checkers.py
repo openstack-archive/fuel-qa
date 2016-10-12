@@ -1428,10 +1428,10 @@ def check_free_space_slave(env, min_disk_slave=150):
     for node in env.d_env.nodes().slaves:
         if node.driver.node_active(node):
             active_nodes.append(node)
-    for slave_id in xrange(len(active_nodes)):
+    for slave_id in range(len(active_nodes)):
         volume_slave_numb = len(
             env.d_env.nodes().slaves[slave_id].disk_devices)
-        for disk_id in xrange(volume_slave_numb):
+        for disk_id in range(volume_slave_numb):
             volume_size = env.d_env.nodes().slaves[slave_id].disk_devices[
                 disk_id].volume.get_capacity()
             disk_size_slave += volume_size

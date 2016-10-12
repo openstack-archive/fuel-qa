@@ -118,7 +118,7 @@ class RepetitiveRestart(TestLoadBase):
             logger.debug(benchmark_results[tag].show())
 
         self.show_step(9)
-        for i in xrange(settings.RESTART_COUNT):
+        for i in range(settings.RESTART_COUNT):
             self.show_step(10, 'number {}'.format(i + 1), initialize=True)
             self.fuel_web.cold_restart_nodes(
                 self.env.d_env.get_nodes(name__in=[

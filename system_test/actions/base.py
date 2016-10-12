@@ -225,7 +225,7 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions,
         num = iter(xrange(1, slaves + 1))
         nodes = {}
         for new in nodes_list:
-            for _ in xrange(new['count']):
+            for _ in range(new['count']):
                 name = names.format(next(num))
                 while name in self.assigned_slaves:
                     name = names.format(next(num))
@@ -244,7 +244,7 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions,
         for node in nodes_list:
             cluster_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
                 self.cluster_id, node['roles'])
-            for i in xrange(node['count']):
+            for i in range(node['count']):
                 dnode = self.fuel_web.get_devops_node_by_nailgun_node(
                     cluster_nodes[i])
                 self.assigned_slaves.remove(dnode.name)
