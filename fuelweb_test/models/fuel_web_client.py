@@ -1022,26 +1022,26 @@ class FuelWebClient29(object):
 
     @logwrap
     def get_last_task_id(self, cluster_id, task_name):
-        filtered_tasks = self.filter_tasks(self.client.get_tasks(),
-                                           cluster=cluster_id,
-                                           name=task_name)
+        filtered_tasks = self.filter_nailgun_entity(self.client.get_tasks(),
+                                                    cluster=cluster_id,
+                                                    name=task_name)
         return max([task['id'] for task in filtered_tasks])
 
     @staticmethod
     @logwrap
-    def filter_tasks(tasks, **filters):
+    def filter_nailgun_entity(entities, **filters):
         res = []
-        for task in tasks:
+        for entity in entities:
             for f_key, f_value in six.iteritems(filters):
-                if task.get(f_key) != f_value:
+                if entity.get(f_key) != f_value:
                     break
             else:
-                res.append(task)
+                res.append(entity)
         return res
 
     @logwrap
     def wait_for_tasks_presence(self, get_tasks, **filters):
-        wait(lambda: self.filter_tasks(get_tasks(), **filters),
+        wait(lambda: self.filter_nailgun_entity(get_tasks(), **filters),
              timeout=300,
              timeout_msg="Timeout exceeded while waiting for tasks.")
 
@@ -3205,6 +3205,7 @@ class FuelWebClient30(FuelWebClient29):
                              raw_data=None,
                              override_ifaces_params=None):
         interfaces = self.client.get_node_interfaces(node_id)
+        phys_interfaces = self.filter_nailgun_entity(interfaces, type="ether")
 
         node = [n for n in self.client.list_nodes() if n['id'] == node_id][0]
         d_node = self.get_devops_node_by_nailgun_node(node)
@@ -3214,7 +3215,7 @@ class FuelWebClient30(FuelWebClient29):
             for bond in bonds:
                 macs = [i.mac_address.lower() for i in
                         d_node.interface_set.filter(label__in=bond.parents)]
-                parents = [{'name': iface['name']} for iface in interfaces
+                parents = [{'name': iface['name']} for iface in phys_interfaces
                            if iface['mac'].lower() in macs]
                 bond_config = {
                     'mac': None,
