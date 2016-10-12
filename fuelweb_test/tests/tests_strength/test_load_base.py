@@ -28,8 +28,8 @@ class TestLoadBase(TestBasic):
 
         Scenario:
             1. Create cluster
-            2. Add 3 nodes with controller + ceph-osd roles
-            3. Add 2 node with compute role
+            2. Add 3 nodes with controller
+            3. Add 3 node with compute role + ceph-osd roles
             4. Deploy the cluster
             5. Make snapshot
 
@@ -41,6 +41,8 @@ class TestLoadBase(TestBasic):
             return
 
         self.env.revert_snapshot("ready_with_5_slaves")
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[5:6],
+                                 skip_timesync=True)
 
         self.show_step(1, initialize=True)
         cluster_id = self.fuel_web.create_cluster(
@@ -58,11 +60,12 @@ class TestLoadBase(TestBasic):
         self.fuel_web.update_nodes(
             cluster_id,
             {
-                'slave-01': ['controller', 'ceph-osd'],
-                'slave-02': ['controller', 'ceph-osd'],
-                'slave-03': ['controller', 'ceph-osd'],
-                'slave-04': ['compute'],
-                'slave-05': ['compute']
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['compute', 'ceph-osd'],
+                'slave-05': ['compute', 'ceph-osd'],
+                'slave-06': ['compute', 'ceph-osd']
             }
         )
 
