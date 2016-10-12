@@ -28,9 +28,6 @@ from novaclient.client import Client as NovaClient
 from neutronclient.v2_0.client import Client as NeutronClient
 from proboscis.asserts import assert_equal
 import six
-# pylint: disable=redefined-builtin
-# noinspection PyUnresolvedReferences
-from six.moves import xrange
 # pylint: enable=redefined-builtin
 # pylint: disable=import-error
 # noinspection PyUnresolvedReferences
@@ -271,7 +268,7 @@ class Common(object):
     def __start_keystone_session(
             self, retries=3, ca_cert=None, insecure=not VERIFY_SSL):
         exc_type, exc_value, exc_traceback = None, None, None
-        for i in xrange(retries):
+        for i in range(retries):
             try:
                 if insecure:
                     self.keystone_session = KeystoneSession(
@@ -304,7 +301,7 @@ class Common(object):
         ssh = SSHManager()
         cmd = "/usr/local/bin/swift-rings-rebalance.sh"
         logger.debug('Check swift ring and rebalance it.')
-        for _ in xrange(retry_count):
+        for _ in range(retry_count):
             try:
                 checkers.check_swift_ring(controller_ip)
                 break

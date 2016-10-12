@@ -38,10 +38,6 @@ from proboscis.asserts import assert_equal
 # pylint: disable=import-error
 # noinspection PyUnresolvedReferences
 from six.moves import configparser
-# pylint: enable=import-error
-# pylint: disable=redefined-builtin
-# noinspection PyUnresolvedReferences
-from six.moves import xrange
 # pylint: enable=redefined-builtin
 import yaml
 
@@ -848,7 +844,7 @@ def get_process_uptime(remote, process_name):
     ps_output = ps_output.split(':')
     uptime = 0
     time_factor = 1
-    for i in xrange(1, len(ps_output) + 1):
+    for i in range(1, len(ps_output) + 1):
         uptime += int(ps_output[-i]) * time_factor
         time_factor *= 60
     return uptime

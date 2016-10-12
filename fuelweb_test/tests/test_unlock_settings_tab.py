@@ -20,8 +20,6 @@ from proboscis import SkipTest
 from proboscis import test
 from proboscis.asserts import assert_false
 from keystoneauth1.exceptions import HttpError
-# pylint: disable=redefined-builtin
-from six.moves import xrange
 # pylint: enable=redefined-builtin
 
 from fuelweb_test import logger
@@ -107,7 +105,7 @@ class UnlockSettingsTab(TestBasic):
             self.env.d_env.nodes().slaves[count:count + ceph_nodes_count],
             skip_timesync=True)
         nodes = {'slave-0{}'.format(i): ['ceph-osd']
-                 for i in xrange(count + 1, count + ceph_nodes_count + 1)}
+                 for i in range(count + 1, count + ceph_nodes_count + 1)}
         self.fuel_web.update_nodes(self.cluster_id, nodes)
 
     def load_config(self, file_name):

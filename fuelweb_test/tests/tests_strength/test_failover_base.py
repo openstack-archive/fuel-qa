@@ -24,9 +24,6 @@ from proboscis.asserts import assert_false
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 from proboscis import SkipTest
-# pylint: disable=redefined-builtin
-# noinspection PyUnresolvedReferences
-from six.moves import xrange
 # pylint: enable=redefined-builtin
 
 from core.helpers.log_helpers import logwrap
@@ -141,7 +138,7 @@ class TestHaFailoverBase(TestBasic):
 
             return ret
 
-        for num in xrange(2):
+        for num in range(2):
 
             # STEP: Revert environment
             # if num==0: show_step(1); if num==1: show_step(5)
@@ -253,7 +250,7 @@ class TestHaFailoverBase(TestBasic):
 
         checks_number = 10
         for resource in resources:
-            for check_counter in xrange(1, checks_number + 1):
+            for check_counter in range(1, checks_number + 1):
                 # 1. Locate where resource is running
                 active_nodes = self.fuel_web.get_pacemaker_resource_location(
                     devops_controllers[0].name,
@@ -1163,7 +1160,7 @@ class TestHaFailoverBase(TestBasic):
                             for node in ctrl_nodes]
             live_remotes = [self.env.d_env.get_ssh_to_remote(node['ip'])
                             for node in alive_corosync_nodes]
-            for count in xrange(500):
+            for count in range(500):
                 logger.debug('Checking splitbrain in the loop, '
                              'count number: {0}'.format(count))
                 wait_pass(
@@ -1212,7 +1209,7 @@ class TestHaFailoverBase(TestBasic):
             r_nodes = len(self.fuel_web.get_rabbit_running_nodes(node.name))
             return r_nodes == len(n_ctrls)
 
-        for n in xrange(1, 4):
+        for n in range(1, 4):
             logger.info('Checking {} time'.format(n))
             cmd = 'crm_resource --resource p_rabbitmq-server ' \
                   '--set-parameter max_rabbitmqctl_timeouts ' \
@@ -1282,7 +1279,7 @@ class TestHaFailoverBase(TestBasic):
         self.fuel_web.assert_os_services_ready(cluster_id)
 
         # Start the test
-        for count in xrange(REPEAT_COUNT):
+        for count in range(REPEAT_COUNT):
             logger.info('Attempt {0} to check rabbit recovery'.format(count))
             # Get primary controller from nailgun
             p_d_ctrl = self.fuel_web.get_nailgun_primary_node(
