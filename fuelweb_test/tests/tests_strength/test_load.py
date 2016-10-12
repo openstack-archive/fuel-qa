@@ -38,7 +38,7 @@ class Load(TestLoadBase):
 
     """
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+    @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["load_ceph_partitions_cold_reboot"])
     @log_snapshot_after_test
     @setup_teardown(setup=TestLoadBase.prepare_load_ceph_ha)
@@ -111,7 +111,8 @@ class Load(TestLoadBase):
                 'slave-02',
                 'slave-03',
                 'slave-04',
-                'slave-05']))
+                'slave-05',
+                'slave-06']))
 
         self.show_step(9)
         self.fuel_web.assert_ha_services_ready(cluster_id)
