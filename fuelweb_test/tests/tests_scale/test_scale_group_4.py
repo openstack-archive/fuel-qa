@@ -140,7 +140,7 @@ class HaScaleGroup4(TestBasic):
         Scenario:
             1. Create cluster: Neutron VLAN, cinder for volumes
                and ceph for images
-            2. Add 3 controller+ceph, 1 compute and 1 cinder nodes
+            2. Add 3 controller, 1 compute, 1 cinder and 1 ceph nodes
             3. Deploy the cluster
             4. Add 1 ceph node and 1 cinder node
             5. Deploy changes
@@ -164,6 +164,11 @@ class HaScaleGroup4(TestBasic):
 
         """
         self.env.revert_snapshot("ready_with_9_slaves")
+
+        # Bootstrap additional nodes
+        self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[9:12],
+                                 skip_timesync=True)
+
         self.show_step(1, initialize=True)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -177,19 +182,20 @@ class HaScaleGroup4(TestBasic):
         self.fuel_web.update_nodes(
             cluster_id,
             {
-                'slave-01': ['controller', 'ceph-osd'],
-                'slave-02': ['controller', 'ceph-osd'],
-                'slave-03': ['controller', 'ceph-osd'],
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
                 'slave-04': ['compute'],
-                'slave-05': ['cinder']
+                'slave-05': ['cinder'],
+                'slave-06': ['ceph-osd']
             }
         )
         self.show_step(3)
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
         self.show_step(4)
-        nodes = {'slave-06': ['cinder'],
-                 'slave-07': ['ceph-osd']}
+        nodes = {'slave-07': ['cinder'],
+                 'slave-08': ['ceph-osd']}
         self.fuel_web.update_nodes(
             cluster_id, nodes,
             True, False
@@ -202,12 +208,12 @@ class HaScaleGroup4(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.show_step(8)
-        nodes = {'slave-08': ['cinder']}
+        nodes = {'slave-09': ['cinder']}
         self.fuel_web.update_nodes(
             cluster_id, nodes,
             True, False
         )
-        nodes = {'slave-06': ['cinder']}
+        nodes = {'slave-07': ['cinder']}
         self.fuel_web.update_nodes(
             cluster_id, nodes,
             False, True
@@ -220,14 +226,14 @@ class HaScaleGroup4(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.show_step(12)
-        nodes = {'slave-09': ['ceph-osd']}
+        nodes = {'slave-10': ['ceph-osd']}
         self.fuel_web.update_nodes(
             cluster_id, nodes,
             True, False
         )
         with self.fuel_web.get_ssh_for_node('slave-07') as remote_ceph:
             self.fuel_web.prepare_ceph_to_delete(remote_ceph)
-        nodes = {'slave-07': ['ceph-osd']}
+        nodes = {'slave-08': ['ceph-osd']}
         self.fuel_web.update_nodes(
             cluster_id, nodes,
             False, True
@@ -240,14 +246,14 @@ class HaScaleGroup4(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.show_step(16)
-        nodes = {'slave-08': ['cinder']}
+        nodes = {'slave-09': ['cinder']}
         self.fuel_web.update_nodes(
             cluster_id, nodes,
             False, True
         )
         with self.fuel_web.get_ssh_for_node('slave-09') as remote_ceph:
             self.fuel_web.prepare_ceph_to_delete(remote_ceph)
-        nodes = {'slave-09': ['ceph-osd']}
+        nodes = {'slave-10': ['ceph-osd']}
         self.fuel_web.update_nodes(
             cluster_id, nodes,
             False, True
