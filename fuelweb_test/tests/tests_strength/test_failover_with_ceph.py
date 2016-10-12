@@ -35,8 +35,8 @@ class TestHaCephNeutronFailover(TestHaFailoverBase):
 
         Scenario:
             1. Create cluster
-            2. Add 2 nodes with controller roles, 1 node controller + ceph-osd
-            3. Add 1 node with compute role, 1 node compute + ceph-osd
+            2. Add 3 nodes with controller roles
+            3. Add 2 node compute + ceph-osd roles
             4. Deploy the cluster
             5. Make snapshot
 
