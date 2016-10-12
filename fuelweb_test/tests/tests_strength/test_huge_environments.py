@@ -160,7 +160,7 @@ class HugeHaNeutron(base_test_case.TestBasic):
 
         Scenario:
             1. Create cluster
-            2. Add 3 nodes with controller and ceph role
+            2. Add 3 nodes with controller
             3. Add 3 nodes with compute and ceph roles
             4. Add 3 nodes with mongo roles
             5. Verify network
@@ -178,6 +178,7 @@ class HugeHaNeutron(base_test_case.TestBasic):
             'volumes_ceph': True,
             'images_ceph': True,
             'objects_ceph': True,
+            'osd_pool_size': '3',
             'ceilometer': True,
             'net_provider': 'neutron',
             'net_segment_type': settings.NEUTRON_SEGMENT['tun'],
@@ -194,9 +195,9 @@ class HugeHaNeutron(base_test_case.TestBasic):
         self.fuel_web.update_nodes(
             cluster_id,
             {
-                'slave-01': ['controller', 'ceph-osd'],
-                'slave-02': ['controller', 'ceph-osd'],
-                'slave-03': ['controller', 'ceph-osd'],
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
                 'slave-04': ['compute', 'ceph-osd'],
                 'slave-05': ['compute', 'ceph-osd'],
                 'slave-06': ['compute', 'ceph-osd'],
