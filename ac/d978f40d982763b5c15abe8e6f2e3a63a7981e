@@ -1,0 +1,11 @@
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+1: tatyana-leontovich <tleontovich@mirantis.com>
+Code-Review+1: Ilya Kutukov <post.ilya@gmail.com>
+Code-Review+2: Nastya Urlapova <aurlapova@mirantis.com>
+Workflow+1: Alexey Shtokolov <ashtokolov@gmail.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 14 Oct 2016 15:21:17 +0000
+Reviewed-on: https://review.openstack.org/386602
+Project: openstack/fuel-qa
+Branch: refs/heads/stable/newton
