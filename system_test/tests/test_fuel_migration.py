@@ -121,9 +121,9 @@ class FuelMasterMigrate(ActionsBase, FuelMasterActions):
 
         logger.info("Wait for file 'migration-done' appears")
         with self.env.d_env.get_admin_remote() as remote:
-            wait(lambda: remote.exists("/tmp/migration-done"),
+            wait(lambda: not remote.exists("/notready"),
                  timeout=60 * 10,
-                 timeout_msg="File /tmp/migration-done wasn't appeared")
+                 timeout_msg="File wasn't removed in 900 sec")
             logger.info("Migration complete!")
 
         logger.info("Wait for Slave nodes become online")
