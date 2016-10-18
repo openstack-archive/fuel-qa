@@ -1,5 +1,5 @@
 setuptools>=22.0,!=24.0.0  # PSF/ZPL  # MANDATORY TO BUILD CORRECT VIRTUALENV
-pycparser!=2.14  # BSD  # Version pinned to avoid AssertionError: sorry, but this version only supports 100 named groups
+pycparser<=2.14  # BSD  # Version pinned to avoid AssertionError: sorry, but this version only supports 100 named groups
 pip>=6.0  # MIT  # MANDATORY TO BUILD CORRECT VIRTUALENV
 nose==1.2.1
 anyjson>=0.3.3  # BSD
