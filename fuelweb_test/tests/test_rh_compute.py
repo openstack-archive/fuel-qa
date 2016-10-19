@@ -53,7 +53,7 @@ class RhBase(TestBasic):
         :param node_ip: IP address of target node.
         :param timeout: Timeout for wait function.
         """
-        wait(lambda: (not tcp_ping(node_ip, 22)), interval=1,
+        wait(lambda: (not tcp_ping(node_ip, 22, 1)), interval=1,
              timeout=timeout, timeout_msg="Node doesn't gone offline")
 
     def warm_restart_nodes(self, devops_nodes):

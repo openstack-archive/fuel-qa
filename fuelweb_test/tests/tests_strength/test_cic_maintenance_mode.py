@@ -238,7 +238,7 @@ class CICMaintenanceMode(TestBasic):
                 assert_equal(result['exit_code'], 0,
                              'Failed to execute "{0}" on remote host: {1}'.
                              format(command2, result))
-                wait(lambda: not tcp_ping(_ip, 22), timeout=60 * 10)
+                wait(lambda: not tcp_ping(_ip, 22, 1), timeout=60 * 10)
 
             logger.info('Wait a %s node offline status after unexpected '
                         'reboot', devops_node.name)
@@ -443,7 +443,7 @@ class CICMaintenanceMode(TestBasic):
                 assert_equal(result['exit_code'], 0,
                              'Failed to execute "{0}" on remote host: {1}'.
                              format(command2, result))
-                wait(lambda: not tcp_ping(_ip, 22), timeout=60 * 10)
+                wait(lambda: not tcp_ping(_ip, 22, 1), timeout=60 * 10)
 
             # Node don't have enough time for set offline status
             # after reboot --force
