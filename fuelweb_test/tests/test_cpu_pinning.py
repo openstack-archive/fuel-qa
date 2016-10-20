@@ -107,7 +107,7 @@ class NumaCpuPinning(TestBasic):
 
         server = os_conn.create_server_for_migration(neutron=True,
                                                      label=net_name,
-                                                     flavor=flavor_id)
+                                                     flavor_id=flavor_id)
         os_conn.verify_instance_status(server, 'ACTIVE')
         os_conn.delete_instance(server)
         os_conn.delete_flavor(flavor)

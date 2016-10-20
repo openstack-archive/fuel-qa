@@ -111,23 +111,22 @@ class OpenStackActions(common.Common):
 
         :param name: server name, if None -> test-serv + random suffix
         :param security_groups: list, if None -> ssh + icmp v4 & icmp v6
-        :param flavor_id: micro_flavor if None
+        :param flavor_id: create new flavor if None
         :param net_id: network id, could be omitted
         :param timeout: int=100
         :param image: TestVM if None.
         :return: Server, in started state
         """
-        def find_micro_flavor():
-            return [
-                flavor for flavor in self.nova.flavors.list()
-                if flavor.name == 'm1.micro'].pop()
 
         if not name:
             name = "test-serv" + str(random.randint(1, 0x7fffffff))
         if not security_groups:
             security_groups = [self.create_sec_group_for_ssh()]
         if not flavor_id:
-            flavor_id = find_micro_flavor().id
+            flavor = self.create_flavor('test_flavor_{}'.
+                                        format(random.randint(10, 10000)),
+                                        64, 1, 0)
+            flavor_id = flavor.id
         if image is None:
             image = self._get_cirros_image().id
 
@@ -146,10 +145,8 @@ class OpenStackActions(common.Common):
 
     def create_server_for_migration(self, neutron=True, scenario='',
                                     timeout=100, filename=None, key_name=None,
-                                    label=None, flavor=None, **kwargs):
+                                    label=None, flavor_id=None, **kwargs):
         name = "test-serv" + str(random.randint(1, 0x7fffffff))
-        if flavor is None:
-            flavor = self.nova.flavors.list()[0].id
         security_group = {}
         try:
             if scenario:
@@ -173,9 +170,15 @@ class OpenStackActions(common.Common):
         else:
             kwargs.update({'security_groups': security_groups})
 
+        if not flavor_id:
+            flavor = self.create_flavor('test_flavor_{}'.
+                                        format(random.randint(10, 10000)),
+                                        64, 1, 0)
+            flavor_id = flavor.id
+
         srv = self.nova.servers.create(name=name,
                                        image=image_id,
-                                       flavor=flavor,
+                                       flavor=flavor_id,
                                        userdata=scenario,
                                        files=filename,
                                        key_name=key_name,
