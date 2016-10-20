@@ -227,7 +227,7 @@ class ServicesReconfiguration(TestBasic):
         if hypervisor_name:
             kwargs['availability_zone'] = "nova:{0}".format(hypervisor_name)
         instance = os_conn.create_server_for_migration(
-            neutron=True, label=net_name, flavor=flavor_id, **kwargs)
+            neutron=True, label=net_name, flavor_id=flavor_id, **kwargs)
 
         floating_ip = os_conn.assign_floating_ip(instance)
 
