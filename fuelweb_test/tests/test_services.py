@@ -534,10 +534,11 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(_ip,
-                                service_name='ceilometer-api',
-                                ignore_count_of_proccesses=True)
+        # NOTE(akostrikov) We need to change checks of uwsgi services LP1635605
+        # _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
+        # checkers.verify_service(_ip,
+        #                         service_name='aodh-api',
+        #                         ignore_count_of_proccesses=True)
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-03")['ip']
         partitions = utils.get_mongo_partitions(_ip, "vda5")
@@ -589,10 +590,11 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(_ip,
-                                service_name='ceilometer-api',
-                                ignore_count_of_proccesses=True)
+        # NOTE(akostrikov) We need to change checks of uwsgi services LP1635605
+        # _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
+        # checkers.verify_service(_ip,
+        #                         service_name='aodh-api',
+        #                         ignore_count_of_proccesses=True)
 
         self.run_tests(cluster_id)
         self.env.make_snapshot("deploy_ceilometer_ha_one_controller_multirole")
@@ -646,10 +648,11 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(_ip,
-                                service_name='ceilometer-api',
-                                ignore_count_of_proccesses=True)
+        # NOTE(akostrikov) We need to change checks of uwsgi services LP1635605
+        # _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
+        # checkers.verify_service(_ip,
+        #                         service_name='aodh-api',
+        #                         ignore_count_of_proccesses=True)
 
         self.run_tests(cluster_id,
                        skip_tests=['test_check_volume_events'])
@@ -697,10 +700,11 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(_ip,
-                                service_name='ceilometer-api',
-                                ignore_count_of_proccesses=True)
+        # NOTE(akostrikov) We need to change checks of uwsgi services LP1635605
+        # _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
+        # checkers.verify_service(_ip,
+        #                         service_name='aodh-api',
+        #                         ignore_count_of_proccesses=True)
 
         self.run_tests(cluster_id)
         self.env.make_snapshot("deploy_ceilometer_ha_multirole", is_make=True)
@@ -791,10 +795,11 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(_ip,
-                                service_name='ceilometer-api',
-                                ignore_count_of_proccesses=True)
+        # NOTE(akostrikov) We need to change checks of uwsgi services LP1635605
+        # _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
+        # checkers.verify_service(_ip,
+        #                         service_name='aodh-api',
+        #                         ignore_count_of_proccesses=True)
 
         self.run_tests(cluster_id)
         self.env.make_snapshot("deploy_ceilometer_ha_with_external_mongo")
@@ -857,10 +862,11 @@ class HeatHAOneController(TestBasic):
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         checkers.verify_service(_ip, service_name='heat-api', count=5)
 
-        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(_ip,
-                                service_name='ceilometer-api',
-                                ignore_count_of_proccesses=True)
+        # NOTE(akostrikov) We need to change checks of uwsgi services LP1635605
+        # _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
+        # checkers.verify_service(_ip,
+        #                         service_name='aodh-api',
+        #                         ignore_count_of_proccesses=True)
 
         logger.debug('Run Heat OSTF platform tests')
 
@@ -944,12 +950,13 @@ class HeatHA(TestBasic):
             cluster_vip, data['user'], data['password'], data['tenant'])
         self.fuel_web.assert_cluster_ready(os_conn, smiles_count=13)
 
-        for slave in ["slave-01", "slave-02", "slave-03"]:
-            _ip = self.fuel_web.get_nailgun_node_by_name(slave)['ip']
-            checkers.verify_service(_ip, service_name='heat-api', count=5)
-            checkers.verify_service(_ip,
-                                    service_name='ceilometer-api',
-                                    ignore_count_of_proccesses=True)
+        # NOTE(akostrikov) We need to change checks of uwsgi services LP1635605
+        # for slave in ["slave-01", "slave-02", "slave-03"]:
+        #     _ip = self.fuel_web.get_nailgun_node_by_name(slave)['ip']
+        #     checkers.verify_service(_ip, service_name='heat-api', count=5)
+        #     checkers.verify_service(_ip,
+        #                             service_name='aodh-api',
+        #                             ignore_count_of_proccesses=True)
 
         logger.debug('Run Heat OSTF platform tests')
 
