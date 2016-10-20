@@ -536,7 +536,7 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         checkers.verify_service(_ip,
-                                service_name='ceilometer-api',
+                                service_name='aodh-api',
                                 ignore_count_of_proccesses=True)
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-03")['ip']
@@ -591,7 +591,7 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         checkers.verify_service(_ip,
-                                service_name='ceilometer-api',
+                                service_name='aodh-api',
                                 ignore_count_of_proccesses=True)
 
         self.run_tests(cluster_id)
@@ -648,7 +648,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         checkers.verify_service(_ip,
-                                service_name='ceilometer-api',
+                                service_name='aodh-api',
                                 ignore_count_of_proccesses=True)
 
         self.run_tests(cluster_id,
@@ -699,7 +699,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         checkers.verify_service(_ip,
-                                service_name='ceilometer-api',
+                                service_name='aodh-api',
                                 ignore_count_of_proccesses=True)
 
         self.run_tests(cluster_id)
@@ -793,7 +793,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         checkers.verify_service(_ip,
-                                service_name='ceilometer-api',
+                                service_name='aodh-api',
                                 ignore_count_of_proccesses=True)
 
         self.run_tests(cluster_id)
@@ -859,7 +859,7 @@ class HeatHAOneController(TestBasic):
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         checkers.verify_service(_ip,
-                                service_name='ceilometer-api',
+                                service_name='aodh-api',
                                 ignore_count_of_proccesses=True)
 
         logger.debug('Run Heat OSTF platform tests')
@@ -948,7 +948,7 @@ class HeatHA(TestBasic):
             _ip = self.fuel_web.get_nailgun_node_by_name(slave)['ip']
             checkers.verify_service(_ip, service_name='heat-api', count=5)
             checkers.verify_service(_ip,
-                                    service_name='ceilometer-api',
+                                    service_name='aodh-api',
                                     ignore_count_of_proccesses=True)
 
         logger.debug('Run Heat OSTF platform tests')
