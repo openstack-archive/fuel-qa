@@ -67,7 +67,7 @@ class SupportHugepages(TestBasic):
             neutron=True,
             label=net_name,
             availability_zone="nova:{0}".format(target_compute['fqdn']),
-            flavor=flavor.id)
+            flavor_id=flavor.id)
 
         server = server.to_dict()
         asserts.assert_equal(
