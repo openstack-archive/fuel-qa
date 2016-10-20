@@ -117,17 +117,14 @@ class OpenStackActions(common.Common):
         :param image: TestVM if None.
         :return: Server, in started state
         """
-        def find_micro_flavor():
-            return [
-                flavor for flavor in self.nova.flavors.list()
-                if flavor.name == 'm1.micro'].pop()
 
         if not name:
             name = "test-serv" + str(random.randint(1, 0x7fffffff))
         if not security_groups:
             security_groups = [self.create_sec_group_for_ssh()]
         if not flavor_id:
-            flavor_id = find_micro_flavor().id
+            flavor = self.create_flavor('test_flavor', 64, 1, 0)
+            flavor_id = flavor.id
         if image is None:
             image = self._get_cirros_image().id
 
@@ -146,7 +143,7 @@ class OpenStackActions(common.Common):
 
     def create_server_for_migration(self, neutron=True, scenario='',
                                     timeout=100, filename=None, key_name=None,
-                                    label=None, flavor=1, **kwargs):
+                                    label=None, flavor_id=None, **kwargs):
         name = "test-serv" + str(random.randint(1, 0x7fffffff))
         security_group = {}
         try:
@@ -171,9 +168,13 @@ class OpenStackActions(common.Common):
         else:
             kwargs.update({'security_groups': security_groups})
 
+        if not flavor_id:
+            flavor_id = self.create_flavor('test_flavor', 64, 1, 0)
+            flavor_id = flavor_id.id
+
         srv = self.nova.servers.create(name=name,
                                        image=image_id,
-                                       flavor=flavor,
+                                       flavor=flavor_id,
                                        userdata=scenario,
                                        files=filename,
                                        key_name=key_name,
