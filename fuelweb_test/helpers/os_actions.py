@@ -148,6 +148,8 @@ class OpenStackActions(common.Common):
                                     timeout=100, filename=None, key_name=None,
                                     label=None, flavor=1, **kwargs):
         name = "test-serv" + str(random.randint(1, 0x7fffffff))
+        if flavor == 1:
+            flavor = self.nova.flavors.list()[0].id
         security_group = {}
         try:
             if scenario:
