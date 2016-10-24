@@ -350,7 +350,7 @@ def _unpack_docstring(items):
     elif count == 2:
         title, steps = items
     elif count == 1:
-        title = items
+        title = items[0]
     return title, steps, duration
 
 

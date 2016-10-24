@@ -546,13 +546,13 @@ class TestsConfigDBAPI(TestBasic):
         self.env.make_snapshot('configdb_resource_tests_lvl_overrides')
 
     @test(depends_on_groups=['create_component_and_env_configdb'],
-          groups=['configdb_cli_interface'])
+          groups=['configdb_cli_interface'], enabled=False)
     def update_via_key_path(self):
         # TODO(akostrikov) Update key by path
         pass
 
     @test(depends_on_groups=['create_component_and_env_configdb'],
-          groups=['configdb_cli_interface'])
+          groups=['configdb_cli_interface'], enabled=False)
     def key_deletion_via_path(self):
         # TODO(akostrikov) Wipe key by path
         # TODO(akostrikov) Delete key by path
