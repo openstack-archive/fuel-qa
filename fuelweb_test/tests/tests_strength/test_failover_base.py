@@ -501,34 +501,35 @@ class TestHaFailoverBase(TestBasic):
         self.env.revert_snapshot(self.snapshot_name)
         cluster_id = self.fuel_web.get_last_created_cluster()
         for node in self.fuel_web.client.list_cluster_nodes(cluster_id):
-            remote = self.env.d_env.get_ssh_to_remote(node['ip'])
-            assert_true(
-                check_ping(remote, DNS, deadline=120, interval=10),
-                "No Internet access from {0}".format(node['fqdn'])
-            )
-        remote_compute = self.fuel_web.get_ssh_for_node('slave-05')
+            with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
+                assert_true(
+                    check_ping(remote, DNS, deadline=120, interval=10),
+                    "No Internet access from {0}".format(node['fqdn'])
+                )
         devops_node = self.fuel_web.get_nailgun_primary_node(
             self.env.d_env.nodes().slaves[0])
-        file_name = DOWNLOAD_LINK.split('/')[-1]
-        file_path = '/root/tmp'
-        remote_compute.execute(
-            "screen -S download -d -m bash -c 'mkdir -p {0} &&"
-            " cd {0} && wget --limit-rate=100k {1}'".format(file_path,
-                                                            DOWNLOAD_LINK))
-        try:
-            wait(
-                lambda: remote_compute.execute("ls -1 {0}/{1}".format(
-                    file_path, file_name))['exit_code'] == 0, timeout=60)
-        except TimeoutError:
-            raise TimeoutError(
-                "File download was not started")
-        file_size1 = get_file_size(remote_compute, file_name, file_path)
-        time.sleep(60)
-        file_size2 = get_file_size(remote_compute, file_name, file_path)
-        assert_true(file_size2 > file_size1,
-                    "File download was interrupted, size of downloading "
-                    "does not change")
+        with self.fuel_web.get_ssh_for_node('slave-05') as remote_compute:
+            file_name = DOWNLOAD_LINK.split('/')[-1]
+            file_path = '/root/tmp'
+            remote_compute.execute(
+                "screen -S download -d -m bash -c 'mkdir -p {0} &&"
+                " cd {0} && wget --limit-rate=100k {1}'".format(file_path,
+                                                                DOWNLOAD_LINK))
+            try:
+                wait(
+                    lambda: remote_compute.execute("ls -1 {0}/{1}".format(
+                        file_path, file_name))['exit_code'] == 0, timeout=60)
+            except TimeoutError:
+                raise TimeoutError(
+                    "File download was not started")
+            file_size1 = get_file_size(remote_compute, file_name, file_path)
+            time.sleep(60)
+            file_size2 = get_file_size(remote_compute, file_name, file_path)
+            assert_true(file_size2 > file_size1,
+                        "File download was interrupted, size of downloading "
+                        "does not change")
         devops_node.destroy()
+
         try:
             wait(
                 lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
@@ -536,10 +537,12 @@ class TestHaFailoverBase(TestBasic):
         except TimeoutError:
             raise TimeoutError(
                 "Primary controller was not destroyed")
-        assert_true(
-            check_ping(remote_compute, DNS, deadline=120, interval=10),
-            "No Internet access from {0}".format(node['fqdn'])
-        )
+
+        with self.fuel_web.get_ssh_for_node('slave-05') as remote_compute:
+            assert_true(
+                check_ping(remote_compute, DNS, deadline=120, interval=10),
+                "No Internet access from {0}".format(node['fqdn'])
+            )
         if OPENSTACK_RELEASE == OPENSTACK_RELEASE_UBUNTU:
             file_size1 = get_file_size(remote_compute, file_name, file_path)
             time.sleep(60)
