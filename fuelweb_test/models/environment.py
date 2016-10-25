@@ -413,18 +413,27 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
         admin = self.d_env.nodes().admin
         self.d_env.start([admin])
 
-        logger.info("Waiting for admin node to start up")
-        wait(lambda: admin.driver.node_active(admin), 60,
-             timeout_msg='Admin node startup timeout')
-        logger.info("Proceed with installation")
-        # update network parameters at boot screen
-        admin.send_keys(self.get_keys(admin, custom=custom,
-                                      build_images=build_images,
-                                      iso_connect_as=iso_connect_as))
-        if settings.SHOW_FUELMENU:
-            self.wait_for_fuelmenu()
-        else:
-            self.wait_for_provisioning()
+        def provision_admin(admin_node):
+            logger.info("Waiting for admin node to start up")
+            wait(lambda: admin.driver.node_active(admin_node), 60,
+                 timeout_msg='Admin node startup timeout')
+            logger.info("Proceed with installation")
+            # update network parameters at boot screen
+            admin_node.send_keys(self.get_keys(admin_node, custom=custom,
+                                          build_images=build_images,
+                                          iso_connect_as=iso_connect_as))
+            if settings.SHOW_FUELMENU:
+                self.wait_for_fuelmenu()
+            else:
+                self.wait_for_provisioning()
+
+        try:
+            provision_admin(admin)
+        except Exception as e:
+            logger.info('Master node restart: LP1587411')
+            logger.info('Exception is: {e}'.format(e=e))
+            admin.reset()
+            provision_admin(admin)
 
         self.set_admin_ssh_password()
 
