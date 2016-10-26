@@ -958,7 +958,7 @@ def check_oswl_stat(postgres_actions, remote_collector, master_uid,
          'volume': 0,
          'image': 0,
          'tenant': 2,
-         'keystone_user': 8
+         'keystone_user': 7
          },
         'modified':
         {'vm': 0,
