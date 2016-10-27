@@ -1,0 +1,7 @@
+---
+configuration:
+nova_config:
+  data:
+    DEFAULT/debug:
+      value: True
+
