@@ -357,27 +357,23 @@ class CommandLine(TestBasic):
         assert_true(check_cobbler_node_exists(remote, node_id),
                     "node-{0} is not found".format(node_id))
         self.env.d_env.nodes().slaves[2].destroy()
-        try:
-            wait(
-                lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
-                    self.env.d_env.nodes().
-                    slaves[2])['online'], timeout=60 * 6)
-        except TimeoutError:
-            raise
+        wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
+            self.env.d_env.nodes().
+            slaves[2])['online'], timeout=60 * 6)
+
+        remote = self.env.d_env.get_admin_remote()
         assert_true(
             remote.execute('fuel node --node-id {0} --delete-from-db'.
                            format(node_id))['exit_code'] == 0,
             "Offline node-{0} was not deleted from database".format(node_id)
         )
-        try:
-            wait(
-                lambda: not remote.execute(
-                    "fuel node | awk '{{print $1}}' | grep -w '{0}'".
-                    format(node_id))['exit_code'] == 0, timeout=60 * 2)
-        except TimeoutError:
-            raise TimeoutError(
-                "After deletion node-{0} is found in fuel list".
-                format(node_id))
+        wait(
+            lambda: not remote.execute(
+                "fuel node | awk '{{print $1}}' | grep -w '{0}'".
+                format(node_id))['exit_code'] == 0,
+            timeout=60 * 2,
+            timeout_msg="After deletion node-{0} is found in fuel list".
+            format(node_id))
         assert_false(check_cobbler_node_exists(remote, node_id),
                      "After deletion node-{0} is found in cobbler list".
                      format(node_id))
