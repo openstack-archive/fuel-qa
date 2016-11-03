@@ -247,9 +247,20 @@ def get_tests_groups_from_jenkins(runner_name, build_number, distros):
         groups = re.findall(TEST_GROUP_PATTERN, console)
 
         if not groups:
-            logger.error("No test group found in console of the job {0}/{1}"
-                         .format(b['jobName'], b['buildNumber']))
-            continue
+            # maybe it's failed baremetal job?
+            # because of a design baremetal tests run pre-setup job
+            # and when it fails there are no test groups in common meaning:
+            # groups which could be parsed by TEST_GROUP_PATTERN
+            baremetal_pattern = re.compile(r'Jenkins Build.*jenkins-(.*)-\d+')
+            baremetal_groups = re.findall(baremetal_pattern, console)
+            if not baremetal_groups:
+                logger.error(
+                    "No test group found in console of the job {0}/{1}".format
+                    (b['jobName'], b['buildNumber']))
+                continue
+            # we should get the group via jobName because the test group name
+            # inside the log could be cut and some symbols will be changed to *
+            groups = b['jobName'].split('.')
         # Use the last group (there can be several groups in upgrade jobs)
         test_group = groups[-1]
 
