@@ -204,7 +204,7 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
             "label": "UbuntuBootstrap",
             "extra-dir": ["/root/inject/"],
             "extend-kopts": "'{0}'".format(" ".join(kernel_cmdline)),
-            "kernel-flavor": "linux-generic-lts-saucy-eol-upgrade",
+            "kernel-flavor": "linux-generic-lts-xenial",
             "output-dir": "/tmp",
             "package": ["fuse", "sshfs"],
         }
