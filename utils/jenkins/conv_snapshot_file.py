@@ -100,7 +100,7 @@ def write_test_vars(filename, test_variables):
     with open(filename, 'wt') as f:
         f.write(
             '\n'.join(
-                ["{0}='{1}'".format(k.upper(), v)
+                ["export {0}='{1}'".format(k.upper(), v)
                  for k, v in test_variables.items()]
             )
         )
