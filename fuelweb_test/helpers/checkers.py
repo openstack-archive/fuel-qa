@@ -48,6 +48,38 @@ ssh_manager = SSHManager()
 
 
 @logwrap
+def check_partition_exists(ip, disk, size_in_mb):
+    """Check if exists partition at node
+
+    :type ip: str
+    :type disk: str
+    :param ip: ip address of node
+    :param disk: partition name
+    :param size_in_mb: size of partition
+    :return: bool (True if disk exists)
+    """
+    disks = ssh_manager.execute(
+        ip, "lsblk -lb -o NAME,FSTYPE,SIZE")['stdout']
+    disks = [x.split() for x in disks if 'LVM2_member' in x]
+    cur_disks = [x for x in disks if disk in x[0]]
+
+    for vol in cur_disks:
+        real_size = int(vol[2]) / 1024 / 1024
+        if abs(float(real_size) / float(size_in_mb) - 1) < 0.1:
+            logger.info(
+                'Partition exists: {0}, expected size {1} '
+                'real size {2}'.format(vol[0], size_in_mb, real_size))
+            return True
+    logger.error('Partition not exists: {0}, expected size {1} '.format(
+        disk, size_in_mb))
+    for vol in disks:
+        real_size = int(vol[2]) / 1024 / 1024
+        logger.error('Available disk {0} with: {1} mb'.format(
+            vol[0], real_size))
+    return False
+
+
+@logwrap
 def validate_minimal_amount_nodes(
         nodes, expected_amount,
         state='discover', online=True):
