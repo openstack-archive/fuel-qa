@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites>
+	<testsuite name="firefox on any platform" failures="0" skipped="0" tests="10" time="85.421">
+		<testsuite name="Neutron VLAN segmentation" failures="0" skipped="0" tests="7" time="65.469">
+			<testcase name="Check no network settings on &quot;Settings&quot; tab" time="0.753" status="0"/>
+			<testcase name="User returns to the selected segment on &quot;Networks&quot; tab" time="3.342" status="0"/>
+			<testcase name="Check &quot;Node Network Groups&quot; segment on &quot;Networks&quot; tab" time="5.523" status="0"/>
+			<testcase name="Check &quot;Settings&quot; segment on &quot;Networks&quot; tab" time="3.309" status="0"/>
+			<testcase name="Check &quot;Network Verification&quot; segment on &quot;Networks&quot; tab" time="1.946" status="0"/>
+			<testcase name="Success network verification exists only on &quot;Network Verification&quot; segment" time="17.375" status="0"/>
+			<testcase name="Failed network verification presents on each subtab on &quot;Networks&quot; tab" time="5.587" status="0"/>
+		</testsuite>
+		<testsuite name="Neutron tunneling segmentation" failures="0" skipped="0" tests="3" time="19.929">
+			<testcase name="Check &quot;Node Network Groups&quot; segment on &quot;Networks&quot; tab" time="4.943" status="0"/>
+			<testcase name="Check &quot;Settings&quot; segment on &quot;Networks&quot; tab" time="2.385" status="0"/>
+			<testcase name="Check &quot;Network Verification&quot; segment on &quot;Networks&quot; tab" time="1.582" status="0"/>
+		</testsuite>
+	</testsuite>
+</testsuites>
