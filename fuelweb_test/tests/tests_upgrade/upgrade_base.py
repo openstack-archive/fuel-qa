@@ -19,11 +19,13 @@ from __future__ import unicode_literals
 from distutils.version import LooseVersion
 # pylint: enable=no-name-in-module
 # pylint: enable=import-error
+import re
 
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_not_equal
 from proboscis.asserts import assert_true
 from proboscis import SkipTest
+import requests
 import six
 
 from fuelweb_test import logger
@@ -130,6 +132,29 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
             "mv {cfg}.backup {cfg}".format(cfg=self.FUEL_MIRROR_CFG_FILE)]
         for cmd in cmds:
             admin_remote.check_call(cmd)
+
+    def upgrade_mcollective_agents(self):
+        """Upgrade mcollective agent on nodes according to upgrade runbook;
+        This actions WILL NOT be automated by octane
+        """
+        # Fetch latest available package
+        astute_deb_location = "http://mirror.fuel-infra.org/mos-repos/" \
+                              "ubuntu/snapshots/9.0-latest/pool/main/a/astute"
+        repo_content = requests.get(astute_deb_location).content
+        mco_package = re.findall('>(nailgun-mcagents_.*all\.deb)',
+                                 repo_content)[-1]
+
+        # Update package on each node; use curl for predictable file name
+        nodes = self.fuel_web.client.list_cluster_nodes(self.orig_cluster_id)
+        for node in nodes:
+            d_node = self.fuel_web.get_devops_node_by_nailgun_node(node)
+            remote = self.fuel_web.get_ssh_for_node(node_name=d_node.name)
+            remote.check_call("curl {repo}/{pkg} > {pkg}".format(
+                repo=astute_deb_location,
+                pkg=mco_package))
+            with remote.sudo():
+                remote.check_call("dpkg -i {pkg}".format(pkg=mco_package))
+                remote.check_call("service mcollective restart")
 
     def upgrade_release(self, use_net_template=False):
         self.show_step(self.next_step)

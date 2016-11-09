@@ -28,8 +28,7 @@ class TestOSupgrade(OSUpgradeBase):
         super(TestOSupgrade, self).__init__()
         self.old_cluster_name = self.cluster_names["ceph_ha"]
 
-    @test(depends_on_groups=['upgrade_ceph_ha_restore'],
-          groups=["os_upgrade_env"])
+    @test(groups=["os_upgrade_env"])
     @log_snapshot_after_test
     def os_upgrade_env(self):
         """Octane clone target environment
@@ -48,6 +47,8 @@ class TestOSupgrade(OSUpgradeBase):
         # some paranoid time sync sequence
         self.env.sync_time(["admin"])
         self.env.sync_time()
+
+        self.upgrade_mcollective_agents()
 
         self.install_octane()
 
