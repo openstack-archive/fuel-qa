@@ -131,6 +131,27 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
         for cmd in cmds:
             admin_remote.check_call(cmd)
 
+    def upgrade_mcollective_agents(self):
+        astute_deb_location = "http://mirror.fuel-infra.org/mos-repos/" \
+                              "ubuntu/snapshots/9.0-latest/pool/main/a/astute"
+        import requests
+        import re
+        repo_content = requests.get(astute_deb_location)._content
+        mco_package = re.findall('>(nailgun-mcagents_.*all\.deb)',
+                                 repo_content)[-1]
+        # import ipdb; ipdb.sset_trace()
+
+        nodes = self.fuel_web.client.list_cluster_nodes(self.orig_cluster_id)
+        for node in nodes:
+            d_node = self.fuel_web.get_devops_node_by_nailgun_node(node)
+            remote = self.fuel_web.get_ssh_for_node(node_name=d_node.name)
+            remote.check_call("curl {repo}/{pkg} > {pkg}".format(
+                repo=astute_deb_location,
+                pkg=mco_package))
+            with remote.sudo():
+                remote.check_call("dpkg -i {pkg}".format(pkg=mco_package))
+        exit(1)
+
     def upgrade_release(self, use_net_template=False):
         self.show_step(self.next_step)
 
