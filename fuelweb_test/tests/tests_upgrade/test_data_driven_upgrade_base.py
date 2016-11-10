@@ -326,8 +326,6 @@ class DataDrivenUpgradeBase(TestBasic):
         if self.fuel_version >= LooseVersion('8.0'):
             self.fuel_web.change_default_network_settings()
 
-        n_nodes = self.fuel_web.client.list_nodes()
-        d_nodes = self.fuel_web.get_devops_nodes_by_nailgun_nodes(n_nodes)
         discover_n_nodes = [node for node in self.fuel_web.client.list_nodes()
                             if self.fuel_web.is_node_discovered(node)]
 
@@ -336,12 +334,6 @@ class DataDrivenUpgradeBase(TestBasic):
             discover_d_nodes = self.fuel_web.get_devops_nodes_by_nailgun_nodes(
                 discover_n_nodes)
             self.fuel_web.cold_restart_nodes(discover_d_nodes)
-
-        # LP: 1561092 mcollective can stuck after upgrade
-        logger.info("Applying fix for LP:1561092")
-        for node in d_nodes:
-            with self.fuel_web.get_ssh_for_node(node_name=node.name) as remote:
-                remote.check_call("service mcollective restart")
 
     def revert_source(self):
         assert_is_not_none(self.source_snapshot_name,
