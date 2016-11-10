@@ -203,12 +203,7 @@ class OpenStackActions(common.Common):
             return True
 
     def verify_srv_deleted(self, srv, timeout=150):
-        try:
-            server = self.get_instance_detail(srv.id)
-        except Exception:
-            logger.info("Server was successfully deleted")
-            return
-        helpers.wait(lambda: self.is_srv_deleted(server),
+        helpers.wait(lambda: self.is_srv_deleted(srv),
                      interval=2, timeout=timeout,
                      timeout_msg="Server wasn't deleted in "
                                  "{0} seconds".format(timeout))
