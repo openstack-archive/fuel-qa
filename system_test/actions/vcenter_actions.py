@@ -103,7 +103,7 @@ class VMwareActions(object):
             "vcenter_host": vc_host,
             "az_name": vc_az,
             "vcenter_password": vc_pwd,
-            "vcenter_insecure": ca_bypass,
+            "vcenter_security_disabled": ca_bypass,
             "vcenter_ca_file": ca_file
         }
 
@@ -126,7 +126,7 @@ class VMwareActions(object):
                 "vcenter_password": pwd,
                 "datacenter": dc,
                 "datastore": ds,
-                "vcenter_insecure": ca_bypass,
+                "vcenter_security_disabled": ca_bypass,
                 "ca_file": ca_file
             }
         }
