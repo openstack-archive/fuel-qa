@@ -37,6 +37,13 @@ class TestsConfigDBAPI(TestBasic):
     """Tests to cover cli interface of communication with
     configdb(tuningbox)"""
 
+    @staticmethod
+    def parse_cmd_out(json_out):
+        result = {}
+        for pair in json_out:
+            result[pair["Field"]] = pair["Value"]
+        return result
+
     @test(depends_on_groups=['create_component_and_env_configdb'],
           groups=['configdb_cli_interface'])
     @log_snapshot_after_test
@@ -113,6 +120,7 @@ class TestsConfigDBAPI(TestBasic):
         component = self.ssh_manager.check_call(
             self.ssh_manager.admin_ip,
             show_comp_cmd).stdout_json
+        component = self.parse_cmd_out(component)
         res_def = component['resource_definitions'][0]
         assert_equal(res_def['content'],
                      EXPECTED_RES_DEF['content'])
@@ -194,22 +202,24 @@ class TestsConfigDBAPI(TestBasic):
                           '-i {id} -l nodes  -f json'.format(id=res_id)
         out_lvl_comp = self.ssh_manager.check_call(
             admin_ip, create_lvl_comp).stdout_json
+        out_lvl_comp = self.parse_cmd_out(out_lvl_comp)
 
         self.show_step(8)  # Verify environment with component and level
-        env_lvl_comp = out_lvl_comp
-        assert_equal(env_lvl_comp['components'], [res_id])
-        assert_equal(env_lvl_comp['hierarchy_levels'], ['nodes'])
+        assert_equal(out_lvl_comp['components'], [res_id])
+        assert_equal(out_lvl_comp['hierarchy_levels'], ['nodes'])
 
         self.show_step(9)  # Create environment with component and two levels
         create_new_comp = 'fuel2 config comp create -n another_comp -f json'
         comp_res = self.ssh_manager.check_call(
             admin_ip, create_new_comp).stdout_json
+        comp_res = self.parse_cmd_out(comp_res)
         comp_id = comp_res['id']
         create_mult_env_cmd = 'fuel2 config env create ' \
                               '-l nodes,servers  -f json ' \
                               '-i{id1},{id2}'.format(id1=comp_id, id2=res_id)
         env_obj = self.ssh_manager.check_call(
             admin_ip, create_mult_env_cmd).stdout_json
+        env_obj = self.parse_cmd_out(env_obj)
 
         self.show_step(10)  # Verify environment with component and two levels
 
@@ -254,6 +264,7 @@ class TestsConfigDBAPI(TestBasic):
         create_new_comp = 'fuel2 config comp create -n another_comp -f json'
         comp_res = self.ssh_manager.check_call(
             admin_ip, create_new_comp).stdout_json
+        comp_res = self.parse_cmd_out(comp_res)
         comp_id = comp_res['id']
         create_res_cmd = 'fuel2 config def create --name res1 -i {id} ' \
                          '--content \'{{"var": 1}}\' ' \
@@ -261,6 +272,7 @@ class TestsConfigDBAPI(TestBasic):
         create_res_out = self.ssh_manager.check_call(
             admin_ip, create_res_cmd).stdout_json
         create_res_obj = create_res_out
+        create_res_obj = self.parse_cmd_out(create_res_obj)
         res_id = create_res_obj['id']
 
         self.show_step(3)  # Create environment with component
@@ -268,6 +280,7 @@ class TestsConfigDBAPI(TestBasic):
                               '-i{cid}'.format(cid=comp_id)
         env_obj = self.ssh_manager.check_call(
             admin_ip, create_mult_env_cmd).stdout_json
+        env_obj = self.parse_cmd_out(env_obj)
         env_id = env_obj['id']
 
         self.show_step(4)  # Get default resource value
@@ -277,7 +290,7 @@ class TestsConfigDBAPI(TestBasic):
         admin_ip = self.ssh_manager.admin_ip
         res_obj = self.ssh_manager.check_call(
             admin_ip, get_resource_cmd).stdout_json
-        assert_equal(res_obj, {})
+        assert_equal(res_obj, [])
 
         self.show_step(5)  # Update resource value
         set_resource_cmd = 'fuel2 config set --env {env_id} --resource ' \
@@ -295,6 +308,7 @@ class TestsConfigDBAPI(TestBasic):
         admin_ip = self.ssh_manager.admin_ip
         res_obj = self.ssh_manager.check_call(
             admin_ip, get_resource_cmd).stdout_json
+        res_obj = self.parse_cmd_out(res_obj)
         assert_equal(res_obj['key'], {'a': 1, 'b': None})
 
         self.show_step(7)  # Make snapshot
@@ -327,12 +341,14 @@ class TestsConfigDBAPI(TestBasic):
         create_new_comp = 'fuel2 config comp create -n another_comp -f json'
         comp_res = self.ssh_manager.check_call(
             admin_ip, create_new_comp).stdout_json
+        comp_res = self.parse_cmd_out(comp_res)
         comp_id = comp_res['id']
         create_res_cmd = 'fuel2 config def create --name res1 -i {id} ' \
                          '--content \'{{"var": 1}}\' ' \
                          '-t json -f json'.format(id=comp_id)
         create_res_obj = self.ssh_manager.check_call(
             admin_ip, create_res_cmd).stdout_json
+        create_res_obj = self.parse_cmd_out(create_res_obj)
         res_id = create_res_obj['id']
 
         self.show_step(3)  # Create environment with component and levels
@@ -340,6 +356,7 @@ class TestsConfigDBAPI(TestBasic):
                               '-i{cid} -f json'.format(cid=comp_id)
         env_obj = self.ssh_manager.check_call(
             admin_ip, create_mult_env_cmd).stdout_json
+        env_obj = self.parse_cmd_out(env_obj)
         env_id = env_obj['id']
         get_resource_cmd = 'fuel2 config get --env {env_id} ' \
                            '--resource {res_id} ' \
@@ -348,7 +365,7 @@ class TestsConfigDBAPI(TestBasic):
         res_obj = self.ssh_manager.check_call(
             admin_ip,
             get_resource_cmd).stdout_json
-        assert_equal(res_obj, {})
+        assert_equal(res_obj, [])
 
         self.show_step(4)  # Get default resource value by level
         get_lvl_res_cmd = 'fuel2 config get --env {env_id} ' \
@@ -357,7 +374,7 @@ class TestsConfigDBAPI(TestBasic):
                                                                  res_id=res_id)
         lvl_obj = self.ssh_manager.check_call(
             admin_ip, get_lvl_res_cmd).stdout_json
-        assert_equal(lvl_obj, {})
+        assert_equal(lvl_obj, [])
 
         self.show_step(5)  # Update resource value with level
         set_lvl_res_cmd = 'fuel2 config set --env {env_id} --resource ' \
@@ -375,6 +392,7 @@ class TestsConfigDBAPI(TestBasic):
                                                                  res_id=res_id)
         lvl_obj = self.ssh_manager.check_call(
             admin_ip, get_lvl_res_cmd).stdout_json
+        lvl_obj = self.parse_cmd_out(lvl_obj)
         assert_equal(lvl_obj['key']['a'], 1)
         assert_equal(lvl_obj['key']['b'], None)
 
@@ -385,7 +403,7 @@ class TestsConfigDBAPI(TestBasic):
                                                  res_id=res_id)
         lvl_obj = self.ssh_manager.check_call(
             admin_ip, get_lvl_res_cmd).stdout_json
-        assert_equal(lvl_obj, {})
+        assert_equal(lvl_obj, [])
 
         self.show_step(8)  # Make snapshot
         self.env.make_snapshot('configdb_resource_tests_lvl')
@@ -416,12 +434,14 @@ class TestsConfigDBAPI(TestBasic):
         create_new_comp = 'fuel2 config comp create -n another_comp -f json'
         comp_res = self.ssh_manager.check_call(
             admin_ip, create_new_comp).stdout_json
+        comp_res = self.parse_cmd_out(comp_res)
         comp_id = comp_res['id']
         create_res_cmd = 'fuel2 config def create --name res1 -i {id} ' \
                          '--content \'{{"var": 1}}\' ' \
                          '-t json -f json'.format(id=comp_id)
         create_res_obj = self.ssh_manager.check_call(
             admin_ip, create_res_cmd).stdout_json
+        create_res_obj = self.parse_cmd_out(create_res_obj)
         res_id = create_res_obj['id']
 
         self.show_step(3)  # Create environment for overrides
@@ -429,6 +449,7 @@ class TestsConfigDBAPI(TestBasic):
                               '-i{cid} -f json'.format(cid=comp_id)
         env_obj = self.ssh_manager.check_call(
             admin_ip, create_mult_env_cmd).stdout_json
+        env_obj = self.parse_cmd_out(env_obj)
         env_id = env_obj['id']
 
         self.show_step(4)  # Update resource value
@@ -457,6 +478,7 @@ class TestsConfigDBAPI(TestBasic):
         admin_ip = self.ssh_manager.admin_ip
         res_obj = self.ssh_manager.check_call(
             admin_ip, get_resource_cmd).stdout_json
+        res_obj = self.parse_cmd_out(res_obj)
         assert_equal(res_obj['key']['a'], 3)
         assert_equal(res_obj['key']['b'], None)
 
@@ -490,19 +512,22 @@ class TestsConfigDBAPI(TestBasic):
         create_new_comp = 'fuel2 config comp create -n another_comp -f json'
         comp_res = self.ssh_manager.check_call(
             admin_ip, create_new_comp).stdout_json
+        comp_res = self.parse_cmd_out(comp_res)
         comp_id = comp_res['id']
         create_res_cmd = 'fuel2 config def create --name res1 -i {id} ' \
                          '--content \'{{"var": 1}}\' ' \
                          '-t json -f json'.format(id=comp_id)
         create_res_obj = self.ssh_manager.check_call(
             admin_ip, create_res_cmd).stdout_json
+        create_res_obj = self.parse_cmd_out(create_res_obj)
         res_id = create_res_obj['id']
 
         self.show_step(3)  # Create environment for overrides
         create_mult_env_cmd = 'fuel2 config env create -l nodes ' \
-                              '-i{cid} -f json'.format(cid=comp_id)
+                              '-i {cid} -f json'.format(cid=comp_id)
         env_obj = self.ssh_manager.check_call(
             admin_ip, create_mult_env_cmd).stdout_json
+        env_obj = self.parse_cmd_out(env_obj)
         env_id = env_obj['id']
 
         self.show_step(4)  # Update resource value with level
@@ -529,6 +554,7 @@ class TestsConfigDBAPI(TestBasic):
                            '-f json'.format(env_id=env_id, res_id=res_id)
         res_obj = self.ssh_manager.check_call(
             admin_ip, get_resource_cmd).stdout_json
+        res_obj = self.parse_cmd_out(res_obj)
         assert_equal(res_obj['key']['a'], 3)
         assert_equal(res_obj['key']['b'], None)
 
@@ -539,7 +565,7 @@ class TestsConfigDBAPI(TestBasic):
 
         res_obj = self.ssh_manager.check_call(
             admin_ip, get_resource_cmd).stdout_json
-        assert_equal(res_obj, {})
+        assert_equal(res_obj, [])
 
         # TODO(akostrikov) Multiple levels
         self.show_step(8)  # Make snapshot
