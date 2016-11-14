@@ -274,5 +274,6 @@ def main():
                               tests=tests_descriptions,
                               check_all_sections=not options.check_one_section)
 
+
 if __name__ == '__main__':
     main()
