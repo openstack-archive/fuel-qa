@@ -500,6 +500,8 @@ class EnvironmentModel(object):
                         cmd=cmd
                     )
             self.admin_install_updates()
+            self.admin_reboot_and_wait()
+
         if settings.MULTIPLE_NETWORKS:
             self.describe_other_admin_interfaces(admin)
         self.nailgun_actions.set_collector_address(
@@ -839,3 +841,38 @@ class EnvironmentModel(object):
         return self.postgres_actions.run_query(
             db='nailgun',
             query="select master_node_uid from master_node_settings limit 1;")
+
+    def admin_reboot_and_wait(self):
+
+        admin = self.d_env.nodes().admin
+        mgr = self.ssh_manager
+
+        logger.info("Preparing to reboot master node")
+
+        init_uptime = self._get_uptime()
+
+        mgr.execute_on_remote(ip=self.admin_node_ip, cmd="reboot &")
+
+        time.sleep(60)
+        self._wait_uptime_changed(init_uptime, 360)
+        self.wait_for_provisioning()
+        admin.await(self.d_env.admin_net, timeout=360, by_port=8000)
+
+        logger.info("Master node successfully reloaded")
+
+    def _wait_uptime_changed(self, uptime, timeout=180):
+        try:
+            wait(lambda: uptime >= self._get_uptime(), 60, timeout)
+        except Exception:
+            logger.error("Node is not restarted in {0}".format(timeout))
+            raise
+
+    def _get_uptime(self):
+        try:
+            result = self.ssh_manager.execute_on_remote(
+                ip=self.admin_node_ip,
+                cmd="cat /proc/uptime"
+            )
+            return float(result['stdout_str'].split()[0])
+        except Exception:
+            return None
