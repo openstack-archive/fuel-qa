@@ -1,0 +1,4 @@
+configuration:
+    nova_config:
+        'DEFAULT/cpu_allocation_ratio':
+            value: 1.0
