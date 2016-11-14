@@ -1,0 +1,4 @@
+configuration:
+  file:
+    /root/testfile.cfg:
+      content: "myconfig = 1.0"
