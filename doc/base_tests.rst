@@ -795,8 +795,13 @@ Test SR-IOV
    :members:
 
 Test graph extension
-------------------------------------------------------
+--------------------
 .. automodule:: fuelweb_test.tests.test_graph_extension
+   :members:
+
+Test infrastructure as code extension
+-------------------------------------
+.. automodule:: fuelweb_test.tests.test_ias_git_extension.test_ias_git_extension
    :members:
 
 Test for mixed cluster
