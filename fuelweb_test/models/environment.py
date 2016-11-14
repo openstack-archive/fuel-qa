@@ -659,14 +659,22 @@ class EnvironmentModel(object):
     def admin_install_updates(self):
         """Install maintenance updates using the following commands (see docs
         for details):
+        dockerctl destroy all
         yum clean expire-cache
         yum update -y
         docker load -i /var/www/nailgun/docker/images/fuel-images.tar
-        dockerctl destroy all
+        reboot
         dockerctl start all
         dockerctl check
-        fuel release --sync-deployment-tasks --dir /etc/puppet/
         """
+        logger.info('Terminating all containers...')
+        self.ssh_manager.execute_on_remote(
+            ip=self.admin_node_ip,
+            cmd='dockerctl destroy all',
+            err_msg='Unable to destroy containers'
+        )
+        logger.info('Containers terminated')
+
         logger.info('Searching for updates..')
         update_command = 'yum clean expire-cache && ' \
                          'yum update -y 2>>/var/log/yum-update-error.log'
@@ -707,15 +715,21 @@ class EnvironmentModel(object):
 
         logger.info('{0} package(s) were updated'.format(updates_count))
 
+        logger.info('Loading new docker images...')
+        self.ssh_manager.execute_on_remote(
+            ip=self.admin_node_ip,
+            cmd='docker load -i /var/www/nailgun/docker/'
+                'images/fuel-images.tar',
+            err_msg='Unable to load images'
+        )
+        logger.info('Images loaded')
+
+        self.admin_reboot_and_wait()
+
         cmd = ' ; '.join(
-            ["docker load -i /var/www/nailgun/docker/images/fuel-images.tar",
-             "dockerctl destroy all",
-             "dockerctl start all",
-             "dockerctl check",
-             "fuel release --sync-deployment-tasks --dir /etc/puppet/ "
-             "--user={user} --password={pwd}"
-             "".format(user=settings.KEYSTONE_CREDS['username'],
-                       pwd=settings.KEYSTONE_CREDS['password'])])
+            ["dockerctl start all",
+             "dockerctl check"]
+        )
 
         result = self.ssh_manager.execute(
             ip=self.ssh_manager.admin_ip,
@@ -839,3 +853,57 @@ class EnvironmentModel(object):
         return self.postgres_actions.run_query(
             db='nailgun',
             query="select master_node_uid from master_node_settings limit 1;")
+
+    def admin_reboot_and_wait(self):
+
+        admin = self.d_env.nodes().admin
+        init_uptime = self._get_uptime()
+        logger.info(
+            "Kernel release before reboot: {0}".format(
+                self._get_kernel()))
+        try:
+            self.ssh_manager.execute_on_remote(
+                ip=self.admin_node_ip,
+                cmd="systemctl --force kexec"
+            )
+            time.sleep(5)
+            admin.reset()
+            time.sleep(300)
+            self.wait_for_provisioning(timeout=180)
+        except:
+            logger.info("Reboot failed. Hard resetting admin node")
+            admin.reset()
+            time.sleep(300)
+            self.wait_for_provisioning()
+
+        admin.await(self.d_env.admin_net, timeout=360, by_port=8000)
+        self._is_uptime_changed(init_uptime)
+
+        logger.info("Admin node restarted with kernel: {0}".format(
+            self._get_kernel()))
+
+    def _is_uptime_changed(self, uptime):
+        if uptime <= self._get_uptime():
+            raise Exception("Uptime was not changed, restart failed")
+
+    def _get_uptime(self):
+        try:
+            result = self.ssh_manager.execute_on_remote(
+                ip=self.admin_node_ip,
+                cmd="cat /proc/uptime"
+            )
+            logger.info("Got uptime: {0}".format(
+                result['stdout_str'].split()[0]))
+            return float(result['stdout_str'].split()[0])
+        except Exception:
+            return None
+
+    def _get_kernel(self):
+        try:
+            result = self.ssh_manager.execute_on_remote(
+                ip=self.admin_node_ip,
+                cmd="uname -r"
+            )
+            return result['stdout_str'].split()[0]
+        except Exception:
+            return None
