@@ -1,0 +1,12 @@
+nodes:
+  '1': node_1_configs
+  '2': node_2_configs
+roles:
+  'cinder': 'cinder_configs'
+  'compute': 'compute_configs'
+  'controller': 'controller_configs'
+  'primary-controller': 'controller_configs'
+#enc:
+#  script: tools/enc.py
+#  modulepath:
+#    - modules
