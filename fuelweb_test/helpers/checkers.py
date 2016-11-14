@@ -1336,7 +1336,7 @@ def fail_deploy(not_ready_transactions):
         cluster_info_template = "\n\tCluster ID: {cluster}{info}\n"
         task_details_template = (
             "\n"
-            "\t\t\tTask name: {deployment_graph_task_name}\n"
+            "\t\t\tTask name: {task_name}\n"
             "\t\t\t\tStatus: {status}\n"
             "\t\t\t\tStart:  {time_start}\n"
             "\t\t\t\tEnd:    {time_end}\n"
