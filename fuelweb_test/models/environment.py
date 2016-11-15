@@ -669,6 +669,72 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
 
         logger.info('Update successful')
 
+    def admin_install_updates_mos_mu(self, repo=None, repo_key=None):
+        """Update master node using mos-playbooks tool"""
+        logger.info('Searching for mos-playbooks package')
+        #
+        # search_command = 'yum search mos-playbooks'
+        #
+        # search_result = self.ssh_manager.check_call(
+        #     ip=self.ssh_manager.admin_ip,
+        #     command=search_command)
+        #
+        # assert_true(
+        #     "Warning: No matches found for: " not in
+        #     search_result.stderr_str,
+        #     "mos-playbooks wasn't found")
+
+        # install_command = 'yum install -y mos-playbooks'
+        install_command = 'yum install git -y ; git clone ' \
+                          'https://github.com/aepifanov/mos_mu.git ; ' \
+                          'cd mos_mu ; git checkout 9.2'
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=install_command)
+
+        logger.info('Prepare Fuel node for updating')
+        # mos_mu_path = 'mos_playbooks/mos_mu'
+        mos_mu_path = 'cd mos_mu ;'
+        prepare_command = '{} ./install_ansible.sh'.format(mos_mu_path)
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=prepare_command)
+
+        logger.info('Prepare Fuel node')
+
+        if repo:
+            if not repo_key:
+                repo_key=repo.replace('x86_64', 'RPM-GPG-KEY-mos9.0')
+            ext_vars = \
+                '-e \'{{"mos9_centos_repo":"{0}", "mos9_GPG_KEY":"{1}"}}\'' \
+                ''.format(repo, repo_key)
+        else:
+            ext_vars = ''
+
+        command = '{0} ansible-playbook playbooks/mos9_prepare_fuel.yml ' \
+                  '{1}'.format(mos_mu_path, ext_vars)
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=command)
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=command)
+
+        logger.info('Update Fuel node')
+        update_command = \
+            '{} ansible-playbook playbooks/update_fuel.yml ' \
+            '-e \'{{"rebuild_bootstrap":false}}\''.format(mos_mu_path)
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=update_command)
+
+        logger.info('Update Fuel node was successful')
+
     # Modifies a resolv.conf on the Fuel master node and returns
     # its original content.
     # * adds 'nameservers' at start of resolv.conf if merge=True
