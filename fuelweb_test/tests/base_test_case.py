@@ -273,7 +273,12 @@ class TestBasic(object):
                         replace_repos.replace_ubuntu_repos(
                             {'value': editor.content['BOOTSTRAP']['repos']},
                             upstream_host='archive.ubuntu.com')
-            self.env.admin_install_updates()
+            if settings.USE_MOS_MU_FOR_UPGRADE:
+                self.env.admin_install_updates_mos_mu(
+                    repo='http://mirror.fuel-infra.org/mos-repos/centos/'
+                         'mos9.0-centos7/updates/x86_64')
+            else:
+                self.env.admin_install_updates()
         if settings.MULTIPLE_NETWORKS:
             self.env.describe_other_admin_interfaces(
                 self.env.d_env.nodes().admin)

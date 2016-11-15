@@ -669,6 +669,63 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
 
         logger.info('Update successful')
 
+    def admin_install_updates_mos_mu(self, repo=None, repo_key=None):
+        """Update master node using mos-playbooks tool"""
+        logger.info('Installing mos-playbooks package from '
+                    '{}'.format(settings.MOS_MU_URL))
+
+        install_command = 'yum install -y {} && yum install -y ' \
+                          'mos-playbooks'.format(settings.MOS_MU_URL)
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=install_command)
+
+        logger.info('Prepare Fuel node for updating')
+        if settings.MOS_MU_PATH:
+            mos_mu_path = 'cd {} ;'.format(settings.MOS_MU_PATH)
+        else:
+            mos_mu_path = ''
+
+        prepare_command = '{} ./install_ansible.sh'.format(mos_mu_path)
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=prepare_command)
+
+        logger.info('Prepare Fuel node')
+
+        if repo:
+            if not repo_key:
+                repo_key = repo.replace('x86_64', 'RPM-GPG-KEY-mos9.0')
+            ext_vars = \
+                '-e \'{{"mos9_centos_repo":"{0}", "mos9_GPG_KEY":"{1}"}}\'' \
+                ''.format(repo, repo_key)
+        else:
+            ext_vars = ''
+
+        command = '{0} ansible-playbook playbooks/mos9_prepare_fuel.yml ' \
+                  '{1}'.format(mos_mu_path, ext_vars)
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=command)
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=command)
+
+        logger.info('Update Fuel node')
+        update_command = \
+            '{} ansible-playbook playbooks/update_fuel.yml ' \
+            '-e \'{{"rebuild_bootstrap":false}}\''.format(mos_mu_path)
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=update_command)
+
+        logger.info('Update Fuel node was successful')
+
     # Modifies a resolv.conf on the Fuel master node and returns
     # its original content.
     # * adds 'nameservers' at start of resolv.conf if merge=True
