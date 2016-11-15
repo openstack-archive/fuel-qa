@@ -32,6 +32,7 @@ from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_FROM_GIT
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
 from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
 from fuelweb_test.settings import KEYSTONE_CREDS
+from fuelweb_test.settings import MOS_MU_PATH
 from fuelweb_test.settings import PLUGIN_PACKAGE_VERSION
 from fuelweb_test.settings import FUEL_SETTINGS_YAML
 from fuelweb_test.settings import NESSUS_IMAGE_PATH
@@ -282,6 +283,102 @@ class AdminActions(BaseActions):
         if repo['name'] not in [value['name'] for value in repos['value']]:
             repos['value'].append(repo)
         return repos
+
+    def admin_install_updates(self):
+        """Update packages using yum and install updates via
+        update-master-node.sh tool"""
+        logger.info('Searching for python-cudet package')
+
+        search_command = 'yum search python-cudet'
+
+        search_result = self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=search_command)
+
+        assert_true(
+            "Warning: No matches found for: " not in search_result.stderr_str,
+            "python-cudet wasn't found")
+
+        install_command = 'yum install -y python-cudet'
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=install_command)
+
+        logger.info('prepare Fuel node for updating')
+        prepare_command = 'update-prepare prepare master'
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=prepare_command)
+
+        logger.info('update Fuel node')
+        update_command = 'update-prepare update master'
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=update_command)
+
+        logger.info('Update successful')
+
+    def admin_install_updates_mos_mu(self):
+        """Update master node using mos-playbooks tool"""
+        logger.info('Searching for mos-playbooks package')
+
+        search_command = 'yum search mos-playbooks'
+
+        search_result = self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=search_command)
+
+        assert_true(
+            "Warning: No matches found for: " not in search_result.stderr_str,
+            "mos-release wasn't found")
+
+        logger.info('Installing mos-playbooks package')
+
+        install_command = 'yum install -y mos-playbooks'
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=install_command)
+
+        logger.info('Install ansible')
+        mos_mu_path = 'cd {} ;'.format(MOS_MU_PATH)
+
+        prepare_command = '{} ./install_ansible.sh'.format(mos_mu_path)
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=prepare_command)
+
+        logger.info('Prepare Fuel node')
+
+        command = '{0} ansible-playbook playbooks/mos9_prepare_fuel.yml' \
+                  ''.format(mos_mu_path)
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=command)
+
+        logger.info('Update Fuel node')
+        update_command = \
+            '{} ansible-playbook playbooks/update_fuel.yml ' \
+            '-e \'{{"rebuild_bootstrap":false}}\''.format(mos_mu_path)
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=update_command)
+
+        logger.info('Enable kernel v4.4 for the further deployments')
+        command = '{0} ansible-playbook playbooks/' \
+                  'mos9_fuel_upgrade_kernel_4.4.yml'.format(mos_mu_path)
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=command)
+
+        logger.info('Update Fuel node was successful')
 
 
 class NailgunActions(BaseActions):
