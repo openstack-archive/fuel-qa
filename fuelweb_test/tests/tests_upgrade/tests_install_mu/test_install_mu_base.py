@@ -20,7 +20,6 @@ from proboscis.asserts import assert_true
 from fuelweb_test import logger
 from fuelweb_test.helpers.utils import pretty_log
 from fuelweb_test.helpers.utils import YamlEditor
-from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import settings
 from fuelweb_test.tests import test_cli_base
 
@@ -83,6 +82,10 @@ class MUInstallBase(test_cli_base.CommandLine):
                 command=cmd)
 
     def _check_for_potential_updates(self, cluster_id, updated=False):
+
+        if settings.USE_MOS_MU_FOR_UPGRADE:
+            logger.warning('SKIPPED DUE TO ABSENT OF DB FOR CUDET')
+            return True
 
         # "cudet" command don't have json output
         if updated:
@@ -165,6 +168,8 @@ class MUInstallBase(test_cli_base.CommandLine):
         )
 
     def _install_mu(self, cluster_id, repos='proposed'):
+        if settings.USE_MOS_MU_FOR_UPGRADE:
+            repos = 'mos9.2'
         if settings.UPGRADE_CLUSTER_FROM_PROPOSED:
             cmd = "fuel2 update install --env {} --repos {} " \
                   "--restart-rabbit --restart-mysql".format(cluster_id,
@@ -190,7 +195,9 @@ class MUInstallBase(test_cli_base.CommandLine):
                                      timeout=120 * 60)
 
     def _prepare_cluster_for_mu(self):
-
+        if settings.USE_MOS_MU_FOR_UPGRADE:
+            self._prepare_cluster_for_mu_via_mos_mu()
+            return True
         cluster_id = self.fuel_web.get_last_created_cluster()
 
         mos_repo = {
@@ -238,159 +245,15 @@ class MUInstallBase(test_cli_base.CommandLine):
         self.show_step(self.next_step)
         self.env.admin_actions.wait_for_fuel_ready(timeout=600)
 
-    @test(depends_on_groups=["deploy_multirole_compute_cinder"],
-          groups=["prepare_for_install_mu_non_ha_cluster"])
-    @log_snapshot_after_test
-    def prepare_for_install_mu_non_ha_cluster(self):
-        """Update master node and install packages for MU installing
+    def _prepare_cluster_for_mu_via_mos_mu(self):
 
-        Scenario:
-            1. Revert snapshot deploy_multirole_compute_cinder
-            2. Enable updates repo
-            3. Prepare master node for update
-            4. Update master node
-            5. Prepare env for update
-            6. Check Fuel services
+        cluster_id = self.fuel_web.get_last_created_cluster()
 
-        Duration: 20m
-        Snapshot: prepare_for_install_mu_non_ha_cluster
-        """
+        self.show_step(self.next_step)
+        self.show_step(self.next_step)
+        self.show_step(self.next_step)
+        self.show_step(self.next_step)
+        self.env.admin_install_updates_mos_mu(cluster_id)
 
-        self.check_env_var()
-        self.check_run("prepare_for_install_mu_non_ha_cluster")
-
-        self.show_step(1)
-        self.env.revert_snapshot("deploy_multirole_compute_cinder")
-
-        self._prepare_cluster_for_mu()
-
-        self.env.make_snapshot(
-            "prepare_for_install_mu_non_ha_cluster",
-            is_make=True)
-
-    @test(depends_on_groups=["ceph_rados_gw"],
-          groups=["prepare_for_install_mu_ha_cluster"])
-    @log_snapshot_after_test
-    def prepare_for_install_mu_ha_cluster(self):
-        """Update master node and install packages for MU installing
-
-        Scenario:
-            1. Revert snapshot ceph_rados_gw
-            2. Enable updates repo
-            3. Prepare master node for update
-            4. Update master node
-            5. Prepare env for update
-            6. Check Fuel services
-
-        Duration: 20m
-        Snapshot: prepare_for_install_mu_ha_cluster
-        """
-
-        self.check_env_var()
-
-        self.check_run("prepare_for_install_mu_ha_cluster")
-
-        self.show_step(1)
-        self.env.revert_snapshot("ceph_rados_gw")
-
-        self._prepare_cluster_for_mu()
-
-        self.env.make_snapshot(
-            "prepare_for_install_mu_ha_cluster",
-            is_make=True)
-
-    @test(depends_on_groups=["ironic_deploy_ceilometer"],
-          groups=["prepare_for_install_mu_services_1"])
-    @log_snapshot_after_test
-    def prepare_for_install_mu_services_1(self):
-        """Update master node and install packages for MU installing
-
-        Scenario:
-            1. Revert snapshot ironic_deploy_ceilometer
-            2. Enable updates repo
-            3. Prepare master node for update
-            4. Update master node
-            5. Prepare env for update
-            6. Check Fuel services
-
-        Duration: 20m
-        Snapshot: prepare_for_install_mu_services_1
-        """
-
-        self.check_env_var()
-
-        self.check_run("prepare_for_install_mu_services_1")
-
-        self.show_step(1)
-
-        self.env.revert_snapshot("ironic_deploy_ceilometer")
-
-        self._prepare_cluster_for_mu()
-
-        self.env.make_snapshot(
-            "prepare_for_install_mu_services_1",
-            is_make=True)
-
-    @test(depends_on_groups=["deploy_sahara_ha_tun"],
-          groups=["prepare_for_install_mu_services_2"])
-    @log_snapshot_after_test
-    def prepare_for_install_mu_services_2(self):
-        """Update master node and install packages for MU installing
-
-        Scenario:
-            1. Revert snapshot deploy_sahara_ha_tun
-            2. Enable updates repo
-            3. Prepare master node for update
-            4. Update master node
-            5. Prepare env for update
-            6. Check Fuel services
-
-        Duration: 20m
-        Snapshot: prepare_for_install_mu_services_2
-        """
-
-        self.check_env_var()
-
-        self.check_run("prepare_for_install_mu_services_2")
-
-        self.show_step(1)
-
-        self.env.revert_snapshot("deploy_sahara_ha_tun")
-
-        self._prepare_cluster_for_mu()
-
-        self.env.make_snapshot(
-            "prepare_for_install_mu_services_2",
-            is_make=True)
-
-    @test(depends_on_groups=["deploy_murano_ha_with_tun"],
-          groups=["prepare_for_install_mu_services_3"])
-    @log_snapshot_after_test
-    def prepare_for_install_mu_services_3(self):
-        """Update master node and install packages for MU installing
-
-        Scenario:
-            1. Revert snapshot deploy_sahara_ha_tun
-            2. Enable updates repo
-            3. Prepare master node for update
-            4. Update master node
-            5. Prepare env for update
-            6. Check Fuel services
-
-        Duration: 20m
-        Snapshot: prepare_for_install_mu_services_3
-        """
-
-        self.check_env_var()
-
-        self.check_run("prepare_for_install_mu_services_3")
-
-        self.show_step(1)
-
-        self.env.revert_snapshot("deploy_murano_ha_with_tun")
-
-        self._prepare_cluster_for_mu()
-
-        self.env.make_snapshot(
-            "prepare_for_install_mu_services_3",
-            is_make=True)
+        self.show_step(self.next_step)
+        self.env.admin_actions.wait_for_fuel_ready(timeout=600)

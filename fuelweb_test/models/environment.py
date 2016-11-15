@@ -669,6 +669,73 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
 
         logger.info('Update successful')
 
+    def admin_install_updates_mos_mu(self, cluster_id):
+        """Update master node using mos-playbooks tool"""
+        # logger.info('Searching for mos-playbooks package')
+        #
+        # search_command = 'yum search mos-playbooks'
+        #
+        # search_result = self.ssh_manager.check_call(
+        #     ip=self.ssh_manager.admin_ip,
+        #     command=search_command)
+        #
+        # assert_true(
+        #     "Warning: No matches found for: " not in
+        #     search_result.stderr_str,
+        #     "mos-playbooks wasn't found")
+
+        # install_command = 'yum install -y mos-playbooks'
+        install_command = 'yum install git -y ; git clone ' \
+                          'https://github.com/aepifanov/mos_mu.git ; ' \
+                          'cd mos_mu ; git checkout 9.2'
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=install_command)
+
+        logger.info('Prepare Fuel node for updating')
+        # mos_mu_path = 'mos_playbooks/mos_mu'
+        mos_mu_path = 'cd mos_mu ;'
+        prepare_command = '{} ./install_ansible.sh'.format(mos_mu_path)
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=prepare_command)
+
+        logger.info('Prepare Fuel node')
+        ext_vars = \
+            '\'{{"mos9_centos_repo":"{0}", "mos9_GPG_KEY":"{1}"}}\'' \
+            ''.format(settings.UPGRADE_CLUSTER_FROM_PROPOSED_RPM,
+                      settings.UPGRADE_CLUSTER_FROM_PROPOSED_RPM_KEY)
+        command = '{0} ansible-playbook playbooks/mos9_prepare_fuel.yml -e ' \
+                  '{1}'.format(mos_mu_path, ext_vars)
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=command)
+
+        logger.info('Prepare Enviroment')
+        ext_vars = '\'{{"env_id":{0}, "snapshot_repo":"{1}"}}\'' \
+                   ''.format(cluster_id,
+                             settings.MOS_UBUNTU_MIRROR_ID)
+        command = '{0} ansible-playbook playbooks/mos9_prepare_env.yml -e ' \
+                  '{1}'.format(mos_mu_path, ext_vars)
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=command)
+
+        logger.info('Update Fuel node')
+        update_command = \
+            '{} ansible-playbook playbooks/update_fuel.yml ' \
+            '-e \'{{"rebuild_bootstrap":false}}\''.format(mos_mu_path)
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=update_command)
+
+        logger.info('Update Fuel node was successful')
+
     # Modifies a resolv.conf on the Fuel master node and returns
     # its original content.
     # * adds 'nameservers' at start of resolv.conf if merge=True
