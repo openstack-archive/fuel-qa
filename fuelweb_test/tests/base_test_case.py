@@ -277,7 +277,10 @@ class TestBasic(object):
                         replace_repos.replace_ubuntu_repos(
                             {'value': editor.content['BOOTSTRAP']['repos']},
                             upstream_host='archive.ubuntu.com')
-            self.env.admin_install_updates()
+            if settings.UPDATE_MASTER_VIA_MOS_MU:
+                self.env.admin_install_updates_mos_mu()
+            else:
+                self.env.admin_install_updates()
         if settings.MULTIPLE_NETWORKS:
             self.env.describe_other_admin_interfaces(
                 self.env.d_env.nodes().admin)
@@ -400,13 +403,6 @@ class SetupEnvironment(TestBasic):
         with TimeStat("setup_environment", is_uniq=True):
             self.env.setup_environment()
             self.fuel_post_install_actions()
-        # TODO(snovikov): REMOVE THIS CODE WHEN A NEW KERNEL WILL BE DELIVERED
-        # BY ANSIBLE'S PLAYBOOKS https://github.com/aepifanov/mos_mu
-        # TODO(vkhlyunev): this env var is REALLY spike and I don't want to
-        # put additional variable to settings module
-        if not settings.get_var_as_bool("DISABLE_XENIAL_KERNEL", False):
-            logger.info('Enable kernel v4.4 for the further deployments')
-            self.rebuild_bootstrap_image_with_xenial_kernel()
         self.env.make_snapshot("empty", is_make=True)
         self.current_log_step = 0
 
