@@ -676,6 +676,65 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
 
         logger.info('Update successful')
 
+    def admin_install_updates_mos_mu(self):
+        """Update master node using mos-playbooks tool"""
+        logger.info('Searching for mos-playbooks package')
+
+        search_command = 'yum search mos-playbooks'
+
+        search_result = self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=search_command)
+
+        assert_true(
+            "Warning: No matches found for: " not in search_result.stderr_str,
+            "mos-release wasn't found")
+
+        logger.info('Installing mos-playbooks package')
+
+        install_command = 'yum install -y mos-playbooks'
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=install_command)
+
+        logger.info('Install ansible')
+        mos_mu_path = 'cd {} ;'.format(settings.MOS_MU_PATH)
+
+        prepare_command = '{} ./install_ansible.sh'.format(mos_mu_path)
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=prepare_command)
+
+        logger.info('Prepare Fuel node')
+
+        command = '{0} ansible-playbook playbooks/mos9_prepare_fuel.yml' \
+                  ''.format(mos_mu_path)
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=command)
+
+        logger.info('Update Fuel node')
+        update_command = \
+            '{} ansible-playbook playbooks/update_fuel.yml ' \
+            '-e \'{{"rebuild_bootstrap":false}}\''.format(mos_mu_path)
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=update_command)
+
+        logger.info('Enable kernel v4.4 for the further deployments')
+        command = '{0} ansible-playbook playbooks/' \
+                  'mos9_fuel_upgrade_kernel_4.4.yml'.format(mos_mu_path)
+
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=command)
+
+        logger.info('Update Fuel node was successful')
+
     # Modifies a resolv.conf on the Fuel master node and returns
     # its original content.
     # * adds 'nameservers' at start of resolv.conf if merge=True

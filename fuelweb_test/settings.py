@@ -672,6 +672,7 @@ UPDATE_FUEL_PATH = os.environ.get('UPDATE_FUEL_PATH', '~/fuel/pkgs/')
 UPDATE_FUEL_MIRROR = os.environ.get("UPDATE_FUEL_MIRROR", '').split()
 
 UPDATE_MASTER = get_var_as_bool('UPDATE_MASTER', False)
+UPDATE_MASTER_VIA_MOS_MU = get_var_as_bool('UPDATE_MASTER_VIA_MOS_MU', False)
 
 EMC_PLUGIN_PATH = os.environ.get('EMC_PLUGIN_PATH')
 EMC_SP_A_IP = os.environ.get('EMC_SP_A_IP')
@@ -763,10 +764,14 @@ UPGRADE_CLUSTER_FROM_PROPOSED = get_var_as_bool(
 
 UPGRADE_CLUSTER_FROM_PROPOSED_DEB = os.environ.get(
     "UPGRADE_CLUSTER_FROM_PROPOSED_DEB")
+UPGRADE_CLUSTER_FROM_PROPOSED_DEB_KEY = os.environ.get(
+    "UPGRADE_CLUSTER_FROM_PROPOSED_DEB_KEY", None)
 UPGRADE_CLUSTER_FROM_PROPOSED_RPM = os.environ.get(
     "UPGRADE_CLUSTER_FROM_PROPOSED_RPM")
 UPGRADE_CLUSTER_FROM_PROPOSED_RPM_KEY = os.environ.get(
     "UPGRADE_CLUSTER_FROM_PROPOSED_RPM_KEY")
+USE_MOS_MU_FOR_UPGRADE = get_var_as_bool("USE_MOS_MU_FOR_UPGRADE", False)
+MOS_MU_PATH = os.environ.get("MOS_MU_PATH", 'mos_playbooks/mos_mu')
 
 # Remove after 9.1 release
 CUDET_UBUNTU_DB_URL = os.environ.get("CUDET_UBUNTU_DB_URL")
