@@ -84,6 +84,10 @@ class MUInstallBase(test_cli_base.CommandLine):
 
     def _check_for_potential_updates(self, cluster_id, updated=False):
 
+        if settings.USE_MOS_MU_FOR_UPGRADE:
+            logger.warning('SKIPPED DUE TO ABSENT OF DB FOR CUDET')
+            return True
+
         # "cudet" command don't have json output
         if updated:
             cmd = "cudet -e {}".format(cluster_id)
@@ -157,12 +161,6 @@ class MUInstallBase(test_cli_base.CommandLine):
             "/n{}".format(pretty_log(std_out)))
 
         # step 4 of workaround -discard changes in cudet main.py
-
-        cmd = "mv /tmp/main.py {}".format(cudet_file_path)
-        self.ssh_manager.check_call(
-            ip=self.ssh_manager.admin_ip,
-            command=cmd
-        )
 
     def _install_mu(self, cluster_id, repos='proposed'):
         if settings.UPGRADE_CLUSTER_FROM_PROPOSED:
@@ -238,9 +236,49 @@ class MUInstallBase(test_cli_base.CommandLine):
         self.show_step(self.next_step)
         self.env.admin_actions.wait_for_fuel_ready(timeout=600)
 
+    def _prepare_cluster_for_mu2(self):
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        if settings.UPGRADE_CLUSTER_FROM_PROPOSED:
+            proposed = {
+                'name': 'proposed',
+                'section': 'main restricted',
+                'uri': settings.UPGRADE_CLUSTER_FROM_PROPOSED_DEB,
+                'priority': 1200,
+                'suite':
+                    'mos9.0-proposed',
+                'type': 'deb'}
+
+            self._add_cluster_repo(cluster_id, proposed)
+
+            self.show_step(self.next_step)
+            logger.warning('STEP SKIPPED DUE TO UPDATE VIA MOS MU TOOL')
+
+            with YamlEditor(settings.FUEL_SETTINGS_YAML,
+                            ip=self.env.get_admin_node_ip()) as editor:
+                editor.content['BOOTSTRAP']['repos'].append(proposed)
+
+            if settings.UPGRADE_CLUSTER_FROM_PROPOSED_DEB_KEY:
+                key = settings.UPGRADE_CLUSTER_FROM_PROPOSED_DEB_KEY
+                cmd = 'wget -qO - {} | sudo apt-key add -'.format(key)
+                nodes = self.fuel_web.client.list_cluster_nodes(
+                    cluster_id=cluster_id)
+                for node in nodes:
+                    logger.debug("Import GPG key on {}".format(
+                        node["hostname"]))
+                    self.ssh_manager.check_call(node['ip'], cmd)
+
+        self.show_step(self.next_step)
+        self.show_step(self.next_step)
+        self.show_step(self.next_step)
+        self.env.admin_install_updates_mos_mu(cluster_id)
+
+        self.show_step(self.next_step)
+        self.env.admin_actions.wait_for_fuel_ready(timeout=600)
+
     @test(depends_on_groups=["deploy_multirole_compute_cinder"],
           groups=["prepare_for_install_mu_non_ha_cluster"])
-    @log_snapshot_after_test
     def prepare_for_install_mu_non_ha_cluster(self):
         """Update master node and install packages for MU installing
 
@@ -262,8 +300,10 @@ class MUInstallBase(test_cli_base.CommandLine):
         self.show_step(1)
         self.env.revert_snapshot("deploy_multirole_compute_cinder")
 
-        self._prepare_cluster_for_mu()
-
+        if settings.USE_MOS_MU_FOR_UPGRADE:
+            self._prepare_cluster_for_mu2()
+        else:
+            self._prepare_cluster_for_mu()
         self.env.make_snapshot(
             "prepare_for_install_mu_non_ha_cluster",
             is_make=True)
