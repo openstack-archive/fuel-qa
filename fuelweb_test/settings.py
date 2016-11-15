@@ -762,10 +762,18 @@ UPGRADE_CLUSTER_FROM_PROPOSED = get_var_as_bool(
 
 UPGRADE_CLUSTER_FROM_PROPOSED_DEB = os.environ.get(
     "UPGRADE_CLUSTER_FROM_PROPOSED_DEB")
+UPGRADE_CLUSTER_FROM_PROPOSED_DEB_KEY = os.environ.get(
+    "UPGRADE_CLUSTER_FROM_PROPOSED_DEB_KEY", None)
 UPGRADE_CLUSTER_FROM_PROPOSED_RPM = os.environ.get(
     "UPGRADE_CLUSTER_FROM_PROPOSED_RPM")
 UPGRADE_CLUSTER_FROM_PROPOSED_RPM_KEY = os.environ.get(
     "UPGRADE_CLUSTER_FROM_PROPOSED_RPM_KEY")
+USE_MOS_MU_FOR_UPGRADE = get_var_as_bool("USE_MOS_MU_FOR_UPGRADE", False)
+MOS_MU_PATH = os.environ.get("MOS_MU_PATH", 'mos_playbooks/mos_mu')
+MOS_MU_URL = os.environ.get(
+    "MOS_MU_URL", 'http://mirror.fuel-infra.org/mos-repos/centos/'
+                  'mos9.0-centos7/snapshots/proposed-latest/x86_64/'
+                  'Packages/mos-release-9.2-0.1.beta.el7.noarch.rpm')
 
 # Remove after 9.1 release
 CUDET_UBUNTU_DB_URL = os.environ.get("CUDET_UBUNTU_DB_URL")
