@@ -207,5 +207,6 @@ def main():
 
     write_test_vars(SNAPSHOT_OUTPUT_FILE, test_variables)
 
+
 if __name__ == '__main__':
     main()

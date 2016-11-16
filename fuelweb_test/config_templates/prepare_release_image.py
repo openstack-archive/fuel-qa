@@ -54,5 +54,6 @@ def execute():
                         "{cluster.id}",
                         release_str))
 
+
 if __name__ == '__main__':
     execute()
