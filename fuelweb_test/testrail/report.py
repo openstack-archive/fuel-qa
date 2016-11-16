@@ -591,5 +591,6 @@ def main():
             make_bug_statistics(tests_results, operation_systems)
 
 
+
 if __name__ == "__main__":
     main()
