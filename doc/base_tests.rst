@@ -795,11 +795,16 @@ Test SR-IOV
    :members:
 
 Test graph extension
-------------------------------------------------------
+--------------------
 .. automodule:: fuelweb_test.tests.test_graph_extension
    :members:
 
 Test for mixed cluster
 ----------------------
 .. automodule:: fuelweb_test.tests.tests_upgrade.test_add_upgraded_node_to_cluster
+   :members:
+
+Test Multiqueue
+---------------
+.. automodule:: fuelweb_test.tests.test_multiqueue
    :members:
