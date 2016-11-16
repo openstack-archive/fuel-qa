@@ -80,6 +80,7 @@ class TestCaseRepository(set):
         raise AttributeError("'TestCaseRepository' object has no attribute "
                              " 'update'")
 
+
 Repository = TestCaseRepository()
 
 

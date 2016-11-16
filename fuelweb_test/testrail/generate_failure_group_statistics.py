@@ -840,5 +840,6 @@ def main():
             logger.info('Statistics have not been published'
                         'due to internal issue')
 
+
 if __name__ == '__main__':
     sys.exit(main())
