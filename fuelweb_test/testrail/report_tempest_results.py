@@ -277,5 +277,6 @@ def main():
     LOG.info('The results of Tempest tests have been uploaded.')
     LOG.info('Report URL: {0}'.format(test_plan['url']))
 
+
 if __name__ == "__main__":
     main()
