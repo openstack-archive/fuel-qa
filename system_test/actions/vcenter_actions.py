@@ -294,7 +294,7 @@ class VMwareActions(object):
             'host_username': az['vcenter_username'],
             'host_password': az['vcenter_password'],
             'host_ip': az['vcenter_host'],
-            'insecure': az['vcenter_insecure']
+            'insecure': az['vcenter_security_disabled']
         }
         return conf_dict
 
