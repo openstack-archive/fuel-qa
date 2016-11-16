@@ -260,6 +260,19 @@ def update_fuel(func):
             cluster_id = environment.fuel_web.get_last_created_cluster()
 
             if centos_files_count > 0:
+                with environment.d_env.get_admin_remote() as remote:
+                    # Update packages on master node
+                    remote.execute(
+                        'dockerctl destroy all; '
+                        'docker rmi -f $(docker images -q); '
+                        'systemctl stop docker.service; '
+                        'yum -y install yum-plugin-priorities;'
+                        'yum clean expire-cache; yum update -y; '
+                        'sleep 60; '
+                        'systemctl start docker.service; '
+                        'docker load -i /var/www/nailgun/docker/images/fuel-images.tar; '
+                        'dockerctl start all')
+
                 environment.docker_actions.execute_in_containers(
                     cmd='yum -y install yum-plugin-priorities')
 
@@ -267,12 +280,6 @@ def update_fuel(func):
                 environment.docker_actions.execute_in_containers(
                     cmd='yum clean expire-cache; yum update -y')
                 environment.docker_actions.restart_containers()
-
-                with environment.d_env.get_admin_remote() as remote:
-                    # Update packages on master node
-                    remote.execute(
-                        'yum -y install yum-plugin-priorities;'
-                        'yum clean expire-cache; yum update -y')
 
                 # Add auxiliary repository to the cluster attributes
                 if settings.OPENSTACK_RELEASE_UBUNTU not in \
