@@ -40,6 +40,7 @@ class NoDebugMessageFilter(logging.Filter):
     def filter(self, record):
         return not record.levelno <= logging.DEBUG
 
+
 logging.getLogger('paramiko.transport').setLevel(logging.WARNING)
 logging.getLogger('paramiko.hostkeys').setLevel(logging.WARNING)
 logging.getLogger('iso8601.iso8601').addFilter(NoDebugMessageFilter())
@@ -61,6 +62,7 @@ def debug(logger):
             return result
         return wrapped
     return wrapper
+
 
 logwrap = debug(logger)
 
