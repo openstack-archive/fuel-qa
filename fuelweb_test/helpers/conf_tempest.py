@@ -153,6 +153,7 @@ def main():
     conf.configure()
     conf.copy_config()
 
+
 if __name__ == '__main__':
     logger.info('Starting tempest config generation.')
     main()
