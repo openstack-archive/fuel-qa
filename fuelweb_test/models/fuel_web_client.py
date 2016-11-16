@@ -766,7 +766,7 @@ class FuelWebClient29(object):
                     "vcenter_host": "",
                     "vcenter_password": "",
                     "datastore": "",
-                    "vcenter_insecure": True},
+                    "vcenter_security_disabled": True},
                 "availability_zones": [
                     {"vcenter_username": VCENTER_USERNAME,
                      "nova_computes": [
@@ -784,7 +784,7 @@ class FuelWebClient29(object):
                      "vcenter_host": VCENTER_IP,
                      "az_name": "vcenter",
                      "vcenter_password": VCENTER_PASSWORD,
-                     "vcenter_insecure": True
+                     "vcenter_security_disabled": True
 
                      }],
                 "network": {"esxi_vlan_interface": "vmnic0"}
