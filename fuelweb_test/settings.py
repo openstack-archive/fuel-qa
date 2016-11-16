@@ -24,6 +24,7 @@ def get_var_as_bool(name, default):
     value = os.environ.get(name, '')
     return _boolean_states.get(value.lower(), default)
 
+
 # Default timezone for clear logging
 TIME_ZONE = 'UTC'
 
@@ -46,6 +47,7 @@ INTERFACES_DICT = {
 # Refactor when additional logic is needed like info from master node/devops.
 def iface_alias(interface_name):
     return INTERFACES_DICT[interface_name]
+
 
 ISO_PATH = os.environ.get('ISO_PATH')
 LOGS_DIR = os.environ.get('LOGS_DIR', os.getcwd())
