@@ -85,6 +85,7 @@ OPENSTACK_RELEASE = os.environ.get(
     'OPENSTACK_RELEASE', OPENSTACK_RELEASE_UBUNTU).lower()
 
 RELEASE_VERSION = os.environ.get('RELEASE_VERSION', "mitaka")
+FUEL_RELEASE_VERSION = os.environ.get('RELEASE_VERSION', "9.2")
 
 # FIXME(mattmymo): Update CI jobs to use 'Ubuntu 14.04' for OPENSTACK_RELEASE
 if OPENSTACK_RELEASE == 'ubuntu':
