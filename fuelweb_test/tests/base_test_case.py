@@ -18,6 +18,7 @@ import time
 from proboscis import TestProgram
 from proboscis import SkipTest
 from proboscis import test
+from proboscis.asserts import assert_equal
 
 from fuelweb_test import logger
 from fuelweb_test import settings
@@ -365,6 +366,15 @@ class TestBasic(object):
         logger.debug("post-installation configuration of Fuel services")
         self.fuel_post_install_actions()
 
+    def check_fuel_version(self):
+        admin_ip = self.env.get_admin_node_ip()
+        cmd = "fuel --fuel-version --json"
+        output = self.ssh_manager.check_call(admin_ip, cmd).stdout_json
+        fuel_release = output['release']
+        err_msg = "Fuel version should be `{}` but it is `{}`".format(
+            settings.FUEL_RELEASE_VERSION, fuel_release)
+        assert_equal(fuel_release, settings.FUEL_RELEASE_VERSION, err_msg)
+
 
 @test
 class SetupEnvironment(TestBasic):
@@ -396,6 +406,7 @@ class SetupEnvironment(TestBasic):
             self.env.setup_environment()
             self.fuel_post_install_actions()
         self.env.make_snapshot("empty", is_make=True)
+        self.check_fuel_version()
         self.current_log_step = 0
 
     @test(groups=["setup_master_custom_manifests"])
