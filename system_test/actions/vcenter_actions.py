@@ -294,7 +294,7 @@ class VMwareActions(object):
             'host_username': az['vcenter_username'],
             'host_password': az['vcenter_password'],
             'host_ip': az['vcenter_host'],
-            'insecure': az['vcenter_insecure']
+            'insecure': az['vcenter_security_disabled']
         }
         return conf_dict
 
@@ -344,7 +344,7 @@ class VMwareActions(object):
             'vmware_host_ip': settings['vcenter_host'],
             'vmware_host_username': settings['vcenter_username'],
             'vmware_host_password': settings['vcenter_password'],
-            'vmware_insecure': settings['vcenter_insecure']
+            'vmware_insecure': settings['vcenter_security_disabled']
         }
         return conf_dict
 
@@ -383,7 +383,7 @@ class VMwareActions(object):
             'vmware_server_username': settings['vcenter_username'],
             'vmware_server_password': settings['vcenter_password'],
             'vmware_datastores': datastore,
-            'vmware_insecure': settings['vcenter_insecure']
+            'vmware_insecure': settings['vcenter_security_disabled']
         }
         return conf_dict
 
