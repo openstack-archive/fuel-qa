@@ -532,16 +532,23 @@ class EnvironmentModel(object):
     def admin_install_updates(self):
         """Install maintenance updates using the following commands (see docs
         for details):
+        dockerctl destroy all
         yum clean expire-cache
         yum update -y
+        reboot
         docker load -i /var/www/nailgun/docker/images/fuel-images.tar
-        dockerctl destroy all
         dockerctl start all
         dockerctl check
         fuel release --sync-deployment-tasks --dir /etc/puppet/
         """
-        logger.info('Searching for updates..')
+        logger.info('Start admin node update')
         admin_remote = self.d_env.get_admin_remote()
+        logger.info('Terminating all containers...')
+        admin_remote.execute('dockerctl destroy all')
+        logger.info('Containers terminated')
+
+        logger.info('Searching for updates..')
+
         update_command = 'yum clean expire-cache; yum update -y'
         update_result = admin_remote.execute(update_command)
         logger.info('Result of "{1}" command on master node: '
@@ -566,10 +573,16 @@ class EnvironmentModel(object):
             return
         logger.info('{0} packet(s) were updated'.format(updates_count))
 
+        self.admin_reboot_and_wait()
+
+        logger.info('Loading new docker images...')
+        admin_remote.execute('docker load -i /var/www/nailgun/docker/'
+                             'images/fuel-images.tar')
+        logger.info('Images loaded')
+
+        logger.info('Starting containers')
         cmd = ' ; '.join(
-            ["docker load -i /var/www/nailgun/docker/images/fuel-images.tar",
-             "dockerctl destroy all",
-             "dockerctl start all",
+            ["dockerctl start all",
              "dockerctl check",
              "fuel release --sync-deployment-tasks --dir /etc/puppet/ "
              "--user={user} --password={pwd}"
@@ -581,6 +594,7 @@ class EnvironmentModel(object):
         assert_equal(int(result['exit_code']), 0,
                      'bootstrap failed, '
                      'inspect logs for details')
+        logger.info('Admin node update complete')
 
     # Modifies a resolv.conf on the Fuel master node and returns
     # its original content.
@@ -664,3 +678,47 @@ class EnvironmentModel(object):
         return self.postgres_actions.run_query(
             db='nailgun',
             query="select master_node_uid from master_node_settings limit 1;")
+
+    def admin_reboot_and_wait(self):
+        admin = self.d_env.nodes().admin
+        init_uptime = self._get_uptime()
+        admin_remote = self.d_env.get_admin_remote()
+        logger.info(
+            "Kernel release before reboot: {0}".format(
+                self._get_kernel()))
+        try:
+            admin_remote.execute("reboot")
+            time.sleep(300)
+            self.wait_for_provisioning(timeout=300)
+        except:
+            logger.info("Reboot failed. Hard resetting admin node")
+            admin.reset()
+            time.sleep(300)
+            self.wait_for_provisioning()
+
+        self._is_uptime_changed(init_uptime)
+
+        logger.info("Admin node restarted with kernel: {0}".format(
+            self._get_kernel()))
+
+    def _is_uptime_changed(self, uptime):
+        if uptime <= self._get_uptime():
+            raise Exception("Uptime was not changed, restart failed")
+
+    def _get_uptime(self):
+        admin_remote = self.d_env.get_admin_remote()
+        try:
+            result = admin_remote.execute("cat /proc/uptime")
+            logger.info("Got uptime: {0}".format(
+                result.stdout_str.split()[0]))
+            return float(result.stdout_str.split()[0])
+        except Exception:
+            return None
+
+    def _get_kernel(self):
+        admin_remote = self.d_env.get_admin_remote()
+        try:
+            result = admin_remote.execute("uname -r")
+            return result.stdout_str.split()[0]
+        except Exception:
+            return None
