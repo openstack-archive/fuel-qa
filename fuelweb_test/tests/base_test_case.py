@@ -167,6 +167,55 @@ class TestBasic(object):
             return True
         return False
 
+    def rebuild_bootstrap_image_with_xenial_kernel(self):
+        # TODO(snovikov): REMOVE THIS CODE WHEN A NEW KERNEL WILL BE DELIVERED
+        # BY ANSIBLE'S PLAYBOOKS https://github.com/aepifanov/mos_mu
+        admin_ip = self.env.get_admin_node_ip()
+        target_path = "/etc/fuel-bootstrap-cli/fuel_bootstrap_cli.yaml"
+        backup = YamlEditor(target_path,
+                            ip=admin_ip
+                            ).get_content()
+        with YamlEditor(target_path,
+                        ip=admin_ip) as editor:
+            editor.content['kernel_flavor'] = 'linux-image-generic-lts-xenial'
+            editor.content['packages'] = [pkg for pkg in backup['packages']
+                                          if pkg != 'hpsa-dkms']
+
+        logger.info('start the build of ubuntu bootstrap image')
+        cmd = 'fuel-bootstrap build --activate --label bootstrap-kernel44'
+        self.ssh_manager.check_call(
+            ip=admin_ip,
+            command=cmd
+        )
+        logger.info('check that image was built')
+        cmd = 'fuel-bootstrap list | grep bootstrap-kernel44 | grep -q active'
+        self.ssh_manager.check_call(
+            ip=admin_ip,
+            command=cmd
+        )
+        # upload useful scripts
+        script_path = ('{0}/fuelweb_test/useful_scripts/'.format(
+            os.environ.get("WORKSPACE", "./")))
+        for script in os.listdir(script_path):
+            _path = os.path.join(script_path, script)
+            self.ssh_manager.upload_to_remote(
+                ip=admin_ip,
+                source=_path,
+                target='/tmp/'
+            )
+            # do executable
+            cmd = 'chmod +x /tmp/{}'.format(script)
+            self.ssh_manager.check_call(
+                ip=admin_ip,
+                command=cmd
+            )
+            # execute script
+            cmd = '/tmp/{}'.format(script)
+            self.ssh_manager.check_call(
+                ip=admin_ip,
+                command=cmd
+            )
+
     def fuel_post_install_actions(self,
                                   force_ssl=settings.FORCE_HTTPS_MASTER_NODE
                                   ):
@@ -347,6 +396,10 @@ class SetupEnvironment(TestBasic):
         with TimeStat("setup_environment", is_uniq=True):
             self.env.setup_environment()
             self.fuel_post_install_actions()
+        # TODO(snovikov): REMOVE THIS CODE WHEN A NEW KERNEL WILL BE DELIVERED
+        # BY ANSIBLE'S PLAYBOOKS https://github.com/aepifanov/mos_mu
+        logger.info('Enable kernel v4.4 for the further deployments')
+        self.rebuild_bootstrap_image_with_xenial_kernel()
         self.env.make_snapshot("empty", is_make=True)
         self.current_log_step = 0
 
