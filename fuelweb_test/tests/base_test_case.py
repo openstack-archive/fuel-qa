@@ -240,56 +240,8 @@ class TestBasic(object):
             logger.info('Enabled sending of statistics to {0}:{1}'.format(
                 settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
             ))
-        if settings.DISABLE_OFFLOADING:
-            logger.info(
-                '========================================'
-                'Applying workaround for bug #1526544'
-                '========================================'
-            )
-            # Disable TSO offloading for every network interface
-            # that is not virtual (loopback, bridges, etc)
-            ifup_local = (
-                """#!/bin/bash\n"""
-                """if [[ -z "${1}" ]]; then\n"""
-                """  exit\n"""
-                """fi\n"""
-                """devpath=$(readlink -m /sys/class/net/${1})\n"""
-                """if [[ "${devpath}" == /sys/devices/virtual/* ]]; then\n"""
-                """  exit\n"""
-                """fi\n"""
-                """ethtool -K ${1} tso off\n"""
-            )
-            cmd = (
-                "echo -e '{0}' | sudo tee /sbin/ifup-local;"
-                "sudo chmod +x /sbin/ifup-local;"
-            ).format(ifup_local)
-            self.ssh_manager.execute_on_remote(
-                ip=self.ssh_manager.admin_ip,
-                cmd=cmd
-            )
-            cmd = (
-                'for ifname in $(ls /sys/class/net); do '
-                'sudo /sbin/ifup-local ${ifname}; done'
-            )
-            self.ssh_manager.execute_on_remote(
-                ip=self.ssh_manager.admin_ip,
-                cmd=cmd
-            )
-            # Log interface settings
-            cmd = (
-                'for ifname in $(ls /sys/class/net); do '
-                '([[ $(readlink -e /sys/class/net/${ifname}) == '
-                '/sys/devices/virtual/* ]] '
-                '|| ethtool -k ${ifname}); done'
-            )
-            result = self.ssh_manager.execute_on_remote(
-                ip=self.ssh_manager.admin_ip,
-                cmd=cmd
-            )
-            logger.debug('Offloading settings:\n{0}\n'.format(
-                         ''.join(result['stdout'])))
-            if force_ssl:
-                self.env.enable_force_https(self.ssh_manager.admin_ip)
+        if force_ssl:
+            self.env.enable_force_https(self.ssh_manager.admin_ip)
 
     def reinstall_master_node(self):
         """Erase boot sector and run setup_environment"""
