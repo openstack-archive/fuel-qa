@@ -49,6 +49,8 @@ class TestOSupgrade(OSUpgradeBase):
         self.env.sync_time(["admin"])
         self.env.sync_time()
 
+        self.upgrade_mcollective_agents()
+
         self.install_octane()
 
         release_id = self.upgrade_release(use_net_template=False)
