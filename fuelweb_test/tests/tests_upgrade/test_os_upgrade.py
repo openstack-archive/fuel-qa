@@ -28,7 +28,8 @@ class TestOSupgrade(OSUpgradeBase):
         super(TestOSupgrade, self).__init__()
         self.old_cluster_name = self.cluster_names["ceph_ha"]
 
-    @test(groups=["os_upgrade_env"])
+    @test(depends_on_groups=['upgrade_ceph_ha_restore'],
+          groups=["os_upgrade_env"])
     @log_snapshot_after_test
     def os_upgrade_env(self):
         """Octane clone target environment
