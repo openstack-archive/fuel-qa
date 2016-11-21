@@ -3029,6 +3029,60 @@ class FuelWebClient29(object):
         }
         return _net_pool
 
+    def setup_hugepages(self, nailgun_node_id,
+                        hp_2mb=0, hp_1gb=0, hp_dpdk_mb=0):
+        node_attributes = self.client.get_node_attributes(nailgun_node_id)
+        node_attributes['hugepages']['nova']['value']['2048'] = hp_2mb
+        node_attributes['hugepages']['nova']['value']['1048576'] = hp_1gb
+        node_attributes['hugepages']['dpdk']['value'] = hp_dpdk_mb
+        self.client.upload_node_attributes(node_attributes, nailgun_node_id)
+
+    def check_dpdk(self, nailgun_node_id, net='private'):
+        compute_net = self.client.get_node_interfaces(nailgun_node_id)
+        dpdk_available = False
+        dpdk_enabled = False
+        for interface in compute_net:
+            if net not in [n['name'] for n in interface['assigned_networks']]:
+                continue
+            if 'dpdk' not in interface['interface_properties']:
+                continue
+
+            dpdk_available = interface['interface_properties']['dpdk'][
+                'available']
+            if 'enabled' in interface['interface_properties']['dpdk']:
+                dpdk_enabled = interface['interface_properties']['dpdk'][
+                    'enabled']
+            break
+
+        return {'available': dpdk_available, 'enabled': dpdk_enabled}
+
+    def enable_dpdk(self, nailgun_node_id, switch_to=True, net='private',
+                    forceEnable=False):
+        if not forceEnable:
+            assert_true(self.check_dpdk(nailgun_node_id, net=net)['available'],
+                        'DPDK not available on selected interface')
+
+        compute_net = self.client.get_node_interfaces(
+            nailgun_node_id)
+        for interface in compute_net:
+            for ids in interface['assigned_networks']:
+                if ids['name'] == net:
+                    if interface['type'] == 'bond':
+                        interface['bond_properties']['type__'] = 'dpdkovs'
+                        interface['interface_properties']['dpdk'].update(
+                            {'enabled': switch_to})
+                    else:
+                        interface['interface_properties']['dpdk'][
+                            'enabled'] = switch_to
+                    break
+
+            self.client.put_node_interfaces(
+                [{'id': nailgun_node_id, 'interfaces': compute_net}])
+
+        return self.check_dpdk(
+            nailgun_node_id, net=net)['enabled'] == switch_to
+
+
 
 class FuelWebClient30(FuelWebClient29):
     """FuelWebClient that works with fuel-devops 3.0
