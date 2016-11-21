@@ -27,6 +27,8 @@ from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
+from fuelweb_test.helpers.utils import check_setting_equal, \
+    check_setting_greater
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
@@ -36,11 +38,19 @@ class TestMultiqueue(TestBasic):
 
     def __init__(self):
         super(TestMultiqueue, self).__init__()
-        assert_true(settings.KVM_USE, "Multiqueue feature requires "
-                                      "KVM_USE=true env variable!")
-        assert_true(settings.HARDWARE["slave_node_cpu"] > 1,
-                    "Multiqueue feature requires more than 1 cpu for "
-                    "enabling queues!")
+        check_setting_equal('KVM_USE', True)
+        check_setting_greater('HARDWARE', 2, sub_setting='slave_node_cpu',
+                              env_var_name='SLAVE_NODE_CPU')
+
+    @staticmethod
+    def check_cpu_pinning_requirements():
+        check_setting_equal('KVM_USE', True)
+        check_setting_equal('HARDWARE', sub_setting='slave_node_cpu',
+                            expected_value=6, env_var_name='SLAVE_NODE_CPU')
+        check_setting_equal('HARDWARE', sub_setting='numa_nodes',
+                            expected_value=2, env_var_name='NUMA_NODES')
+        check_setting_equal('ACPI_ENABLE', True,
+                            env_var_name='DRIVER_ENABLE_ACPI')
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["multiqueue_base_check"])
@@ -151,3 +161,45 @@ class TestMultiqueue(TestBasic):
                      "RX queues count is not equal to vcpus count")
         assert_equal(result.stdout_str.count("tx"), vcpus,
                      "TX queues count is not equal to vcpus count")
+
+    @test(groups=["multiqueue_with_dpdk_and_numa"],
+          depends_on_groups=["prepare_slaves_5"])
+    def multiqueue_with_dpdk_and_numa(self):
+        """LALALA
+
+        Scenario:
+        1. lalala
+
+        """
+        self.check_cpu_pinning_requirements()
+        self.env.revert_snapshot("ready_with_5_slaves")
+        self.env.bootstrap_nodes([self.env.d_env.get_node(name='slave-06')])
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.multiqueue_with_dpdk.__name__,
+            settings={
+                'volumes_lvm': False,
+                'volumes_ceph': True,
+                'images_ceph': True,
+                'objects_ceph': True,}
+        )
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['compute', 'ceph-osd'],
+                'slave-05': ['compute', 'ceph-osd'],
+                'slave-06': ['compute', 'ceph-osd']
+            }
+        )
+        computes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['compute'], role_status='pending_roles')
+        for compute in computes:
+            self.fuel_web.setup_hugepages(
+                compute['id'], hp_2mb=512, hp_dpdk_mb=256)
+            self.fuel_web.enable_dpdk(compute['id'])
+            self.fuel_web.enable_cpu_pinning(compute['id'])
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.run_ostf(cluster_id)

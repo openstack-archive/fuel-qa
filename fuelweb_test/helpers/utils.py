@@ -1566,3 +1566,26 @@ def preserve_partition(admin_remote, node_id, partition):
     # Upload the updated disks config to the corresponding node
     admin_remote.execute("fuel node --node-id {0} "
                          "--disk --upload".format(str(node_id)))
+
+
+def get_setting_value_by_name(setting_name, sub_setting=None):
+    setting_value = getattr(settings, setting_name)
+    if sub_setting:
+        setting_value = setting_value[sub_setting]
+    return setting_value
+
+
+def check_setting_equal(setting_name, expected_value,
+                        sub_setting=None, env_var_name=None):
+    setting_value = get_setting_value_by_name(setting_name, sub_setting)
+    if not setting_value == expected_value:
+        env_var_name = env_var_name or setting_name
+        raise exceptions.FuelQAVariableNotSet(env_var_name, expected_value)
+
+
+def check_setting_greater(setting_name, expected_value,
+                          sub_setting=None, env_var_name=None):
+    setting_value = get_setting_value_by_name(setting_name, sub_setting)
+    if not setting_value > expected_value:
+        env_var_name = env_var_name or setting_name
+        raise exceptions.FuelQAVariableNotSet(env_var_name, expected_value)
