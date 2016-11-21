@@ -151,3 +151,41 @@ class TestMultiqueue(TestBasic):
                      "RX queues count is not equal to vcpus count")
         assert_equal(result.stdout_str.count("tx"), vcpus,
                      "TX queues count is not equal to vcpus count")
+
+    @test()
+    def multiqueue_with_dpdk(self):
+        """LALALA
+
+        Scenario:
+        1. lalala
+
+        """
+        self.env.revert_snapshot("ready_with_5_slaves")
+        self.env.bootstrap_nodes([self.env.d_env.get_node(name='slave-06')])
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.multiqueue_with_dpdk.__name__,
+            settings={
+                'volumes_lvm': False,
+                'volumes_ceph': True,
+                'images_ceph': True,
+                'objects_ceph': True,}
+        )
+
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['compute', 'ceph-osd'],
+                'slave-05': ['compute', 'ceph-osd'],
+                'slave-06': ['compute', 'ceph-osd']
+            }
+        )
+        computes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['compute'], role_status='pending_roles')
+        for compute in computes:
+            self.fuel_web.setup_hugepages(
+                compute['id'], hp_2mb=512, hp_dpdk_mb=256)
+            self.fuel_web.enable_dpdk(compute['id'])
+
