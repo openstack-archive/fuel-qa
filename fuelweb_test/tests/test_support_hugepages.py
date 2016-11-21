@@ -110,11 +110,11 @@ class SupportHugepages(TestBasic):
             raise exceptions.FuelQAVariableNotSet(
                 'DRIVER_ENABLE_ACPI', 'true')
 
-        if not settings.HARDWARE['numa_nodes'] == "2":
+        if settings.HARDWARE['numa_nodes'] != 2:
             raise exceptions.FuelQAVariableNotSet(
                 'NUMA_NODES', 2)
 
-        if not settings.HARDWARE['slave_node_cpu'] == "4":
+        if settings.HARDWARE['slave_node_cpu'] != 4:
             raise exceptions.FuelQAVariableNotSet(
                 'SLAVE_NODE_CPU', 4)
 
