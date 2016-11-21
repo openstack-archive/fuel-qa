@@ -675,6 +675,15 @@ class EnvironmentModel(object):
         )
         logger.info('Containers terminated')
 
+        # Working around the bug https://github.com/docker/docker/issues/3182
+        logger.info('Removing docker images')
+        self.ssh_manager.execute_on_remote(
+            ip=self.admin_node_ip,
+            cmd='docker rmi -f $(docker images -q)',
+            err_msg='Unable to remove images'
+        )
+        logger.info('Images removed')
+
         logger.info('Searching for updates..')
         update_command = 'yum clean expire-cache && ' \
                          'yum update -y 2>>/var/log/yum-update-error.log'
