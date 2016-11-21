@@ -91,61 +91,6 @@ class TestDPDK(TestBasic):
         os_conn.delete_instance(server)
         os_conn.delete_flavor(flavor)
 
-    def setup_hugepages(self, nailgun_node,
-                        hp_2mb=0, hp_1gb=0, hp_dpdk_mb=0):
-        node_attributes = self.fuel_web.client.get_node_attributes(
-            nailgun_node['id'])
-        node_attributes['hugepages']['nova']['value']['2048'] = hp_2mb
-        node_attributes['hugepages']['nova']['value']['1048576'] = hp_1gb
-        node_attributes['hugepages']['dpdk']['value'] = hp_dpdk_mb
-        self.fuel_web.client.upload_node_attributes(node_attributes,
-                                                    nailgun_node['id'])
-
-    def check_dpdk(self, nailgun_node, net='private'):
-        compute_net = self.fuel_web.client.get_node_interfaces(
-            nailgun_node['id'])
-        dpdk_available = False
-        dpdk_enabled = False
-        for interface in compute_net:
-            if net not in [n['name'] for n in interface['assigned_networks']]:
-                continue
-            if 'dpdk' not in interface['interface_properties']:
-                continue
-
-            dpdk_available = interface['interface_properties']['dpdk'][
-                'available']
-            if 'enabled' in interface['interface_properties']['dpdk']:
-                dpdk_enabled = interface['interface_properties']['dpdk'][
-                    'enabled']
-            break
-
-        return {'available': dpdk_available, 'enabled': dpdk_enabled}
-
-    def enable_dpdk(self, nailgun_node, switch_to=True, net='private',
-                    forceEnable=False):
-        if not forceEnable:
-            assert_true(self.check_dpdk(nailgun_node, net=net)['available'],
-                        'DPDK not available on selected interface')
-
-        compute_net = self.fuel_web.client.get_node_interfaces(
-            nailgun_node['id'])
-        for interface in compute_net:
-            for ids in interface['assigned_networks']:
-                if ids['name'] == net:
-                    if interface['type'] == 'bond':
-                        interface['bond_properties']['type__'] = 'dpdkovs'
-                        interface['interface_properties']['dpdk'].update(
-                            {'enabled': switch_to})
-                    else:
-                        interface['interface_properties']['dpdk'][
-                            'enabled'] = switch_to
-                    break
-
-            self.fuel_web.client.put_node_interfaces(
-                [{'id': nailgun_node['id'], 'interfaces': compute_net}])
-
-        return self.check_dpdk(nailgun_node, net=net)['enabled'] == switch_to
-
 
 @test(groups=["support_dpdk"])
 class SupportDPDK(TestDPDK):
@@ -153,7 +98,7 @@ class SupportDPDK(TestDPDK):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_cluster_with_dpdk"])
-    @log_snapshot_after_test
+    # @log_snapshot_after_test
     def deploy_cluster_with_dpdk(self):
         """Deploy cluster with DPDK
 
@@ -201,10 +146,12 @@ class SupportDPDK(TestDPDK):
             cluster_id, ['compute'], role_status='pending_roles')[0]
 
         self.show_step(4)
-        self.setup_hugepages(compute, hp_2mb=256, hp_dpdk_mb=128)
+        self.fuel_web.setup_hugepages(
+            compute['id'], hp_2mb=256, hp_dpdk_mb=128)
 
         self.show_step(5)
-        self.enable_dpdk(compute)
+        self.fuel_web.enable_dpdk(compute['id'])
+        import ipdb; ipdb.sset_trace()
 
         self.show_step(6)
         self.fuel_web.verify_network(cluster_id)
@@ -276,12 +223,13 @@ class SupportDPDK(TestDPDK):
             cluster_id, ['compute'], role_status='pending_roles')[0]
 
         self.show_step(4)
-        self.setup_hugepages(compute, hp_2mb=256, hp_dpdk_mb=128)
+        self.fuel_web.setup_hugepages(
+            compute['id'], hp_2mb=256, hp_dpdk_mb=128)
 
         self.show_step(5)
         assert_raises(
             exceptions.BadRequest,
-            self.enable_dpdk, compute,
+            self.fuel_web.enable_dpdk, compute['id'],
             forceEnable=True)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
@@ -324,7 +272,8 @@ class SupportDPDK(TestDPDK):
             cluster_id, ['compute'], role_status='pending_roles')[0]
 
         self.show_step(4)
-        self.setup_hugepages(compute, hp_2mb=256, hp_dpdk_mb=128)
+        self.fuel_web.setup_hugepages(
+            compute['id'], hp_2mb=256, hp_dpdk_mb=128)
 
         self.show_step(5)
         assigned_networks = {
@@ -338,7 +287,7 @@ class SupportDPDK(TestDPDK):
                                            interfaces_dict=assigned_networks)
         assert_raises(
             exceptions.BadRequest,
-            self.enable_dpdk, compute,
+            self.fuel_web.enable_dpdk, compute['id'],
             forceEnable=True)
 
 
@@ -410,11 +359,12 @@ class SupportDPDKBond(BondingTestDPDK, TestDPDK):
 
         self.show_step(5)
         for node in computes:
-            self.setup_hugepages(node, hp_2mb=256, hp_dpdk_mb=128)
+            self.fuel_web.setup_hugepages(
+                node['id'], hp_2mb=256, hp_dpdk_mb=128)
 
         self.show_step(6)
         for node in computes:
-            self.enable_dpdk(node)
+            self.fuel_web.enable_dpdk(node['id'])
 
         self.show_step(7)
         self.fuel_web.verify_network(cluster_id)
