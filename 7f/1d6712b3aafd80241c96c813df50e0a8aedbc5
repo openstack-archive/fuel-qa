@@ -1,0 +1,11 @@
+Code-Review+2: Vladimir Khlyunev <vkhlyunev@mirantis.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Code-Review+2: Dennis Dmitriev <ddmitriev@mirantis.com>
+Workflow+1: Dennis Dmitriev <ddmitriev@mirantis.com>
+Code-Review+1: Artem Grechanichenko <agrechanichenko@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Mon, 21 Nov 2016 13:05:49 +0000
+Reviewed-on: https://review.openstack.org/400099
+Project: openstack/fuel-qa
+Branch: refs/heads/master
