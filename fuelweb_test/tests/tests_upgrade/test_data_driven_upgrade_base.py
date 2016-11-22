@@ -466,3 +466,14 @@ class DataDrivenUpgradeBase(TestBasic):
             }
             editor.content["groups"]["mos"].append(proposed_desc)
             editor.content["repos"].append(proposed_desc)
+
+            nova_review_repo = {
+                "name": "mos-nova-proposed",
+                "uri": "http://perestroika-repo-tst.infra.mirantis.net/review/CR-27730/mos-repos/ubuntu/8.0/",
+                "suite": "mos$mos_version-proposed",
+                "section": "main restricted",
+                "type": "deb",
+                "priority": 1060
+            }
+            editor.content["groups"]["mos"].append(nova_review_repo)
+            editor.content["repos"].append(nova_review_repo)
