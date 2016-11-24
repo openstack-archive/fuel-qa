@@ -3150,18 +3150,19 @@ class FuelWebClient30(FuelWebClient29):
                 for pool in default_node_group.get_network_pools(
                         name__in=['storage', 'management']):
                     networks[pool.name]['cidr'] = str(pool.net)
-                    networks[pool.name]['ip_range'] = self.get_range(
-                        pool.net)[0]
+                    networks[pool.name]['ip_range'] = list(
+                        pool.ip_range(relative_start=2, relative_end=-16))
                     networks[pool.name]['notation'] = 'ip_ranges'
                     networks[pool.name]['vlan_start'] = pool.vlan_start
 
                 if net_provider == 'neutron':
-                    net_settings[net_provider]['config']['internal_cidr'] = \
-                        '192.168.0.0/24'
-                    net_settings[net_provider]['config']['internal_gateway'] =\
-                        '192.168.0.1'
                     private_net_pool = default_node_group.get_network_pool(
                         name='private')
+
+                    net_settings[net_provider]['config']['internal_cidr'] = \
+                        str(private_net_pool.net)
+                    net_settings[net_provider]['config']['internal_gateway'] \
+                        = str(private_net_pool.gateway)
 
                     networks['private_tun']['cidr'] = \
                         str(private_net_pool.net)
