@@ -56,6 +56,9 @@ class TestBasic(object):
         self.__fuel_constants = {
             'rabbit_pcs_name': 'p_rabbitmq-server'
         }
+        if settings.FORCE_DISABLE_UPDATES and settings.UPDATE_MASTER:
+            raise EnvironmentError(
+                "Cannot use FORCE_DISABLE_UPDATES and UPDATE_MASTER together")
 
     @property
     def fuel_constants(self):
@@ -229,9 +232,6 @@ class TestBasic(object):
         self.env.set_admin_keystone_password()
         self.env.sync_time(['admin'])
 
-        if settings.FORCE_DISABLE_UPDATES and settings.UPDATE_MASTER:
-            raise EnvironmentError(
-                "Cannot use FORCE_DISABLE_UPDATES and UPDATE_MASTER together")
         if settings.FORCE_DISABLE_UPDATES:
             cmd = "yum-config-manager --disable mos9.0-* --save"
             self.ssh_manager.check_call(

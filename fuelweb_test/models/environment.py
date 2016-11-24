@@ -440,6 +440,13 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
         # wait while installation complete
 
         self.admin_actions.modify_configs(self.d_env.router())
+        # following "disable" required for clean 9.0 installation
+        cmd = "yum-config-manager --disable mos9.0-* --save"
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=cmd
+        )
+
         self.kill_wait_for_external_config()
         self.wait_bootstrap()
         self.admin_actions.wait_for_fuel_ready()
