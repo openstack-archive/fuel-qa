@@ -12,7 +12,9 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 from proboscis import test
+from proboscis.asserts import assert_true
 
+from fuelweb_test import logger
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -79,14 +81,27 @@ class HaVlanGroup4(TestBasic):
             }
         )
         self.show_step(6)
-        cinders = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            cluster_id=cluster_id,
-            roles=['cinder'],
-            role_status='pending_roles'
-        )
-
-        for node in cinders:
-            cinder_image_size = self.fuel_web.update_node_partitioning(node)
+        cinder_image_size = {}
+        cinder_nodes = self.fuel_web.\
+            get_nailgun_cluster_nodes_by_roles(cluster_id, ['cinder'],
+                                               role_status='pending_roles')
+        for cinder_node in cinder_nodes:
+            cinder_image_size[cinder_node['ip']] = {}
+            cinder_disks = self.fuel_web.get_node_disks_by_volume_name(
+                node=cinder_node['id'],
+                volume_name='cinder')
+            for disk in cinder_disks:
+                cinder_image_size[cinder_node['ip']][disk] = \
+                    self.fuel_web.update_node_partitioning(
+                        cinder_node,
+                        node_role='cinder',
+                        disk=disk,
+                        by_vol_name=True)
+                logger.info(
+                    'Disk: {0} is resized to size: {1} mb, '
+                    'node ip: {2}'.format(
+                        disk, cinder_image_size[cinder_node['ip']][disk],
+                        cinder_node['ip']))
 
         self.show_step(7)
         self.fuel_web.verify_network(cluster_id)
@@ -98,8 +113,17 @@ class HaVlanGroup4(TestBasic):
         self.fuel_web.verify_network(cluster_id)
 
         self.show_step(10)
-        for cinder in cinders:
-            checkers.check_cinder_image_size(cinder['ip'], cinder_image_size)
+        for cinder_node in cinder_nodes:
+            cinder_disks = self.fuel_web.get_node_disks_by_volume_name(
+                node=cinder_node['id'],
+                volume_name='cinder')
+            for disk in cinder_disks:
+                exp_size = cinder_image_size[cinder_node['ip']][disk]
+                assert_true(
+                    checkers.check_partition_exists(cinder_node['ip'],
+                                                    disk=disk,
+                                                    size_in_mb=exp_size),
+                    "Partition check failed, inspect test logs for details")
 
         self.show_step(11)
         self.fuel_web.run_ostf(cluster_id)
