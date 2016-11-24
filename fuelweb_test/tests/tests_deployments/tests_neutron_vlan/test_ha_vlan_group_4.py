@@ -57,7 +57,7 @@ class HaVlanGroup4(TestBasic):
         self.show_step(1, initialize=True)
         self.show_step(2)
 
-        cluster_id = self.fuel_web.create_cluster(
+        cluster_id = self.fuel_web.create_cluster(https://review.openstack.org/#/dashboard/self
             name=self.__class__.__name__,
         )
 
@@ -79,14 +79,22 @@ class HaVlanGroup4(TestBasic):
             }
         )
         self.show_step(6)
-        cinders = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            cluster_id=cluster_id,
-            roles=['cinder'],
-            role_status='pending_roles'
-        )
-
-        for node in cinders:
-            cinder_image_size = self.fuel_web.update_node_partitioning(node)
+        cinder_image_size = {}
+        cinder_nodes = self.fuel_web.\
+            get_nailgun_cluster_nodes_by_roles(cluster_id, ['cinder'],
+                                               role_status='pending_roles')
+        for cinder_node in cinder_nodes:
+            cinder_image_size[cinder_node['ip']] = {}
+            cinder_disks = self.fuel_web.get_node_disks_by_volume_name(
+                node=cinder_node['id'],
+                volume_name='cinder')
+            for disk in cinder_disks:
+                cinder_image_size[cinder_node['ip']][disk] = \
+                    self.fuel_web.update_node_partitioning(
+                        cinder_node,
+                        node_role='cinder',
+                        disk=disk,
+                        by_vol_name=True)
 
         self.show_step(7)
         self.fuel_web.verify_network(cluster_id)
@@ -98,8 +106,15 @@ class HaVlanGroup4(TestBasic):
         self.fuel_web.verify_network(cluster_id)
 
         self.show_step(10)
-        for cinder in cinders:
-            checkers.check_cinder_image_size(cinder['ip'], cinder_image_size)
+        for cinder_node in cinder_nodes:
+            cinder_disks = self.fuel_web.get_node_disks_by_volume_name(
+                node=cinder_node['id'],
+                volume_name='cinder')
+            for disk in cinder_disks:
+                exp_size = cinder_image_size[cinder_node['ip']][disk]
+                checkers.check_partition_exists(cinder_node['ip'],
+                                                disk=disk,
+                                                size_in_mb=exp_size)
 
         self.show_step(11)
         self.fuel_web.run_ostf(cluster_id)
