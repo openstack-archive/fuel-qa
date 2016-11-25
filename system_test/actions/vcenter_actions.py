@@ -87,95 +87,6 @@ class VMwareActions(object):
             self.cluster_id, self.plugin_name, self.plugin_version, options,
             enabled=True)
 
-    @staticmethod
-    def config_attr_vcenter(vmware_attr, vc_user, vc_host, vc_az, vc_pwd,
-                            ca_bypass, ca_file):
-        """Update and return the dictionary with vCenter attributes."""
-        logger.info('Configuring vCenter...')
-
-        vc_values = vmware_attr['editable']['value']['availability_zones'][0]
-        computes = vc_values['nova_computes'][:]
-
-        az_params = {
-            "vcenter_username": vc_user,
-            "nova_computes": computes,
-            "vcenter_host": vc_host,
-            "az_name": vc_az,
-            "vcenter_password": vc_pwd,
-            "vcenter_security_disabled": ca_bypass,
-            "vcenter_ca_file": ca_file
-        }
-
-        vc_values.update(az_params)
-        return vmware_attr
-
-    def config_attr_glance(self, vmware_attr, host, user, pwd, dc, ds,
-                           ca_bypass, ca_file):
-        """Update and return the dictionary with Glance attributes."""
-        cluster_attr = self.fuel_web.client.get_cluster_attributes(
-            self.cluster_id)
-        cluster_attr['editable']['storage']['images_vcenter']['value'] = True
-        self.fuel_web.client.update_cluster_attributes(self.cluster_id,
-                                                       cluster_attr)
-
-        vcenter_value = {
-            "glance": {
-                "vcenter_host": host,
-                "vcenter_username": user,
-                "vcenter_password": pwd,
-                "datacenter": dc,
-                "datastore": ds,
-                "vcenter_security_disabled": ca_bypass,
-                "ca_file": ca_file
-            }
-        }
-
-        vmware_attr['editable']['value'].update(vcenter_value)
-        return vmware_attr
-
-    def config_attr_computes(self, vmware_attr, clusters):
-        """Configure Nova Computes for VMware.
-
-        :param clusters: dictionary with string keys: cluster name (cluster),
-                         service name (srv_name), datastore regex (datastore),
-                         target node (target_node)
-        """
-        nodes = self.fuel_web.client.list_cluster_nodes(self.cluster_id)
-        comp_vmware_nodes = [node for node in nodes if {'compute-vmware'} <=
-                             set(node['pending_roles'] + node['roles'])]
-
-        vc_values = vmware_attr['editable']['value']
-        vc_values["availability_zones"][0]["nova_computes"] = []
-
-        for cluster in clusters:
-            cluster_name = cluster['cluster']
-            srv_name = cluster['srv_name']
-            datastore = cluster['datastore']
-            if cluster['target_node'] == 'compute-vmware':
-                node = comp_vmware_nodes.pop()
-                target_node = node['hostname']
-            else:
-                target_node = cluster['target_node']
-
-            vc_values["availability_zones"][0]["nova_computes"].append({
-                "vsphere_cluster": cluster_name,
-                "service_name": srv_name,
-                "datastore_regex": datastore,
-                "target_node": {
-                    "current": {
-                        "id": target_node,
-                        "label": target_node
-                    },
-                    "options": [{
-                        "id": target_node,
-                        "label": target_node
-                    }]
-                }
-            })
-
-        vmware_attr.update(vc_values)
-        return vmware_attr
-
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
     def configure_vcenter(self):
@@ -191,16 +102,24 @@ class VMwareActions(object):
             r = requests.get(file_url)
             cert_data["content"] = r.text
             cert_data["name"] = file_url.split('/')[-1]
-        vmware_attr = self.config_attr_vcenter(vmware_attr=vmware_attr,
-                                               vc_user=settings['user'],
-                                               vc_host=settings['host'],
-                                               vc_az=settings['az'],
-                                               vc_pwd=settings['pwd'],
-                                               ca_bypass=settings['ca_bypass'],
-                                               ca_file=cert_data)
+        vmware_attr = self.fuel_web.config_attr_vcenter(
+            vmware_attr=vmware_attr,
+            vc_user=settings['user'],
+            vc_host=settings['host'],
+            vc_az=settings['az'],
+            vc_pwd=settings['pwd'],
+            ca_bypass=settings['ca_bypass'],
+            ca_file=cert_data)
 
         glance = vmware_vcenter['glance']
         if glance['enable']:
+            cluster_attr = self.fuel_web.client.get_cluster_attributes(
+                self.cluster_id)
+            cluster_attr['editable']['storage']['images_vcenter'][
+                'value'] = True
+            self.fuel_web.client.update_cluster_attributes(self.cluster_id,
+                                                           cluster_attr)
+
             cert_data = {}
             if not glance['ca_bypass']:
                 file_url = glance['ca_file']
@@ -208,17 +127,19 @@ class VMwareActions(object):
                 cert_data["content"] = r.text
                 cert_data["name"] = file_url.split('/')[-1]
             vmware_attr = \
-                self.config_attr_glance(vmware_attr=vmware_attr,
-                                        host=glance['host'],
-                                        user=glance['user'],
-                                        pwd=glance['pwd'],
-                                        dc=glance['datacenter'],
-                                        ds=glance['datastore'],
-                                        ca_bypass=glance['ca_bypass'],
-                                        ca_file=cert_data)
+                self.fuel_web.config_attr_glance(
+                    vmware_attr=vmware_attr,
+                    host=glance['host'],
+                    user=glance['user'],
+                    pwd=glance['pwd'],
+                    dc=glance['datacenter'],
+                    ds=glance['datastore'],
+                    ca_bypass=glance['ca_bypass'],
+                    ca_file=cert_data)
 
-        vmware_attr = self.config_attr_computes(
-            vmware_attr=vmware_attr, clusters=vmware_vcenter['nova-compute'])
+        vmware_attr = self.fuel_web.config_attr_computes(
+            self.cluster_id, vmware_attr=vmware_attr,
+            clusters=vmware_vcenter['nova-compute'])
 
         self.fuel_web.client.update_cluster_vmware_attributes(
             self.cluster_id, vmware_attr)
@@ -231,24 +152,26 @@ class VMwareActions(object):
         vmware_attr = self.fuel_web.client.get_cluster_vmware_attributes(
             self.cluster_id)
 
-        vmware_attr = self.config_attr_vcenter(vmware_attr=vmware_attr,
-                                               vc_user='user',
-                                               vc_host='8.8.8.8',
-                                               vc_az='az',
-                                               vc_pwd='pwd',
-                                               ca_bypass=True,
-                                               ca_file='')
+        vmware_attr = self.fuel_web.config_attr_vcenter(
+            vmware_attr=vmware_attr,
+            vc_user='user',
+            vc_host='8.8.8.8',
+            vc_az='az',
+            vc_pwd='pwd',
+            ca_bypass=True,
+            ca_file='')
 
         glance = vmware_vcenter['glance']
         if glance['enable']:
-            vmware_attr = self.config_attr_glance(vmware_attr=vmware_attr,
-                                                  host='8.8.8.8',
-                                                  user='user',
-                                                  pwd='pwd',
-                                                  dc='dc',
-                                                  ds='!@#$%^&*()',
-                                                  ca_bypass=True,
-                                                  ca_file='')
+            vmware_attr = self.fuel_web.config_attr_glance(
+                vmware_attr=vmware_attr,
+                host='8.8.8.8',
+                user='user',
+                pwd='pwd',
+                dc='dc',
+                ds='!@#$%^&*()',
+                ca_bypass=True,
+                ca_file='')
 
         clusters = [{
             'cluster': 'Cluster1!',
@@ -262,8 +185,10 @@ class VMwareActions(object):
             'target_node': 'compute-vmware'
         }]
 
-        vmware_attr = self.config_attr_computes(vmware_attr=vmware_attr,
-                                                clusters=clusters)
+        vmware_attr = self.fuel_web.config_attr_computes(
+            self.cluster_id,
+            vmware_attr=vmware_attr,
+            clusters=clusters)
 
         self.fuel_web.client.update_cluster_vmware_attributes(
             self.cluster_id, vmware_attr)
