@@ -761,75 +761,161 @@ class FuelWebClient29(object):
                      "with next attributes {0}".format(attributes))
         self.client.update_cluster_attributes(cluster_id, attributes)
 
+    @staticmethod
+    def config_attr_vcenter(vmware_attr, vc_user, vc_host, vc_az,
+                            vc_pwd, ca_bypass, ca_file):
+        """Update and return the dictionary with vCenter attributes."""
+        logger.info('Configuring vCenter...')
+
+        vc_values = vmware_attr['editable']['value']['availability_zones'][0]
+        computes = vc_values['nova_computes'][:]
+
+        if 'vcenter_security_disabled' in vc_values:
+            security_key = "vcenter_security_disabled"
+        else:
+            security_key = "vcenter_insecure"
+
+        az_params = {
+            "vcenter_username": vc_user,
+            "nova_computes": computes,
+            "vcenter_host": vc_host,
+            "az_name": vc_az,
+            "vcenter_password": vc_pwd,
+            security_key: ca_bypass,
+            "vcenter_ca_file": ca_file
+        }
+
+        vc_values.update(az_params)
+        return vmware_attr
+
+    @staticmethod
+    def config_attr_glance(vmware_attr, host, user, pwd, dc, ds,
+                           ca_bypass, ca_file):
+        """Update and return the dictionary with Glance attributes."""
+        if 'vcenter_security_disabled' in vmware_attr['editable']['value']:
+            security_key = "vcenter_security_disabled"
+        else:
+            security_key = "vcenter_insecure"
+
+        vcenter_value = {
+            "glance": {
+                "vcenter_host": host,
+                "vcenter_username": user,
+                "vcenter_password": pwd,
+                "datacenter": dc,
+                "datastore": ds,
+                security_key: ca_bypass,
+                "ca_file": ca_file
+            }
+        }
+
+        vmware_attr['editable']['value'].update(vcenter_value)
+        return vmware_attr
+
+    def config_attr_computes(self, cluster_id, vmware_attr, clusters):
+        """Configure Nova Computes for VMware.
+
+        :param clusters: dictionary with string keys: cluster name (cluster),
+                         service name (srv_name), datastore regex (datastore),
+                         target node (target_node)
+        """
+        nodes = self.client.list_cluster_nodes(cluster_id)
+        comp_vmware_nodes = [node for node in nodes if {'compute-vmware'} <=
+                             set(node['pending_roles'] + node['roles'])]
+
+        vc_values = vmware_attr['editable']['value']
+        vc_values["availability_zones"][0]["nova_computes"] = []
+
+        for cluster in clusters:
+            cluster_name = cluster['cluster']
+            srv_name = cluster['srv_name']
+            datastore = cluster['datastore']
+            if cluster['target_node'] == 'compute-vmware':
+                node = comp_vmware_nodes.pop()
+                target_node = node['hostname']
+            else:
+                target_node = cluster['target_node']
+
+            vc_values["availability_zones"][0]["nova_computes"].append({
+                "vsphere_cluster": cluster_name,
+                "service_name": srv_name,
+                "datastore_regex": datastore,
+                "target_node": {
+                    "current": {
+                        "id": target_node,
+                        "label": target_node
+                    },
+                    "options": [{
+                        "id": target_node,
+                        "label": target_node
+                    }]
+                }
+            })
+
+        vmware_attr.update(vc_values)
+        return vmware_attr
+
     @logwrap
     def vcenter_configure(self, cluster_id, vcenter_value=None,
                           multiclusters=None, vc_glance=None,
                           target_node_1='controllers',
                           target_node_2='controllers'):
-
         if not vcenter_value:
-            vcenter_value = {
-                "glance": {
-                    "vcenter_username": "",
-                    "datacenter": "",
-                    "vcenter_host": "",
-                    "vcenter_password": "",
-                    "datastore": "",
-                    "vcenter_security_disabled": True},
-                "availability_zones": [
-                    {"vcenter_username": VCENTER_USERNAME,
-                     "nova_computes": [
-                         {"datastore_regex": ".*",
-                          "vsphere_cluster": "Cluster1",
-                          "service_name": "vmcluster1",
-                          "target_node": {
-                              "current": {"id": target_node_1,
-                                          "label": target_node_1},
-                              "options": [{"id": "controllers",
-                                           "label": "controllers"}, ]},
-                          },
+            vmware_attr = self.client.get_cluster_vmware_attributes(cluster_id)
 
-                     ],
-                     "vcenter_host": VCENTER_IP,
-                     "az_name": "vcenter",
-                     "vcenter_password": VCENTER_PASSWORD,
-                     "vcenter_security_disabled": True
+            cert_data = {}
+            vmware_attr = self.config_attr_vcenter(
+                vmware_attr=vmware_attr,
+                vc_user=VCENTER_USERNAME,
+                vc_host=VCENTER_IP,
+                vc_az="vcenter",
+                vc_pwd=VCENTER_PASSWORD,
+                ca_bypass=True,
+                ca_file=cert_data)
 
-                     }],
-                "network": {"esxi_vlan_interface": "vmnic0"}
-            }
-            if multiclusters:
-                multiclusters =\
-                    vcenter_value["availability_zones"][0]["nova_computes"]
-                multiclusters.append(
-                    {"datastore_regex": ".*",
-                     "vsphere_cluster": "Cluster2",
-                     "service_name": "vmcluster2",
-                     "target_node": {
-                         "current": {"id": target_node_2,
-                                     "label": target_node_2},
-                         "options": [{"id": "controllers",
-                                      "label": "controllers"}, ]},
-                     })
             if vc_glance:
-                vcenter_value["glance"]["vcenter_username"] = VCENTER_USERNAME
-                vcenter_value["glance"]["datacenter"] = VCENTER_DATACENTER
-                vcenter_value["glance"]["vcenter_host"] = VCENTER_IP
-                vcenter_value["glance"]["vcenter_password"] = VCENTER_PASSWORD
-                vcenter_value["glance"]["datastore"] = VCENTER_DATASTORE
+                cluster_attr = self.client.get_cluster_attributes(cluster_id)
+                cluster_attr['editable']['storage']['images_vcenter'][
+                    'value'] = True
+                self.client.update_cluster_attributes(cluster_id, cluster_attr)
+
+                cert_data = {}
+                vmware_attr = \
+                    self.config_attr_glance(
+                        vmware_attr=vmware_attr,
+                        host=VCENTER_IP,
+                        user=VCENTER_USERNAME,
+                        pwd=VCENTER_PASSWORD,
+                        dc=VCENTER_DATACENTER,
+                        ds=VCENTER_DATASTORE,
+                        ca_bypass=True,
+                        ca_file=cert_data)
+
+            clusters = []
+            clusters.append(
+                {'cluster': 'Cluster1',
+                 'srv_name': 'vmcluster1',
+                 'datastore': '.*',
+                 'target_node': target_node_1
+                 })
+            if multiclusters:
+                clusters.append(
+                    {'cluster': 'Cluster2',
+                     'srv_name': 'vmcluster2',
+                     'datastore': '.*',
+                     'target_node': target_node_2
+                     })
+
+            vmware_attr = self.config_attr_computes(cluster_id,
+                                                    vmware_attr=vmware_attr,
+                                                    clusters=clusters)
 
         if help_data.VCENTER_USE:
-            logger.info('Configuring vCenter...')
-            vmware_attributes = \
-                self.client.get_cluster_vmware_attributes(cluster_id)
-            vcenter_data = vmware_attributes['editable']
-            vcenter_data['value'] = vcenter_value
             logger.debug("Try to update cluster with next "
-                         "vmware_attributes {0}".format(vmware_attributes))
+                         "vmware_attributes {0}".format(vmware_attr))
             self.client.update_cluster_vmware_attributes(cluster_id,
-                                                         vmware_attributes)
-
-        logger.debug("Attributes of cluster were updated")
+                                                         vmware_attr)
+            logger.info("VMware attributes of cluster were updated")
 
     def add_local_ubuntu_mirror(self, cluster_id, name='Auxiliary',
                                 path=help_data.LOCAL_MIRROR_UBUNTU,
