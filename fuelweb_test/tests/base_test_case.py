@@ -241,6 +241,10 @@ class TestBasic(object):
 
         elif settings.UPDATE_MASTER:
             logger.warning("Restore online mos repos")
+            self.ssh_manager.check_call(
+                ip=self.ssh_manager.admin_ip,
+                command="yum-config-manager --enable mos9.0-* --save")
+
             backup_path = "/var/astute.yaml"
             admin_ip = self.env.get_admin_node_ip()
             backup = YamlEditor(backup_path,
