@@ -3038,46 +3038,61 @@ class FuelWebClient29(object):
         self.client.upload_node_attributes(node_attributes, nailgun_node_id)
 
     def check_dpdk(self, nailgun_node_id, net='private'):
-        compute_net = self.client.get_node_interfaces(nailgun_node_id)
-        dpdk_available = False
-        dpdk_enabled = False
-        for interface in compute_net:
-            if net not in [n['name'] for n in interface['assigned_networks']]:
-                continue
-            if 'dpdk' not in interface['interface_properties']:
-                continue
+        compute_interfaces = self.client.get_node_interfaces(nailgun_node_id)
+        target_interface = None
+        for interface in compute_interfaces:
+            if net in [n['name'] for n in interface['assigned_networks']]:
+                target_interface = interface
+                break
 
-            dpdk_available = interface['interface_properties']['dpdk'][
+        assert_is_not_none(
+            target_interface,
+            "Network {!r} is not found on interfaces".format(net))
+
+        if 'interface_properties' in target_interface.keys():
+            logger.debug("Using old interface serialization scheme")
+            dpdk_available = target_interface['interface_properties']['dpdk'][
                 'available']
-            if 'enabled' in interface['interface_properties']['dpdk']:
-                dpdk_enabled = interface['interface_properties']['dpdk'][
-                    'enabled']
-            break
+            dpdk_enabled = target_interface['interface_properties']['dpdk'][
+                'enabled']
+        else:
+            logger.debug("Using new interface serialization scheme")
+            dpdk_available = target_interface['meta']['dpdk']['available']
+            dpdk_enabled = target_interface['attributes']['dpdk'][
+                'enabled']['value']
 
         return {'available': dpdk_available, 'enabled': dpdk_enabled}
 
     def enable_dpdk(self, nailgun_node_id, switch_to=True, net='private',
-                    forceEnable=False):
-        if not forceEnable:
+                    force_enable=False):
+        if not force_enable:
             assert_true(self.check_dpdk(nailgun_node_id, net=net)['available'],
                         'DPDK not available on selected interface')
 
-        compute_net = self.client.get_node_interfaces(
-            nailgun_node_id)
-        for interface in compute_net:
-            for ids in interface['assigned_networks']:
-                if ids['name'] == net:
-                    if interface['type'] == 'bond':
-                        interface['bond_properties']['type__'] = 'dpdkovs'
-                        interface['interface_properties']['dpdk'].update(
-                            {'enabled': switch_to})
-                    else:
-                        interface['interface_properties']['dpdk'][
-                            'enabled'] = switch_to
-                    break
+        compute_interfaces = self.client.get_node_interfaces(nailgun_node_id)
+        target_interface = None
+        for interface in compute_interfaces:
+            if net in [n['name'] for n in interface['assigned_networks']]:
+                target_interface = interface
+                break
 
-            self.client.put_node_interfaces(
-                [{'id': nailgun_node_id, 'interfaces': compute_net}])
+        if target_interface['type'] == 'bond':
+            target_interface['bond_properties']['type__'] = 'dpdkovs'
+
+        if 'interface_properties' in target_interface.keys():
+            logger.debug("Using old interface serialization scheme")
+            target_interface['interface_properties']['dpdk'][
+                'enabled'] = switch_to
+        else:
+            logger.debug("Using new interface serialization scheme")
+            target_interface['attributes']['dpdk'][
+                'enabled']['value'] = switch_to
+
+        self.client.put_node_interfaces([{'id': nailgun_node_id,
+                                          'interfaces': compute_interfaces}])
+
+        return self.check_dpdk(
+            nailgun_node_id, net=net)['enabled'] == switch_to
 
     def check_sriov(self, nailgun_node_id):
         nailgun_node_ifaces = self.client.get_node_interfaces(
@@ -3093,10 +3108,10 @@ class FuelWebClient29(object):
                 devops_sriov_nics.append(interface['name'])
             if interface['assigned_networks']:
                 continue
-            if 'sriov' not in interface['interface_properties']:
+            api_key = "meta" if "meta" in interface else "interface_properties"
+            if 'sriov' not in interface[api_key]:
                 continue
-            sriov_available = interface['interface_properties']['sriov'][
-                'available']
+            sriov_available = interface[api_key]['sriov']['available']
             if sriov_available:
                 nailgun_sriov_nics.append(interface['name'])
         return set(devops_sriov_nics).intersection(nailgun_sriov_nics)
@@ -3110,9 +3125,18 @@ class FuelWebClient29(object):
         for interface in node_networks:
             if interface['name'] not in nics_to_enable_sriov:
                 continue
-            interface['interface_properties']['sriov']['enabled'] = True
-            interface['interface_properties']['sriov']['sriov_numvfs'] = \
-                interface['interface_properties']['sriov']['sriov_totalvfs']
+            if 'interface_properties' in interface:
+                interface['interface_properties']['sriov']['enabled'] = True
+                interface['interface_properties']['sriov'][
+                    'sriov_numvfs'] = interface['interface_properties'][
+                    'sriov']['sriov_totalvfs']
+            else:
+                interface['attributes']['sriov']['enabled']['value'] = True
+                interface['attributes']['sriov']['numvfs'] = \
+                    interface['meta']['sriov']['totalvfs']
+
+        self.client.put_node_interfaces(
+            [{'id': nailgun_node_id, 'interfaces': node_networks}])
 
         self.client.put_node_interfaces(
             [{'id': nailgun_node_id, 'interfaces': node_networks}])
