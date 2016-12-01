@@ -391,7 +391,7 @@ class FuelPluginBuilder(BaseActions):
         """
         metadata_path = os.path.join(path, 'metadata.yaml')
         output = self.ssh_manager.execute_on_remote(
-            ip=self.admin_ip, cmd="fuel --fuel-version --json",
+            ip=self.admin_ip, cmd="fuel2 fuel-version -f json",
             jsonify=True)['stdout_json']
         fuel_version = [str(output['release'])]
         openstack_version = str(output['openstack_version'])
