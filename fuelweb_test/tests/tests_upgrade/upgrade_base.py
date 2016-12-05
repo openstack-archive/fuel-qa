@@ -30,7 +30,6 @@ import six
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.utils import YamlEditor
-from fuelweb_test.settings import KEYSTONE_CREDS
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.settings import UPGRADE_FUEL_FROM
@@ -391,8 +390,7 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
         self.show_step(self.next_step)
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            command="octane upgrade-osd --admin-password {0} {1} {2}".format(
-                KEYSTONE_CREDS['password'],
+            command="octane upgrade-osd {0} {1}".format(
                 self.orig_cluster_id,
                 seed_cluster_id),
             error_info="octane upgrade-osd failed"
