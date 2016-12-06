@@ -758,6 +758,11 @@ Test SR-IOV
    :members:
 
 Test graph extension
-------------------------------------------------------
+--------------------
 .. automodule:: fuelweb_test.tests.test_graph_extension
+   :members:
+
+Test Multiqueue
+---------------
+.. automodule:: fuelweb_test.tests.test_multiqueue
    :members:
