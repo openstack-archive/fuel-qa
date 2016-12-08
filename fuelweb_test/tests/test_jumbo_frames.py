@@ -53,6 +53,55 @@ class TestJumboFrames(base_test_case.TestBasic):
         },
     }]
 
+    def set_mtu(self, nailgun_node_id, iface=iface_alias('eth3'), mtu=1500):
+        """Set MTU for the corresponding interfaces
+
+        :param nailgun_node_id: int, naigun node id
+        :param iface: str, interface name
+        :param mtu: int, value of MTU
+        """
+        ifaces = self.fuel_web.client.get_node_interfaces(nailgun_node_id)
+        # get target iface
+        for i in ifaces:
+            if i['name'] == iface:
+                target_iface = i
+                break
+
+        if 'interface_properties' in target_iface:
+            logger.debug("Using old interface serialization scheme")
+            target_iface['interface_properties']['mtu'] = mtu
+        else:
+            logger.debug("Using new interface serialization scheme")
+            target_iface['attributes']['mtu']['value']['value'] = mtu
+        self.fuel_web.client.put_node_interfaces([{'id': nailgun_node_id,
+                                                   'interfaces': ifaces}])
+
+    def disable_offloading(self, nailgun_node_id, iface=iface_alias('eth3'),
+                           offloading=False):
+        """Disable offloading for the corresponding interfaces
+
+        :param nailgun_node_id: int, naigun node id
+        :param iface: str, interface name
+        :param offloading: bool, enable or disable offloading
+        """
+        ifaces = self.fuel_web.client.get_node_interfaces(nailgun_node_id)
+        # get target iface
+        for i in ifaces:
+            if i['name'] == iface:
+                target_iface = i
+                break
+
+        if 'interface_properties' in target_iface:
+            logger.debug("Using old interface serialization scheme")
+            target_iface['interface_properties']['disable_offloading'] = \
+                offloading
+        else:
+            logger.debug("Using new interface serialization scheme")
+            target_iface['attributes']['offloading']['disable']['value'] = \
+                offloading
+        self.fuel_web.client.put_node_interfaces([{'id': nailgun_node_id,
+                                                   'interfaces': ifaces}])
+
     def check_node_iface_mtu(self, node, iface, mtu):
         """Check mtu on environment node network interface."""
 
@@ -295,9 +344,8 @@ class TestJumboFrames(base_test_case.TestBasic):
         self.show_step(5)
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in slave_nodes:
-            self.fuel_web.update_node_networks(
-                node['id'], self.interfaces,
-                override_ifaces_params=self.interfaces_update)
+            self.set_mtu(node['id'], mtu=9000)
+            self.disable_offloading(node['id'])
 
         self.show_step(6)
         self.fuel_web.deploy_cluster_wait(cluster_id)
