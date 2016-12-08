@@ -754,6 +754,18 @@ class FuelWebClient29(object):
         self.client.update_cluster_attributes(cluster_id, attributes)
 
     @logwrap
+    def set_ovs_firewall_driver(self, cluster_id):
+        """Set OVS firewall driver for neutron security groups
+
+        :param cluster_id: int, cluster id
+        """
+        cluster_attrs = self.client.get_cluster_attributes(cluster_id)
+        logger.debug('Trying to set OVS firewall driver')
+        cluster_attrs['editable']['common']['security_groups']['value'] = \
+            'openvswitch'
+        self.client.update_cluster_attributes(cluster_id, cluster_attrs)
+
+    @logwrap
     def enable_uca(self, cluster_id):
         attributes = self.client.get_cluster_attributes(cluster_id)
         change_cluster_uca_config(attributes)
