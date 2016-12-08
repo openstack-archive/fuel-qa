@@ -215,22 +215,32 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
 
     @property
     def d_env(self):
-        if self._virt_env is None:
-            if not self._config:
-                try:
-                    return Environment.get(name=settings.ENV_NAME)
-                except Exception:
-                    self._virt_env = Environment.describe_environment(
-                        boot_from=settings.ADMIN_BOOT_DEVICE)
-                    self._virt_env.define()
+        if self._virt_env is not None:
+            return self._virt_env
+
+        env_name = settings.ENV_NAME if not self._config else \
+            self._config['template']['devops_settings']['env_name']
+
+        try:
+            from devops.error import DevopsObjNotFound
+        except ImportError:
+            # pylint: disable=no-member
+            DevopsObjNotFound = Environment.DoesNotExist
+            # pylint: enable=no-member
+
+        try:
+            logger.info("Try to find environment '{0}'".format(env_name))
+            self._virt_env = Environment.get(name=env_name)
+        except DevopsObjNotFound:
+            logger.info("Try to create environment '{0}'".format(env_name))
+            if self._config:
+                self._virt_env = Environment.create_environment(
+                    full_config=self._config)
             else:
-                try:
-                    return Environment.get(name=self._config[
-                        'template']['devops_settings']['env_name'])
-                except Exception:
-                    self._virt_env = Environment.create_environment(
-                        full_config=self._config)
-                    self._virt_env.define()
+                self._virt_env = Environment.describe_environment(
+                    boot_from=settings.ADMIN_BOOT_DEVICE)
+            self._virt_env.define()
+            logger.info("New environment '{0}' was defined".format(env_name))
         return self._virt_env
 
     def resume_environment(self):
