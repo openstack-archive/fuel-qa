@@ -123,6 +123,8 @@ class OSUpgradeBase(DataDrivenUpgradeBase):
                     repo["name"] = "ubuntu-2"
 
         cmds = [
+            # free some space for mirror
+            "rm -rf {}".format(self.remote_dir_for_backups),
             "fuel-mirror create -P ubuntu -G mos > mirror-mos.log 2>&1",
             "fuel-mirror create -P ubuntu -G ubuntu > mirror-ubuntu.log 2>&1",
             "fuel-mirror apply --default -P ubuntu -G mos",
