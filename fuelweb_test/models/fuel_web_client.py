@@ -1749,32 +1749,71 @@ class FuelWebClient29(object):
 
     @logwrap
     def get_offloading_modes(self, node_id, interfaces):
-        offloading_types = []
-        for i in self.client.get_node_interfaces(node_id):
-            for interface in interfaces:
-                if i['name'] == interface:
-                    for offloading_type in i['offloading_modes']:
-                        offloading_types.append(offloading_type['name'])
-        return offloading_types
+        """Get offloading modes for predifened ifaces
+
+        :param node_id: int, nailgun node id
+        :param interfaces: list, list of iface names
+        :return: list, list of available offloading modes
+        """
+        target_ifaces = [iface
+                         for iface in self.client.get_node_interfaces(node_id)
+                         if iface['name'] in interfaces]
+
+        if 'interface_properties' in target_ifaces[0]:
+            logger.debug("Using old interface serialization scheme")
+            offloading_types = set([
+                offloading_type['name']
+                for iface in target_ifaces
+                for offloading_type in iface['offloading_modes']])
+        else:
+            logger.debug("Using new interface serialization scheme")
+            offloading_types = set([
+                offloading_type
+                for iface in target_ifaces
+                for offloading_type in
+                iface['attributes']['offloading']['modes']['value']])
+        return list(offloading_types)
 
     @logwrap
     def update_offloads(self, node_id, update_values, interface_to_update):
-        interfaces = self.client.get_node_interfaces(node_id)
+        """Update offloading modes for the corresponding interface
 
-        for i in interfaces:
+        :param node_id: int, nailgun node id
+        :param update_values: dict, pair of mode name and value
+        :param interface_to_update: str, target iface name
+        """
+        ifaces = self.client.get_node_interfaces(node_id)
+        # get target iface
+        for i in ifaces:
             if i['name'] == interface_to_update:
-                for new_mode in update_values['offloading_modes']:
-                    for mode in i['offloading_modes']:
-                        if mode['name'] == new_mode['name']:
-                            mode.update(new_mode)
-                            break
-                    else:
-                        raise Exception("Offload type '{0}' is not applicable"
-                                        " for interface {1}".format(
-                                            new_mode['name'],
-                                            interface_to_update))
+                iface = i
+                break
+
+        def prepare_offloading_modes(types):
+            return [{'name': name, 'state': types[name], 'sub': []}
+                    for name in types]
+
+        if 'interface_properties' in iface:
+            logger.debug("Using old interface serialization scheme")
+            offloading_modes = prepare_offloading_modes(update_values)
+            for new_mode in offloading_modes:
+                for mode in iface['offloading_modes']:
+                    if mode['name'] == new_mode['name']:
+                        mode.update(new_mode)
+                        break
+                else:
+                    raise Exception("Offload type '{0}' is not applicable"
+                                    " for interface {1}".format(
+                                        new_mode['name'],
+                                        interface_to_update))
+        else:
+            logger.debug("Using new interface serialization scheme")
+            for mode in iface['attributes']['offloading']['modes']['value']:
+                iface['attributes']['offloading']['modes']['value'][mode] = \
+                    update_values[mode]
+
         self.client.put_node_interfaces(
-            [{'id': node_id, 'interfaces': interfaces}])
+            [{'id': node_id, 'interfaces': ifaces}])
 
     def change_default_network_settings(self):
         def fetch_networks(networks):
