@@ -19,6 +19,7 @@ from devops.helpers.helpers import wait
 from devops.models import DiskDevice
 from devops.models import Node
 from devops.models import Volume
+from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 
 from core.helpers.log_helpers import logwrap
@@ -45,6 +46,7 @@ class BaseActions(object):
     def __init__(self):
         self.ssh_manager = SSHManager()
         self.admin_ip = self.ssh_manager.admin_ip
+        self.__new_packages = None
 
     def __repr__(self):
         klass, obj_id = type(self), hex(id(self))
@@ -58,6 +60,14 @@ class BaseActions(object):
             cmd="systemctl restart {0}".format(service),
             err_msg="Failed to restart service {!r}, please inspect logs for "
                     "details".format(service))
+
+    @property
+    def new_packages(self):
+        return self.__new_packages
+
+    @new_packages.setter
+    def new_packages(self, packages):
+        self.__new_packages = packages
 
 
 class AdminActions(BaseActions):
@@ -304,7 +314,10 @@ class AdminActions(BaseActions):
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
             command=install_command)
-
+        logger.info('Requesting packages to be updated')
+        self.new_packages = self.get_packages_list()
+        logger.debug('Got the list of packages to be updated: {}'.format(
+            self.new_packages))
         logger.info('prepare Fuel node for updating')
         prepare_command = 'update-prepare prepare master'
 
@@ -319,10 +332,45 @@ class AdminActions(BaseActions):
             ip=self.ssh_manager.admin_ip,
             command=update_command)
 
+        logger.info('Requesting installed packages')
+        installed_packages = self.get_packages_list('installed')
+        logger.debug('Got the list of installed packages: {}'.format(
+            installed_packages))
+        self.check_packages(installed_packages)
         logger.info('Update successful')
+
+    def get_packages_list(self, packages_list='updates'):
+        cmd = 'yum list {}'.format(packages_list)
+        admin_ip = self.ssh_manager.admin_ip
+        res = self.ssh_manager.check_call(admin_ip, cmd).stdout
+        tmp = '{} Packages\n'.format(
+            'Updated' if packages_list == 'updates' else 'Installed')
+        index = res.index(tmp)
+        res = res[index + 1::]
+        # the 'magic' below allows us to get the full list of packages
+        # we should use it because the command returns too long strings
+        raw = ''.join(res).replace('\n', ' ').split()
+        i = 0
+        packages = dict()
+        while i < len(raw):
+            packages[raw[i]] = raw[i + 1]
+            i += 3
+        return packages
+
+    def check_packages(self, packages):
+        notupdated_packages = list()
+        for package in self.new_packages:
+            if packages[package] != self.new_packages[package]:
+                notupdated_packages.append(package)
+        msg = "These packages weren't updated {}".format(notupdated_packages)
+        assert_equal(notupdated_packages, [], msg)
 
     def prepare_admin_node_for_mos_mu(self):
         """Prepare master node for update via mos-playbooks tool"""
+        logger.info('Requesting packages to be updated')
+        self.new_packages = self.get_packages_list()
+        logger.debug('Got the list of packages to be updated: {}'.format(
+            self.new_packages))
         mos_mu_path = 'cd {} &&'.format(MOS_MU_PATH)
 
         logger.info('Searching for mos-playbooks and mos-release packages')
@@ -383,6 +431,11 @@ class AdminActions(BaseActions):
             ip=self.ssh_manager.admin_ip,
             command=command)
 
+        logger.info('Requesting installed packages')
+        installed_packages = self.get_packages_list('installed')
+        logger.debug('Got the list of installed packages: {}'.format(
+            installed_packages))
+        self.check_packages(installed_packages)
         logger.info('Update Fuel node was successful')
 
 
