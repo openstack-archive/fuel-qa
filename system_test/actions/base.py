@@ -176,7 +176,7 @@ class PrepareActions(object):
             wait(lambda: admin.driver.node_active(admin), 60,
                  timeout_msg='Centos node failed to start')
             logger.info("Waiting for Centos node ssh ready")
-            self.env.wait_for_provisioning()
+            self.env.wait_ssh_available()
 
         self.centos_setup_fuel(hostname)
 

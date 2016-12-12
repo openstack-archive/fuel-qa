@@ -430,7 +430,7 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
             if settings.SHOW_FUELMENU:
                 self.wait_for_fuelmenu()
             else:
-                self.wait_for_provisioning()
+                self.wait_ssh_available()
 
         try:
             provision_admin(admin)
@@ -494,8 +494,8 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
     # pylint: enable=no-self-use
 
     @logwrap
-    def wait_for_provisioning(self,
-                              timeout=settings.WAIT_FOR_PROVISIONING_TIMEOUT):
+    def wait_ssh_available(self,
+                           timeout=settings.WAIT_FOR_PROVISIONING_TIMEOUT):
         # TODO(astudenov): add timeout_msg
         wait_pass(lambda: tcp_ping_(
             self.d_env.nodes(
