@@ -673,8 +673,55 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
             command=update_command)
+        if settings.REBOOT_MASTER_AFTER_UPDATE:
+            self.admin_reboot_and_wait()
 
         logger.info('Update successful')
+
+    def admin_reboot_and_wait(self):
+        admin = self.d_env.nodes().admin
+        init_uptime = self._get_uptime()
+        admin_remote = self.d_env.get_admin_remote()
+        logger.info(
+            "Kernel release before reboot: {0}".format(
+                self._get_kernel()))
+        try:
+            admin_remote.execute("reboot")
+            time.sleep(300)
+            self.wait_for_provisioning(timeout=300)
+        except Exception:
+            logger.info("Reboot failed. Hard resetting admin node",
+                        exc_info=True)
+            admin.reset()
+            time.sleep(300)
+            self.wait_for_provisioning()
+
+        self._is_uptime_changed(init_uptime)
+
+        logger.info("Admin node restarted with kernel: {0}".format(
+            self._get_kernel()))
+
+    def _is_uptime_changed(self, uptime):
+        if uptime <= self._get_uptime():
+            raise Exception("Uptime was not changed, restart failed")
+
+    def _get_uptime(self):
+        admin_remote = self.d_env.get_admin_remote()
+        try:
+            result = admin_remote.execute("cat /proc/uptime")
+            logger.info("Got uptime: {0}".format(
+                result.stdout_str.split()[0]))
+            return float(result.stdout_str.split()[0])
+        except Exception:
+            return None
+
+    def _get_kernel(self):
+        admin_remote = self.d_env.get_admin_remote()
+        try:
+            result = admin_remote.execute("uname -r")
+            return result.stdout_str.split()[0]
+        except Exception:
+            return None
 
     # Modifies a resolv.conf on the Fuel master node and returns
     # its original content.
