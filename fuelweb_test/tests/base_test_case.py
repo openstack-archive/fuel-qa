@@ -25,6 +25,7 @@ from fuelweb_test import settings
 from fuelweb_test.helpers import replace_repos
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import erase_data_from_hdd
+from fuelweb_test.helpers.utils import get_process_uptime
 from fuelweb_test.helpers.utils import get_test_method_name
 from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.helpers.utils import YamlEditor
@@ -234,6 +235,9 @@ class TestBasic(object):
                 self.env.admin_actions.admin_install_updates_mos_mu()
             else:
                 self.env.admin_actions.admin_install_updates()
+
+            self.admin_reboot_and_wait()
+
         if settings.MULTIPLE_NETWORKS:
             self.env.describe_other_admin_interfaces(
                 self.env.d_env.nodes().admin)
@@ -251,6 +255,26 @@ class TestBasic(object):
             ))
         if force_ssl:
             self.env.enable_force_https(self.ssh_manager.admin_ip)
+
+    def admin_reboot_and_wait(self,
+                              reboot=settings.REBOOT_MASTER_AFTER_UPDATE):
+        if not reboot:
+            return
+        admin = self.ssh_manager.get_remote(self.ssh_manager.admin_ip)
+        uptime_old = get_process_uptime(admin, 'systemd')
+        try:
+            self.fuel_web.warm_restart_nodes(admin)
+        except Exception:
+            logger.info("Reboot failed. Hard resetting admin node",
+                        exc_info=True)
+            self.fuel_web.cold_restart_nodes(admin)
+
+        self._is_uptime_changed(admin, uptime_old)
+
+    @staticmethod
+    def _is_uptime_changed(remote, uptime):
+        if uptime <= get_process_uptime(remote, 'systemd'):
+            raise Exception("Uptime was not changed, restart failed")
 
     def reinstall_master_node(self):
         """Erase boot sector and run setup_environment"""
