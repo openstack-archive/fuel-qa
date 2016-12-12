@@ -673,6 +673,8 @@ UPDATE_FUEL_MIRROR = os.environ.get("UPDATE_FUEL_MIRROR", '').split()
 
 UPDATE_MASTER = get_var_as_bool('UPDATE_MASTER', False)
 UPDATE_MASTER_VIA_MOS_MU = get_var_as_bool('UPDATE_MASTER_VIA_MOS_MU', True)
+REBOOT_MASTER_AFTER_UPDATE = get_var_as_bool(
+    'REBOOT_MASTER_AFTER_UPDATE', True)
 
 EMC_PLUGIN_PATH = os.environ.get('EMC_PLUGIN_PATH')
 EMC_SP_A_IP = os.environ.get('EMC_SP_A_IP')
