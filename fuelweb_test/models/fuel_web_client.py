@@ -425,8 +425,14 @@ class FuelWebClient29(object):
     def wait_node_is_online(self, devops_node, timeout=60 * 5):
         logger.info(
             'Wait for node {!r} online status'.format(devops_node.name))
-        wait(lambda: self.get_nailgun_node_by_devops_node(
-             devops_node)['online'],
+        if 'admin' in devops_node.name:
+            def func():
+                return devops_node.is_active()
+        else:
+            def func():
+                return self.get_nailgun_node_by_devops_node(
+                    devops_node)['online']
+        wait(func(),
              timeout=timeout,
              timeout_msg='Node {!r} failed to become online'
                          ''.format(devops_node.name))
@@ -434,8 +440,14 @@ class FuelWebClient29(object):
     def wait_node_is_offline(self, devops_node, timeout=60 * 5):
         logger.info(
             'Wait for node {!r} offline status'.format(devops_node.name))
-        wait(lambda: not self.get_nailgun_node_by_devops_node(
-             devops_node)['online'],
+        if 'admin' in devops_node.name:
+            def func():
+                return not devops_node.is_active()
+        else:
+            def func():
+                return not self.get_nailgun_node_by_devops_node(
+                    devops_node)['online']
+        wait(func(),
              timeout=timeout,
              timeout_msg='Node {!r} failed to become offline'
                          ''.format(devops_node.name))
@@ -2152,9 +2164,13 @@ class FuelWebClient29(object):
                     [n.name for n in devops_nodes])
         for node in devops_nodes:
             logger.debug('Shutdown node %s', node.name)
-            nailgun_node = self.get_nailgun_node_by_devops_node(node)
+            if 'admin' in node.name:
+                ip = self.ssh_manager.admin_ip
+            else:
+                nailgun_node = self.get_nailgun_node_by_devops_node(node)
+                ip = nailgun_node['ip']
             # TODO: LP1620680
-            self.ssh_manager.check_call(ip=nailgun_node['ip'], sudo=True,
+            self.ssh_manager.check_call(ip=ip, sudo=True,
                                         command='sudo shutdown +1')
         for node in devops_nodes:
             self.wait_node_is_offline(node, timeout=timeout)
