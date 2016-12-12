@@ -19,6 +19,7 @@ from devops.helpers.helpers import wait
 from devops.models import DiskDevice
 from devops.models import Node
 from devops.models import Volume
+from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 
 from core.helpers.log_helpers import logwrap
@@ -304,7 +305,10 @@ class AdminActions(BaseActions):
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
             command=install_command)
-
+        logger.info('Requesting packages to be updated')
+        new_packages = self.get_packages_list()
+        logger.debug('Got the list of packages to be updated: {}'.format(
+            new_packages))
         logger.info('prepare Fuel node for updating')
         prepare_command = 'update-prepare prepare master'
 
@@ -319,7 +323,29 @@ class AdminActions(BaseActions):
             ip=self.ssh_manager.admin_ip,
             command=update_command)
 
+        logger.info('Requesting installed packages')
+        installed_packages = self.get_packages_list('installed')
+        logger.debug('Got the list of installed packages: {}'.format(
+            installed_packages))
+        notupdated_packages = list()
+        for package in new_packages:
+            if installed_packages[package] != new_packages[package]:
+                notupdated_packages.append(package)
+        msg = "These packages weren't updated {}".format(notupdated_packages)
+        assert_equal(notupdated_packages, [], msg)
+
         logger.info('Update successful')
+
+    def get_packages_list(self, packages_list='updates'):
+        cmd = 'yum list {}'.format(packages_list)
+        admin_ip = self.ssh_manager.admin_ip
+        res = self.ssh_manager.check_call(admin_ip, cmd).stdout
+        tmp = '{} Packages'.format(
+            'Updated' if packages_list == 'updates' else 'Installed')
+        index = res.index(tmp)
+        res = res[index + 1::]
+        return {package: version for pack in res
+                for package, version, _ in [pack.split()]}
 
     def prepare_admin_node_for_mos_mu(self):
         """Prepare master node for update via mos-playbooks tool"""
