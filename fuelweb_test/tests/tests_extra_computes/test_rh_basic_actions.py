@@ -17,6 +17,7 @@ from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
 from proboscis import asserts
 from proboscis import test
+from proboscis import SkipTest
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -56,6 +57,8 @@ class RhHaOneController(ExtraComputesBase):
         Snapshot: deploy_rh_compute_ha_one_controller_tun
 
         """
+        raise SkipTest("Test disabled because this feauture is not supported")
+
         self.show_step(1, initialize=True)
         logger.debug('Check MD5 sum of RH 7 image')
         check_image = checkers.check_image(
@@ -193,6 +196,7 @@ class RhFailoverGroup(ExtraComputesBase):
         Duration 20m
         Snapshot check_rh_warm_reboot
         """
+        raise SkipTest("Test disabled because this feauture is not supported")
 
         self.show_step(1, initialize=True)
         self.env.revert_snapshot('ready_ha_one_controller_with_rh_compute',
@@ -270,6 +274,7 @@ class RhFailoverGroup(ExtraComputesBase):
         Duration 20m
         Snapshot check_rh_hard_reboot
         """
+        raise SkipTest("Test disabled because this feauture is not supported")
 
         self.show_step(1, initialize=True)
         self.env.revert_snapshot('ready_ha_one_controller_with_rh_compute',
