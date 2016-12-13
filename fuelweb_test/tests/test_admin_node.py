@@ -460,18 +460,24 @@ class GPGSigningCheck(TestBasic):
     """ Tests for checking GPG signing """
     def __init__(self):
         super(GPGSigningCheck, self).__init__()
-        self.release_version = self.fuel_web.get_nailgun_version().get(
+        os_path = 'os' # Path part for base release
+        self.fuel_release_version = self.fuel_web.get_nailgun_version().get(
             'release')
-        self.gpg_name = settings.GPG_CENTOS_KEY_PATH.split('/')[-1].format(
-            release_version=self.release_version)
-        self.gpg_centos_key_path = settings.GPG_CENTOS_KEY_PATH.format(
-            release_version=self.release_version)
+        self.os_release_version = self.fuel_web.get_nailgun_version().get(
+            'openstack_version').split('-')[-1]
+        if self.fuel_release_version != self.os_release_version:
+            os_path = '{}-updates'.format(self.fuel_release_version)
+
         self.centos_repo_path = settings.CENTOS_REPO_PATH.format(
-            release_version=self.release_version)
-        self.ubuntu_repo_path = settings.UBUNTU_REPO_PATH.format(
-            release_version=self.release_version)
+            os_release_version=self.os_release_version, os_path=os_path)
+        self.gpg_name = settings.GPG_CENTOS_KEY_PATH.split('/')[-1].format(
+            os_release_version=self.os_release_version, os_path=os_path)
         self.gpg_centos_key_path = settings.GPG_CENTOS_KEY_PATH.format(
-            release_version=self.release_version)
+            os_release_version=self.os_release_version, os_path=os_path)
+        dists = "dists/mos{os_release_version}"
+        self.ubuntu_repo_path = (settings.UBUNTU_REPO_PATH + dists).format(
+            fuel_release_version=self.fuel_release_version,
+            os_release_version=self.os_release_version)
 
     @test(depends_on=[SetupEnvironment.setup_master],
           groups=['test_check_rpm_packages_signed'])
@@ -537,17 +543,15 @@ class GPGSigningCheck(TestBasic):
             'wget {link}'.format(link=self.gpg_centos_key_path),
             'rpm --import {gpg_pub_key}'.format(gpg_pub_key=self.gpg_name),
             'gpg --import {gpg_pub_key}'.format(gpg_pub_key=self.gpg_name),
-            'wget {repo_path}os/x86_64/repodata/repomd.xml.asc'.format(
+            'wget {repo_path}/x86_64/repodata/repomd.xml.asc'.format(
                 repo_path=self.centos_repo_path),
-            'wget {repo_path}os/x86_64/repodata/repomd.xml'.format(
+            'wget {repo_path}/x86_64/repodata/repomd.xml'.format(
                 repo_path=self.centos_repo_path),
             'gpg --verify repomd.xml.asc repomd.xml',
-            'wget {repo_path}dists/mos{release_version}/Release'.format(
-                repo_path=self.ubuntu_repo_path,
-                release_version=self.release_version),
-            'wget {repo_path}dists/mos{release_version}/Release.gpg'.format(
-                repo_path=self.ubuntu_repo_path,
-                release_version=self.release_version),
+            'wget {repo_path}/Release'.format(
+                repo_path=self.ubuntu_repo_path),
+            'wget {repo_path}/Release.gpg'.format(
+                repo_path=self.ubuntu_repo_path),
             'gpg --verify Release.gpg Release'
         ]
         for cmd in cmds:
@@ -558,7 +562,7 @@ class GPGSigningCheck(TestBasic):
 
         self.show_step(6)
         response = urlopen(
-            '{}/os/x86_64/Packages/'.format(self.centos_repo_path)
+            '{}/x86_64/Packages/'.format(self.centos_repo_path)
         )
         source = response.read()
         rpms = re.findall(r'href="(.*.rpm)"', source)
@@ -566,7 +570,7 @@ class GPGSigningCheck(TestBasic):
 
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd='wget {}os/x86_64/Packages/{}'.format(
+            cmd='wget {}/x86_64/Packages/{}'.format(
                 self.centos_repo_path,
                 rpm)
         )
