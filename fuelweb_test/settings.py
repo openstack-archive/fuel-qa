@@ -474,19 +474,18 @@ MOS_UBUNTU_MIRROR_ID = os.environ.get('MOS_UBUNTU_MIRROR_ID', None)
 # Repos paths and files
 MOS_REPOS = os.environ.get('MOS_REPOS',
                            'http://mirror.fuel-infra.org/mos-repos/')
-CENTOS_REPO_PATH = os.environ.get(
-    'CENTOS_REPO_PATH',
-    MOS_REPOS + 'centos/mos{release_version}-centos7/')
 UBUNTU_REPO_PATH = os.environ.get(
     'UBUNTU_REPO_PATH',
-    MOS_REPOS + 'ubuntu/{release_version}/')
+    MOS_REPOS + 'ubuntu/{fuel_release_version}/')
+CENTOS_REPO_PATH = os.environ.get(
+    'CENTOS_REPO_PATH',
+    MOS_REPOS + 'centos/mos{os_release_version}-centos7/{os_path}/')
 GPG_CENTOS_KEY_PATH = os.environ.get(
     'GPG_CENTOS_KEY',
-    CENTOS_REPO_PATH + 'os/RPM-GPG-KEY-mos{release_version}')
+    CENTOS_REPO_PATH + 'RPM-GPG-KEY-mos{os_release_version}')
 MASTER_CENTOS_GPG = os.environ.get(
     'MASTER_CENTOS_GPG', 'http://packages.fuel-infra.org/repositories'
-                         '/centos/master-centos7/os/RPM-GPG-KEY-'
-)
+                         '/centos/master-centos7/os/RPM-GPG-KEY-')
 PACKAGES_CENTOS = os.environ.get(
     'PACKAGES_CENTOS',
     'http://packages.fuel-infra.org/repositories/'
