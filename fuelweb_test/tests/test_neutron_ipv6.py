@@ -16,20 +16,19 @@ from __future__ import unicode_literals
 
 from warnings import warn
 
-from devops.helpers.ssh_client import SSHAuth
-from devops.helpers.helpers import wait
-from proboscis.asserts import assert_equal
-from proboscis import test
+from devops.helpers import helpers as devops_helpers
 from proboscis import SkipTest
-from paramiko import ChannelException
+from proboscis import test
 
 from fuelweb_test.helpers import os_actions
+from fuelweb_test.helpers.checkers import ping6_from_instance
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.settings import SSH_IMAGE_CREDENTIALS
+from fuelweb_test.helpers.ssh_manager import SSHManager
+from fuelweb_test.helpers.utils import get_instance_ipv6
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test import logger
 
-cirros_auth = SSHAuth(**SSH_IMAGE_CREDENTIALS)
+ssh_manager = SSHManager()
 
 
 @test(enabled=False, groups=["thread_1", "neutron"])
@@ -54,17 +53,15 @@ class TestNeutronIPv6(TestBasic):
 
         Scenario:
             1. Revert deploy_neutron_vlan snapshot
-            2. Create two dualstack network IPv6 subnets
+            2. Create network resources: two dualstack network IPv6 subnets
                 (should be in SLAAC mode,
-                address space should not intersect).
-            3. Create virtual router and set gateway.
-            4. Attach this subnets to the router.
-            5. Create a Security Group,
+                address space should not intersect),
+                virtual router and set gateway.
+            3. Create a Security Group,
                 that allows SSH and ICMP for both IPv4 and IPv6.
-            6. Launch two instances, one for each network.
-            7. Lease a floating IP.
-            8. Attach Floating IP for main instance.
-            9. SSH to the main instance and ping6 another instance.
+            4. Launch two instances, one for each network.
+            5. Attach Floating IP for both instances.
+            6. SSH to the main instance and ping6 another instance.
 
         Duration 10m
         Snapshot deploy_neutron_ip_v6
@@ -91,67 +88,12 @@ class TestNeutronIPv6(TestBasic):
         tenant = os_conn.get_tenant('simpleVlan')
 
         self.show_step(2)
-        net1 = os_conn.create_network(
-            network_name='net1',
-            tenant_id=tenant.id)['network']
-        net2 = os_conn.create_network(
-            network_name='net2',
-            tenant_id=tenant.id)['network']
-
-        subnet_1_v4 = os_conn.create_subnet(
-            subnet_name='subnet_1_v4',
-            network_id=net1['id'],
-            cidr='192.168.100.0/24',
-            ip_version=4)
-
-        subnet_1_v6 = os_conn.create_subnet(
-            subnet_name='subnet_1_v6',
-            network_id=net1['id'],
-            ip_version=6,
-            cidr="2001:db8:100::/64",
-            gateway_ip="2001:db8:100::1",
-            ipv6_ra_mode="slaac",
-            ipv6_address_mode="slaac")
-
-        subnet_2_v4 = os_conn.create_subnet(
-            subnet_name='subnet_2_v4',
-            network_id=net2['id'],
-            cidr='192.168.200.0/24',
-            ip_version=4)
-
-        subnet_2_v6 = os_conn.create_subnet(
-            subnet_name='subnet_2_v6',
-            network_id=net2['id'],
-            ip_version=6,
-            cidr="2001:db8:200::/64",
-            gateway_ip="2001:db8:200::1",
-            ipv6_ra_mode="slaac",
-            ipv6_address_mode="slaac")
+        net1, net2 = os_conn.create_network_resources_for_ipv6_test(tenant)
 
         self.show_step(3)
-        router = os_conn.create_router('test_router', tenant=tenant)
-
-        self.show_step(4)
-        os_conn.add_router_interface(
-            router_id=router["id"],
-            subnet_id=subnet_1_v4["id"])
-
-        os_conn.add_router_interface(
-            router_id=router["id"],
-            subnet_id=subnet_1_v6["id"])
-
-        os_conn.add_router_interface(
-            router_id=router["id"],
-            subnet_id=subnet_2_v4["id"])
-
-        os_conn.add_router_interface(
-            router_id=router["id"],
-            subnet_id=subnet_2_v6["id"])
-
-        self.show_step(5)
         security_group = os_conn.create_sec_group_for_ssh()
 
-        self.show_step(6)
+        self.show_step(4)
         instance1 = os_conn.create_server(
             name='instance1',
             security_groups=[security_group],
@@ -164,81 +106,28 @@ class TestNeutronIPv6(TestBasic):
             net_id=net2['id'],
         )
 
-        self.show_step(7)
-        self.show_step(8)
+        self.show_step(5)
         floating_ip = os_conn.assign_floating_ip(instance1)
         floating_ip2 = os_conn.assign_floating_ip(instance2)
 
-        self.show_step(9)
+        self.show_step(6)
+        get_instance_ipv6(instance1, net1)
+        instance2_ipv6 = get_instance_ipv6(instance2, net2)
 
-        instance1_ipv6 = [
-            addr['addr'] for addr in instance1.addresses[net1['name']]
-            if addr['version'] == 6].pop()
+        node_ip = self.fuel_web.get_node_ip_by_devops_name("slave-01")
+        remote = ssh_manager.get_remote(node_ip)
+        for instance_ip, instance in (
+                (floating_ip.ip, instance1),
+                (floating_ip2.ip, instance2)
+        ):
+            logger.info("Wait for ping from instance {} "
+                        "by floating ip".format(instance.id))
+            devops_helpers.wait(
+                lambda: devops_helpers.tcp_ping(instance_ip, 22),
+                timeout=300,
+                timeout_msg=("Instance {0} is unreachable for {1} seconds".
+                             format(instance.id, 300)))
 
-        instance2_ipv6 = [
-            addr['addr'] for addr in instance2.addresses[net2['name']]
-            if addr['version'] == 6].pop()
-
-        logger.info(
-            '\ninstance1:\n'
-            '\tFloatingIP:   {ip!s}\n'
-            '\tIPv6 address: {ipv6!s}'.format(
-                ip=floating_ip.ip,
-                ipv6=instance1_ipv6))
-        logger.info(
-            '\ninstance2:\n'
-            '\tFloatingIP:   {ip!s}\n'
-            '\tIPv6 address: {ipv6!s}'.format(
-                ip=floating_ip2.ip,
-                ipv6=instance2_ipv6))
-
-        with self.fuel_web.get_ssh_for_node("slave-01") as remote:
-            def ssh_ready(vm_host):
-                try:
-                    remote.execute_through_host(
-                        hostname=vm_host,
-                        cmd="ls -la",
-                        auth=cirros_auth
-                    )
-                    return True
-                except ChannelException:
-                    return False
-
-            for vm_host, hostname in (
-                    (floating_ip.ip, instance1),
-                    (floating_ip2.ip, instance2)
-            ):
-                wait(lambda: ssh_ready(vm_host), timeout=120,
-                     timeout_msg='ssh is not ready on host '
-                                 '{hostname:s} ({ip:s}) at timeout 120s'
-                                 ''.format(hostname=hostname, ip=vm_host))
-
-            res = remote.execute_through_host(
-                hostname=floating_ip.ip,
-                cmd="{ping:s} -q "
-                    "-c{count:d} "
-                    "-w{deadline:d} "
-                    "-s{packetsize:d} "
-                    "{dst_address:s}".format(
-                        ping='ping6',
-                        count=10,
-                        deadline=20,
-                        packetsize=1452,
-                        dst_address=instance2_ipv6),
-                auth=cirros_auth
-            )
-
-            logger.info(
-                'Ping results: \n\t{res:s}'.format(res=res['stdout_str']))
-
-            assert_equal(
-                res['exit_code'],
-                0,
-                'Ping failed with error code: {code:d}\n'
-                '\tSTDOUT: {stdout:s}\n'
-                '\tSTDERR: {stderr:s}'.format(
-                    code=res['exit_code'],
-                    stdout=res['stdout_str'],
-                    stderr=res['stderr_str']))
+        ping6_from_instance(remote, floating_ip.ip, instance2_ipv6)
 
         self.env.make_snapshot('deploy_neutron_ip_v6')

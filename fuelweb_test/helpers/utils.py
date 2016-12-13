@@ -1587,3 +1587,25 @@ def preserve_partition(admin_remote, node_id, partition):
     # Upload the updated disks config to the corresponding node
     admin_remote.execute("fuel node --node-id {0} "
                          "--disk --upload".format(str(node_id)))
+
+
+def get_instance_ipv6(instance, network):
+    """Get instance ip of version 6
+
+    :param instance: obj, object of instance
+    :param network: obj, object of assigned network
+    :return:
+    """
+    instance_ip = [addr['addr']
+                   for addr in instance.addresses[network['name']]
+                   if addr['OS-EXT-IPS:type'] == 'fixed' and
+                   addr['version'] == 6]
+    logger.debug(
+        '\ninstance: {instance_id!s}\n'
+        '\tIPv6 address: {ipv6!s}'.format(
+            instance_id=instance.id,
+            ipv6=instance_ip))
+    assert_true(instance_ip,
+                'Not found ip v6 for instance. Details:\n {}'
+                .format(instance.addresses[network['name']]))
+    return instance_ip[0]
