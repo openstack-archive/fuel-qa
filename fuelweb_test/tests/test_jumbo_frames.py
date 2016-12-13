@@ -12,7 +12,6 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from copy import deepcopy
 import subprocess
 
 from devops.helpers import helpers as devops_helpers
@@ -45,13 +44,13 @@ class TestJumboFrames(base_test_case.TestBasic):
         iface_alias('eth4'): ['storage'],
     }
 
-    interfaces_update = [{
+    iface_update = {
         'name': iface_alias('eth3'),
         'interface_properties': {
             'mtu': 9000,
             'disable_offloading': False
-        },
-    }]
+        }
+    }
 
     def check_node_iface_mtu(self, node, iface, mtu):
         """Check mtu on environment node network interface."""
@@ -295,9 +294,10 @@ class TestJumboFrames(base_test_case.TestBasic):
         self.show_step(5)
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in slave_nodes:
-            self.fuel_web.update_node_networks(
-                node['id'], self.interfaces,
-                override_ifaces_params=self.interfaces_update)
+            self.fuel_web.set_mtu(node['id'],
+                                  self.iface_update['name'], mtu=9000)
+            self.fuel_web.disable_offloading(node['id'],
+                                             self.iface_update['name'])
 
         self.show_step(6)
         self.fuel_web.deploy_cluster_wait(cluster_id)
@@ -310,13 +310,13 @@ class TestJumboFrames(base_test_case.TestBasic):
                           'slave-04', 'slave-05']:
             node = self.fuel_web.get_nailgun_node_by_name(node_name)
             with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
-                for iface in self.interfaces_update:
-                    asserts.assert_true(
-                        self.check_node_iface_mtu(remote, iface['name'], 9000),
-                        "MTU on {0} is not 9000. "
-                        "Actual value: {1}".format(
-                            remote.host,
-                            self.get_node_iface(remote, iface['name'])))
+                asserts.assert_true(
+                    self.check_node_iface_mtu(
+                        remote, self.iface_update['name'], 9000),
+                    "MTU on {0} is not 9000. Actual value: {1}".format(
+                        remote.host,
+                        self.get_node_iface(remote, self.iface_update['name'])
+                    ))
 
         self.show_step(9)
         self.check_mtu_size_between_instances(mtu_offset=0)
@@ -376,9 +376,10 @@ class TestJumboFrames(base_test_case.TestBasic):
         self.show_step(5)
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in slave_nodes:
-            self.fuel_web.update_node_networks(
-                node['id'], self.interfaces,
-                override_ifaces_params=self.interfaces_update)
+            self.fuel_web.set_mtu(node['id'],
+                                  self.iface_update['name'], mtu=9000)
+            self.fuel_web.disable_offloading(node['id'],
+                                             self.iface_update['name'])
 
         self.show_step(6)
         self.fuel_web.deploy_cluster_wait(cluster_id)
@@ -391,13 +392,13 @@ class TestJumboFrames(base_test_case.TestBasic):
                           'slave-04', 'slave-05']:
             node = self.fuel_web.get_nailgun_node_by_name(node_name)
             with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
-                for iface in self.interfaces_update:
-                    asserts.assert_true(
-                        self.check_node_iface_mtu(remote, iface['name'], 9000),
-                        "MTU on {0} is not 9000. "
-                        "Actual value: {1}".format(
-                            remote.host,
-                            self.get_node_iface(remote, iface['name'])))
+                asserts.assert_true(
+                    self.check_node_iface_mtu(
+                        remote, self.iface_update['name'], 9000),
+                    "MTU on {0} is not 9000. Actual value: {1}".format(
+                        remote.host,
+                        self.get_node_iface(remote, self.iface_update['name'])
+                    ))
 
         self.show_step(9)
         self.check_mtu_size_between_instances(mtu_offset=50)
@@ -458,10 +459,10 @@ class TestJumboFrames(base_test_case.TestBasic):
         self.show_step(5)
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in slave_nodes:
-            self.fuel_web.update_node_networks(
-                node['id'],
-                interfaces_dict=deepcopy(self.interfaces),
-                override_ifaces_params=self.interfaces_update)
+            self.fuel_web.set_mtu(node['id'],
+                                  self.iface_update['name'], mtu=9000)
+            self.fuel_web.disable_offloading(node['id'],
+                                             self.iface_update['name'])
 
         self.show_step(6)
         self.fuel_web.deploy_cluster_wait(cluster_id)
@@ -474,13 +475,13 @@ class TestJumboFrames(base_test_case.TestBasic):
                           'slave-04', 'slave-05']:
             node = self.fuel_web.get_nailgun_node_by_name(node_name)
             with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
-                for iface in self.interfaces_update:
-                    asserts.assert_true(
-                        self.check_node_iface_mtu(remote, iface['name'], 9000),
-                        "MTU on {0} is not 9000. "
-                        "Actual value: {1}".format(
-                            remote.host,
-                            self.get_node_iface(remote, iface['name'])))
+                asserts.assert_true(
+                    self.check_node_iface_mtu(
+                        remote, self.iface_update['name'], 9000),
+                    "MTU on {0} is not 9000. Actual value: {1}".format(
+                        remote.host,
+                        self.get_node_iface(remote, self.iface_update['name'])
+                    ))
 
         self.show_step(9)
         self.check_mtu_size_between_instances(mtu_offset=0, diff_net=True)
@@ -541,10 +542,10 @@ class TestJumboFrames(base_test_case.TestBasic):
         self.show_step(5)
         slave_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
         for node in slave_nodes:
-            self.fuel_web.update_node_networks(
-                node['id'],
-                interfaces_dict=deepcopy(self.interfaces),
-                override_ifaces_params=self.interfaces_update)
+            self.fuel_web.set_mtu(node['id'],
+                                  self.iface_update['name'], mtu=9000)
+            self.fuel_web.disable_offloading(node['id'],
+                                             self.iface_update['name'])
 
         self.show_step(6)
         self.fuel_web.deploy_cluster_wait(cluster_id)
@@ -557,13 +558,13 @@ class TestJumboFrames(base_test_case.TestBasic):
                           'slave-04', 'slave-05']:
             node = self.fuel_web.get_nailgun_node_by_name(node_name)
             with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
-                for iface in self.interfaces_update:
-                    asserts.assert_true(
-                        self.check_node_iface_mtu(remote, iface['name'], 9000),
-                        "MTU on {0} is not 9000. "
-                        "Actual value: {1}".format(
-                            remote.host,
-                            self.get_node_iface(remote, iface['name'])))
+                asserts.assert_true(
+                    self.check_node_iface_mtu(
+                        remote, self.iface_update['name'], 9000),
+                    "MTU on {0} is not 9000. Actual value: {1}".format(
+                        remote.host,
+                        self.get_node_iface(remote, self.iface_update['name'])
+                    ))
 
         self.show_step(9)
         self.check_mtu_size_between_instances(mtu_offset=50, diff_net=True)
