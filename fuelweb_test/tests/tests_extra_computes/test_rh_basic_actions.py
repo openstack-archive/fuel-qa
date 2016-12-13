@@ -16,6 +16,7 @@ from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
 from proboscis import asserts
 from proboscis import test
+from proboscis import SkipTest
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -27,11 +28,12 @@ from fuelweb_test.tests.tests_extra_computes.base_extra_computes \
     import ExtraComputesBase
 
 
-@test(groups=["rh", "rh.ha_one_controller", "rh.basic"])
+@test(enabled=False, groups=["rh", "rh.ha_one_controller", "rh.basic"])
 class RhHaOneController(ExtraComputesBase):
     """RH-based compute HA One Controller basic test"""
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
+    @test(enabled=False,
+          depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_rh_compute_ha_one_controller_tun"])
     @log_snapshot_after_test
     def deploy_rh_compute_ha_one_controller_tun(self):
@@ -55,6 +57,9 @@ class RhHaOneController(ExtraComputesBase):
         Snapshot: deploy_rh_compute_ha_one_controller_tun
 
         """
+        # pylint: disable=W0101
+        raise SkipTest("Test disabled because this feauture is not supported")
+
         self.show_step(1, initialize=True)
         logger.debug('Check MD5 sum of RH 7 image')
         check_image = checkers.check_image(
@@ -170,11 +175,12 @@ class RhHaOneController(ExtraComputesBase):
                                is_make=True)
 
 
-@test(groups=['rh', 'rh.failover_group'])
+@test(enabled=False, groups=['rh', 'rh.failover_group'])
 class RhFailoverGroup(ExtraComputesBase):
     """Failover tests for RH-based computes"""
 
-    @test(depends_on_groups=['deploy_rh_compute_ha_one_controller_tun'],
+    @test(enabled=False,
+          depends_on_groups=['deploy_rh_compute_ha_one_controller_tun'],
           groups=['check_rh_warm_reboot'])
     @log_snapshot_after_test
     def check_rh_warm_reboot(self):
@@ -192,6 +198,8 @@ class RhFailoverGroup(ExtraComputesBase):
         Duration 20m
         Snapshot check_rh_warm_reboot
         """
+        # pylint: disable=W0101
+        raise SkipTest("Test disabled because this feauture is not supported")
 
         self.show_step(1, initialize=True)
         self.env.revert_snapshot('ready_ha_one_controller_with_rh_compute',
@@ -247,7 +255,8 @@ class RhFailoverGroup(ExtraComputesBase):
         os_conn.delete_instance(vm)
         os_conn.verify_srv_deleted(vm)
 
-    @test(depends_on_groups=['deploy_rh_compute_ha_one_controller_tun'],
+    @test(enabled=False,
+          depends_on_groups=['deploy_rh_compute_ha_one_controller_tun'],
           groups=['check_rh_hard_reboot'])
     @log_snapshot_after_test
     def check_rh_hard_reboot(self):
@@ -265,6 +274,8 @@ class RhFailoverGroup(ExtraComputesBase):
         Duration 20m
         Snapshot check_rh_hard_reboot
         """
+        # pylint: disable=W0101
+        raise SkipTest("Test disabled because this feauture is not supported")
 
         self.show_step(1, initialize=True)
         self.env.revert_snapshot('ready_ha_one_controller_with_rh_compute',

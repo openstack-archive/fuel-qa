@@ -14,6 +14,7 @@
 
 from proboscis import asserts
 from proboscis import test
+from proboscis import SkipTest
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -25,10 +26,11 @@ from fuelweb_test.tests.tests_extra_computes.base_extra_computes \
     import ExtraComputesBase
 
 
-@test(groups=['rh.migration'])
+@test(enabled=False, groups=['rh.migration'])
 class RhHAOneControllerMigration(ExtraComputesBase):
     """RH-based compute HA migration test"""
-    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+    @test(enabled=False,
+          depends_on=[SetupEnvironment.prepare_slaves_5],
           groups=["check_vm_migration_rh_ha_one_controller_tun"])
     @log_snapshot_after_test
     def check_vm_migration_rh_ha_one_controller_tun(self):
@@ -53,6 +55,9 @@ class RhHAOneControllerMigration(ExtraComputesBase):
         Snapshot: check_vm_migration_rh_ha_one_controller_tun
 
         """
+        # pylint: disable=W0101
+        raise SkipTest("Test disabled because this feauture is not supported")
+
         self.show_step(1, initialize=True)
         logger.debug('Check MD5 sum of RH 7 image')
         check_image = checkers.check_image(
