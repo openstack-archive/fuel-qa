@@ -16,6 +16,7 @@ from devops.helpers.helpers import tcp_ping
 from devops.helpers.helpers import wait
 from proboscis import asserts
 from proboscis import test
+from proboscis import SkipTest
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -55,6 +56,9 @@ class OlHaOneController(ExtraComputesBase):
         Snapshot: deploy_ol_compute_ha_one_controller_tun
 
         """
+        # pylint: disable=W0101
+        raise SkipTest("Test disabled because this feauture is not supported")
+
         self.show_step(1, initialize=True)
         logger.debug('Check MD5 sum of OL 7 image')
         check_image = checkers.check_image(
@@ -189,6 +193,8 @@ class OlFailoverGroup(ExtraComputesBase):
         Duration: 20m
         Snapshot: check_ol_warm_reboot
         """
+        # pylint: disable=W0101
+        raise SkipTest("Test disabled because this feauture is not supported")
 
         self.show_step(1)
         self.env.revert_snapshot('ready_ha_one_controller_with_ol_compute',
@@ -265,6 +271,8 @@ class OlFailoverGroup(ExtraComputesBase):
         Duration: 20m
         Snapshot: check_ol_hard_reboot
         """
+        # pylint: disable=W0101
+        raise SkipTest("Test disabled because this feauture is not supported")
 
         self.show_step(1)
         self.env.revert_snapshot('ready_ha_one_controller_with_ol_compute',

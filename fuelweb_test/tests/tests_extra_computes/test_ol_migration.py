@@ -16,6 +16,7 @@ from __future__ import division
 
 from proboscis import asserts
 from proboscis import test
+from proboscis import SkipTest
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -53,6 +54,9 @@ class OlHAOneControllerMigration(base_extra_computes.ExtraComputesBase):
         Snapshot: check_vm_migration_ol_ha_one_controller_tun
 
         """
+        # pylint: disable=W0101
+        raise SkipTest("Test disabled because this feauture is not supported")
+
         self.show_step(1)
         logger.debug('Check MD5 sum of OL 7 image')
         check_image = checkers.check_image(
