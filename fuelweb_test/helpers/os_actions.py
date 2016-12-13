@@ -739,3 +739,66 @@ class OpenStackActions(common.Common):
         vm_data['server'] = server.to_dict()
         vms_data.append(vm_data)
         return vms_data
+
+    def create_network_resources_for_ipv6_test(self, tenant):
+        """Create network resources: two dualstack network IPv6 subnets
+        (should be in SLAAC mode, address space should not intersect),
+        virtual router and set gateway.
+
+        :param tenant: obj, object of keystone tenant
+        """
+        net1 = self.create_network(
+            network_name='net1',
+            tenant_id=tenant.id)['network']
+        net2 = self.create_network(
+            network_name='net2',
+            tenant_id=tenant.id)['network']
+
+        subnet_1_v4 = self.create_subnet(
+            subnet_name='subnet_1_v4',
+            network_id=net1['id'],
+            cidr='192.168.100.0/24',
+            ip_version=4)
+
+        subnet_1_v6 = self.create_subnet(
+            subnet_name='subnet_1_v6',
+            network_id=net1['id'],
+            ip_version=6,
+            cidr="2001:db8:100::/64",
+            gateway_ip="2001:db8:100::1",
+            ipv6_ra_mode="slaac",
+            ipv6_address_mode="slaac")
+
+        subnet_2_v4 = self.create_subnet(
+            subnet_name='subnet_2_v4',
+            network_id=net2['id'],
+            cidr='192.168.200.0/24',
+            ip_version=4)
+
+        subnet_2_v6 = self.create_subnet(
+            subnet_name='subnet_2_v6',
+            network_id=net2['id'],
+            ip_version=6,
+            cidr="2001:db8:200::/64",
+            gateway_ip="2001:db8:200::1",
+            ipv6_ra_mode="slaac",
+            ipv6_address_mode="slaac")
+
+        router = self.create_router('test_router', tenant=tenant)
+
+        self.add_router_interface(
+            router_id=router["id"],
+            subnet_id=subnet_1_v4["id"])
+
+        self.add_router_interface(
+            router_id=router["id"],
+            subnet_id=subnet_1_v6["id"])
+
+        self.add_router_interface(
+            router_id=router["id"],
+            subnet_id=subnet_2_v4["id"])
+
+        self.add_router_interface(
+            router_id=router["id"],
+            subnet_id=subnet_2_v6["id"])
+        return net1, net2
