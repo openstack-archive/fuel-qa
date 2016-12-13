@@ -639,43 +639,6 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
                                 remote_status['exit_code'],
                                 remote_status['stdout']))
 
-    def admin_install_updates(self):
-        """Update packages using yum and install updates via
-        update-master-node.sh tool"""
-        logger.info('Searching for python-cudet package')
-
-        search_command = 'yum search python-cudet'
-
-        search_result = self.ssh_manager.check_call(
-            ip=self.ssh_manager.admin_ip,
-            command=search_command)
-
-        assert_true(
-            "Warning: No matches found for: " not in search_result.stderr_str,
-            "python-cudet wasn't found")
-
-        install_command = 'yum install -y python-cudet'
-
-        self.ssh_manager.check_call(
-            ip=self.ssh_manager.admin_ip,
-            command=install_command)
-
-        logger.info('prepare Fuel node for updating')
-        prepare_command = 'update-prepare prepare master'
-
-        self.ssh_manager.check_call(
-            ip=self.ssh_manager.admin_ip,
-            command=prepare_command)
-
-        logger.info('update Fuel node')
-        update_command = 'update-prepare update master'
-
-        self.ssh_manager.check_call(
-            ip=self.ssh_manager.admin_ip,
-            command=update_command)
-
-        logger.info('Update successful')
-
     # Modifies a resolv.conf on the Fuel master node and returns
     # its original content.
     # * adds 'nameservers' at start of resolv.conf if merge=True

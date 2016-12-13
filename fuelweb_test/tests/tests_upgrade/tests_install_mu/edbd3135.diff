@@ -1,0 +1,49 @@
+From edbd3135f8087ea73dc73b06962bf8b869ee6f43 Mon Sep 17 00:00:00 2001
+From: Dan Smith <dansmith@redhat.com>
+Date: Wed, 05 Oct 2016 12:54:22 -0700
+Subject: [PATCH] Fix binary name used in the pci device online migration check
+
+The should_migrate_data() method used to gate PCIDevice online migrations
+has, unfortunately, been incorrect since day one. It checks for the
+nova-api service, but should have been checking for nova-osapi_compute.
+This fixes that and adds a test.
+
+Change-Id: I69faa52fc126db6e99827bcb7dcf0841d0e15e74
+Closes-Bug: #1630732
+(cherry picked from commit fb17be18cd0001f58ff5aae883b61c02a9342f88)
+---
+
+diff --git a/nova/objects/pci_device.py b/nova/objects/pci_device.py
+index a0b05e7..28e61af 100644
+--- a/nova/objects/pci_device.py
++++ b/nova/objects/pci_device.py
+@@ -118,7 +118,7 @@
+     def should_migrate_data():
+         # NOTE(ndipanov): Only migrate parent_addr if all services are up to at
+         # least version 4 - this should only ever be called from save()
+-        services = ('conductor', 'api')
++        services = ('conductor', 'osapi_compute')
+         min_parent_addr_version = 4
+ 
+         min_deployed = min(objects.Service.get_minimum_version(
+diff --git a/nova/tests/unit/objects/test_pci_device.py b/nova/tests/unit/objects/test_pci_device.py
+index 4fbe343..8fa906f 100644
+--- a/nova/tests/unit/objects/test_pci_device.py
++++ b/nova/tests/unit/objects/test_pci_device.py
+@@ -307,6 +307,16 @@
+             self.assertIn("other",
+                           update_mock.call_args[0][3]['extra_info'])
+ 
++    @mock.patch('nova.objects.Service.get_minimum_version')
++    @mock.patch('nova.context.get_admin_context')
++    def test_should_migrate_checks_correct_services(self, mock_gc, mock_gmv):
++        mock_gmv.return_value = 100
++        self.assertTrue(objects.PciDevice.should_migrate_data())
++        mock_gmv.assert_has_calls([
++            mock.call(mock_gc.return_value, 'nova-conductor'),
++            mock.call(mock_gc.return_value, 'nova-osapi_compute'),
++        ])
++
+     def test_update_numa_node(self):
+         self.pci_device = pci_device.PciDevice.create(None, dev_dict)
+         self.assertEqual(0, self.pci_device.numa_node)
