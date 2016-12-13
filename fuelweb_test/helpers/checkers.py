@@ -23,8 +23,10 @@ from time import sleep
 from devops.error import TimeoutError
 from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
+from devops.helpers.ssh_client import SSHAuth
 from netaddr import IPAddress
 from netaddr import IPNetwork
+from paramiko import ChannelException
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 
@@ -44,8 +46,10 @@ from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
 from fuelweb_test.settings import POOLS
 from fuelweb_test.settings import PUBLIC_TEST_IP
+from fuelweb_test.settings import SSH_IMAGE_CREDENTIALS
 
 
+cirros_auth = SSHAuth(**SSH_IMAGE_CREDENTIALS)
 ssh_manager = SSHManager()
 
 
@@ -1417,3 +1421,51 @@ def check_firewall_driver(ip, node_role, firewall_driver):
             ssh_manager.open_on_remote(ip, configpath))
         check_config(conf_for_check, configpath, 'securitygroup',
                      'firewall_driver', firewall_driver)
+
+
+def instance_ssh_ready(through_host, instance_ip):
+    try:
+        through_host.execute_through_host(
+            hostname=instance_ip,
+            cmd="ls -la",
+            auth=cirros_auth
+        )
+        return True
+    except ChannelException:
+        return False
+
+
+def ping6_from_instance(through_host, instance_ip, target_ip):
+    """Ping6 target ip from instance
+
+    :param through_host: obj, object of ssh connection
+    :param instance_ip: str, instance ip
+    :param target_ip: str, target ip
+    """
+    res = through_host.execute_through_host(
+        hostname=instance_ip,
+        cmd="{ping:s} -q "
+            "-c{count:d} "
+            "-w{deadline:d} "
+            "-s{packetsize:d} "
+            "{dst_address:s}".format(
+                ping='ping6',
+                count=10,
+                deadline=20,
+                packetsize=1452,
+                dst_address=target_ip),
+        auth=cirros_auth
+    )
+
+    logger.info(
+        'Ping results: \n\t{res:s}'.format(res=res['stdout_str']))
+
+    assert_equal(
+        res['exit_code'],
+        0,
+        'Ping failed with error code: {code:d}\n'
+        '\tSTDOUT: {stdout:s}\n'
+        '\tSTDERR: {stderr:s}'.format(
+            code=res['exit_code'],
+            stdout=res['stdout_str'],
+            stderr=res['stderr_str']))
