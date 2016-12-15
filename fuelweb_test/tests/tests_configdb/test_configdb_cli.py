@@ -281,6 +281,13 @@ class TestsConfigDBAPI(TestBasic):
 
         self.show_step(5)  # Update resource value
         set_resource_cmd = 'fuel2 config set --env {env_id} --resource ' \
+                           '{res_id} --value \'{{}}\' --type json'
+        set_resource_cmd = set_resource_cmd.format(env_id=env_id,
+                                                   res_id=res_id)
+        self.ssh_manager.check_call(
+            admin_ip, set_resource_cmd)
+
+        set_resource_cmd = 'fuel2 config set --env {env_id} --resource ' \
                            '{res_id} --value \'{{"a": 1, "b": null}}\' ' \
                            '--key key  --type json'
         set_resource_cmd = set_resource_cmd.format(env_id=env_id,
@@ -361,6 +368,13 @@ class TestsConfigDBAPI(TestBasic):
 
         self.show_step(5)  # Update resource value with level
         set_lvl_res_cmd = 'fuel2 config set --env {env_id} --resource ' \
+                          '{res_id} --value \'{{}}\' ' \
+                          '--type json --level nodes=1'.format(env_id=env_id,
+                                                               res_id=res_id)
+        self.ssh_manager.check_call(
+            admin_ip, set_lvl_res_cmd)
+
+        set_lvl_res_cmd = 'fuel2 config set --env {env_id} --resource ' \
                           '{res_id} --value \'{{"a": 1, "b": null}}\' ' \
                           '--key key  --type ' \
                           'json --level nodes=1'.format(env_id=env_id,
@@ -434,6 +448,13 @@ class TestsConfigDBAPI(TestBasic):
         self.show_step(4)  # Update resource value
         # TODO(akostrikov) Operations on resource by resource name
         set_res_cmd = 'fuel2 config set --env {env_id} --resource ' \
+                      '{res_id} --value \'{{}}\' ' \
+                      '--type json'.format(env_id=env_id,
+                                           res_id=res_id)
+        self.ssh_manager.check_call(
+            admin_ip, set_res_cmd)
+
+        set_res_cmd = 'fuel2 config set --env {env_id} --resource ' \
                       '{res_id} --value \'{{"a": 1, "b": null}}\' ' \
                       '--key key  --type ' \
                       'json'.format(env_id=env_id,
@@ -506,6 +527,13 @@ class TestsConfigDBAPI(TestBasic):
         env_id = env_obj['id']
 
         self.show_step(4)  # Update resource value with level
+        set_res_cmd = 'fuel2 config set --env {env_id} --resource ' \
+                      '{res_id} --value \'{{}}\' --type json ' \
+                      '--level nodes=1'.format(env_id=env_id,
+                                               res_id=res_id)
+        self.ssh_manager.check_call(
+            admin_ip, set_res_cmd)
+
         set_res_cmd = 'fuel2 config set --env {env_id} --resource ' \
                       '{res_id} --value \'{{"a": 1, "b": null}}\' ' \
                       '--key key  --type json ' \
