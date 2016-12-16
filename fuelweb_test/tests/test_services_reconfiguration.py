@@ -562,14 +562,12 @@ class ServicesReconfiguration(TestBasic):
             1. Revert snapshot "basic_env_for_reconfiguration"
             2. Upload a new openstack configuration
             3. Get uptime of process "nova-api" on each controller
-            4. Get uptime of process "nova-compute" on each compute
-            5. Apply a new quota driver and quota_instances to all nodes
-            6. Wait for configuration applying
-            7. Verify uptime of process "nova-api" on each controller
-            8. Verify uptime of process "nova-compute" on each compute
-            9. Verify nova config settings
-            10. Create new instance
-            11. Try to create one more, verify that it is impossible
+            4. Apply a new quota driver and quota_instances to all nodes
+            5. Wait for configuration applying
+            6. Verify uptime of process "nova-api" on each controller
+            7. Verify nova config settings
+            8. Create new instance
+            9. Try to create one more, verify that it is impossible
 
         Snapshot: reconfigure_nova_quota
 
@@ -581,9 +579,6 @@ class ServicesReconfiguration(TestBasic):
         controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['controller'])
 
-        computes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            cluster_id, ['compute'])
-
         self.show_step(2)
         config = utils.get_config_template('nova_quota')
         structured_config = get_structured_config_dict(config)
@@ -593,26 +588,19 @@ class ServicesReconfiguration(TestBasic):
         uptimes = self.get_service_uptime(controllers, 'nova-api')
 
         self.show_step(4)
-        uptimes_comp = self.get_service_uptime(computes, 'nova-compute')
-
-        self.show_step(5)
         task = self.fuel_web.client.apply_configuration(cluster_id)
 
-        self.show_step(6)
+        self.show_step(5)
         self.fuel_web.assert_task_success(task, timeout=900, interval=5)
 
-        self.show_step(7)
+        self.show_step(6)
         self.check_service_was_restarted(controllers, uptimes, 'nova-api')
 
-        self.show_step(8)
-        self.check_service_was_restarted(computes, uptimes_comp,
-                                         'nova-compute')
-
-        self.show_step(9)
+        self.show_step(7)
         self.check_config_on_remote(controllers, structured_config)
 
-        self.show_step(10)
-        self.show_step(11)
+        self.show_step(8)
+        self.show_step(9)
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
 
