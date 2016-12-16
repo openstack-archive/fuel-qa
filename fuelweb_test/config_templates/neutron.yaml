@@ -2,9 +2,15 @@
 neutron_plugin_ml2:
   ml2_type_vlan/network_vlan_ranges:
     value: "physnet2:1000:1001,physnet1"
+    notify: "Service[neutron-server]"
 neutron_config:
   DEFAULT/verbose:
     ensure: "absent"
+    notify: "Service[neutron-server]"
   DEFAULT/debug:
     value: "True"
+    notify: "Service[neutron-server]"
+service:
+  neutron-server:
+    ensure: running
 

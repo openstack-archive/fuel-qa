@@ -2,5 +2,16 @@
 nova_config:
   DEFAULT/quota_driver:
     value: nova.quota.DbQuotaDriver
+    notify:
+    - "Service[nova-scheduler]"
+    - "Service[nova-compute]"
   DEFAULT/quota_instances:
     value: "1"
+    notify:
+    - "Service[nova-scheduler]"
+    - "Service[nova-compute]"
+service:
+  nova-api:
+    ensure: running
+  nova-compute:
+    ensure: running
