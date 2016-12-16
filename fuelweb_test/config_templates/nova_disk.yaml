@@ -2,3 +2,7 @@
 nova_config:
   DEFAULT/default_ephemeral_format:
     value: ext4
+    notify: "Service[nova-compute]"
+service:
+  nova-compute:
+    ensure: running
