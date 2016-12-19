@@ -13,6 +13,7 @@
 #    under the License.
 
 from proboscis import test
+from proboscis.asserts import assert_true
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -201,6 +202,11 @@ class HaVlanGroup5(TestBasic):
                         node_role='ceph',
                         disk=disk,
                         by_vol_name=True)
+                logger.info(
+                    'Disk: {0} is resized to size: {1} mb, '
+                    'node ip: {2}'.format(
+                        disk, ceph_image_size[ceph_node['ip']][disk],
+                        ceph_node['ip']))
 
         cinder_nodes = self.fuel_web.\
             get_nailgun_cluster_nodes_by_roles(cluster_id, ['cinder'],
@@ -217,6 +223,11 @@ class HaVlanGroup5(TestBasic):
                         node_role='cinder',
                         disk=disk,
                         by_vol_name=True)
+                logger.info(
+                    'Disk: {0} is resized to size: {1} mb, '
+                    'node ip: {2}'.format(
+                        disk, cinder_image_size[cinder_node['ip']][disk],
+                        cinder_node['ip']))
 
         self.show_step(12)
         self.fuel_web.verify_network(cluster_id)
@@ -233,9 +244,11 @@ class HaVlanGroup5(TestBasic):
                 volume_name='ceph')
             for disk in ceph_disks:
                 exp_size = ceph_image_size[ceph_node['ip']][disk]
-                checkers.check_ceph_image_size(ceph_node['ip'],
-                                               expected_size=exp_size,
-                                               device=disk)
+                assert_true(
+                    checkers.check_partition_exists(ceph_node['ip'],
+                                                    disk=disk,
+                                                    size_in_mb=exp_size),
+                    "Partition check failed, inspect test logs for details")
 
         for cinder_node in cinder_nodes:
             cinder_disks = self.fuel_web.get_node_disks_by_volume_name(
@@ -243,12 +256,18 @@ class HaVlanGroup5(TestBasic):
                 volume_name='cinder')
             for disk in cinder_disks:
                 exp_size = cinder_image_size[cinder_node['ip']][disk]
-                checkers.check_partition_exists(cinder_node['ip'],
-                                                disk=disk,
-                                                size_in_mb=exp_size)
+                assert_true(
+                    checkers.check_partition_exists(cinder_node['ip'],
+                                                    disk=disk,
+                                                    size_in_mb=exp_size),
+                    "Partition check failed, inspect test logs for details")
 
         self.show_step(16)
-        self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id,
+            should_fail=1,
+            failed_test_name=['Instance live migration']
+        )
 
         self.env.make_snapshot("cinder_ceph_for_images_ephemeral_rados")
 
