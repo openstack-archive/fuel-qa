@@ -479,8 +479,7 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
             4. Add 1 node with cinder role
             5. Add 1 node with mongo role
             6. Deploy the cluster
-            7. Verify ceilometer api is running
-            8. Run OSTF
+            7. Run OSTF
 
         Duration 45m
         Snapshot: deploy_ceilometer_ha_one_controller_with_mongo
@@ -534,11 +533,6 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(_ip,
-                                service_name='ceilometer-api',
-                                ignore_count_of_proccesses=True)
-
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-03")['ip']
         partitions = utils.get_mongo_partitions(_ip, "vda5")
 
@@ -562,8 +556,7 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
             3. Add 1 nodes with compute role
             4. Add 2 nodes with cinder and mongo roles
             5. Deploy the cluster
-            6. Verify ceilometer api is running
-            7. Run OSTF
+            6. Run OSTF
 
         Duration 35m
         Snapshot: deploy_ceilometer_ha_one_controller_multirole
@@ -588,12 +581,6 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
             }
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
-
-        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(_ip,
-                                service_name='ceilometer-api',
-                                ignore_count_of_proccesses=True)
-
         self.run_tests(cluster_id)
         self.env.make_snapshot("deploy_ceilometer_ha_one_controller_multirole")
 
@@ -612,8 +599,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
             3. Add 1 nodes with compute role
             4. Add 1 node with mongo role
             5. Deploy the cluster
-            6. Verify ceilometer api is running
-            7. Run OSTF
+            6. Run OSTF
 
         Duration 65m
         Snapshot: deploy_ceilometer_ha_with_mongo
@@ -645,12 +631,6 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
             }
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
-
-        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(_ip,
-                                service_name='ceilometer-api',
-                                ignore_count_of_proccesses=True)
-
         self.run_tests(cluster_id,
                        skip_tests=['test_check_volume_events'])
         self.env.make_snapshot("deploy_ceilometer_ha_with_mongo")
@@ -667,8 +647,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
             3. Add 1 nodes with compute role
             4. Add 1 nodes with cinder
             5. Deploy the cluster
-            6. Verify ceilometer api is running
-            7. Run OSTF
+            6. Run OSTF
 
         Duration 80m
         Snapshot: deploy_ceilometer_ha_multirole
@@ -696,12 +675,6 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
             }
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
-
-        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(_ip,
-                                service_name='ceilometer-api',
-                                ignore_count_of_proccesses=True)
-
         self.run_tests(cluster_id)
         self.env.make_snapshot("deploy_ceilometer_ha_multirole", is_make=True)
 
@@ -747,8 +720,7 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
             3. Add 1 nodes with compute and ceph roles
             4. Add 1 node with ceph role
             5. Deploy the cluster
-            6. Verify ceilometer api is running
-            7. Run OSTF
+            6. Run OSTF
 
         Duration 65m
         Snapshot: deploy_ceilometer_ha_with_external_mongo
@@ -790,12 +762,6 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
             }
         )
         self.fuel_web.deploy_cluster_wait(cluster_id)
-
-        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(_ip,
-                                service_name='ceilometer-api',
-                                ignore_count_of_proccesses=True)
-
         self.run_tests(cluster_id)
         self.env.make_snapshot("deploy_ceilometer_ha_with_external_mongo")
 
@@ -817,7 +783,7 @@ class HeatHAOneController(TestBasic):
             3. Add 1 nodes with compute role
             4. Set install Ceilometer option
             5. Deploy the cluster
-            6. Verify Heat, Ceilometer services
+            6. Verify Heat services
             7. Run OSTF platform tests
 
         Duration 40m
@@ -856,11 +822,6 @@ class HeatHAOneController(TestBasic):
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         checkers.verify_service(_ip, service_name='heat-api', count=5)
-
-        _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(_ip,
-                                service_name='ceilometer-api',
-                                ignore_count_of_proccesses=True)
 
         logger.debug('Run Heat OSTF platform tests')
 
@@ -905,7 +866,7 @@ class HeatHA(TestBasic):
             3. Add 1 nodes with compute role
             4. Set Ceilometer install option
             5. Deploy the cluster
-            6. Verify Heat and Ceilometer services
+            6. Verify Heat  services
             7. Run OSTF platform tests
 
         Duration 70m
@@ -947,9 +908,6 @@ class HeatHA(TestBasic):
         for slave in ["slave-01", "slave-02", "slave-03"]:
             _ip = self.fuel_web.get_nailgun_node_by_name(slave)['ip']
             checkers.verify_service(_ip, service_name='heat-api', count=5)
-            checkers.verify_service(_ip,
-                                    service_name='ceilometer-api',
-                                    ignore_count_of_proccesses=True)
 
         logger.debug('Run Heat OSTF platform tests')
 
