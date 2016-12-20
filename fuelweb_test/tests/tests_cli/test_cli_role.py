@@ -21,6 +21,7 @@ from fuelweb_test.settings import NEUTRON_SEGMENT_TYPE
 from fuelweb_test.settings import OPENSTACK_RELEASE
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests import test_cli_base
+from fuelweb_test import logger
 
 
 @test(groups=["cli_component_role_tests"])
@@ -37,11 +38,11 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
             1. Setup master node
             2. SSH to the master node
             3. Download to file controller role with command:
-               fuel role --rel 2 --role controller --file controller.yaml
-            4. Edit the controller.yaml file,
+               fuel2 role download -r 2 -n controller -f yaml -d /tmp
+            4. Edit the /tmp/release_2/controller.yaml file,
                remove section "conflicts" under "meta" section. Save file
             5. Update role from file with command:
-               fuel role --rel 2 --update --file controller.yaml
+               fuel2 role update -r 2 -n controller -d /tmp -f yaml
             6. Go to the Fuel UI and try to create a new environment
             7. Add new node to the environment,
                choose controller and compute roles for node
@@ -54,42 +55,44 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
                            self.fuel_web.client.list_nodes()])
         release_id = self.fuel_web.get_releases_list_for_os(
             release_name=OPENSTACK_RELEASE)[0]
+        role_descr = '/tmp/releases_{}/controller.yaml'.format(release_id)
 
         self.show_step(2)
         self.show_step(3)
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd='fuel role --rel {} --role controller --file'
-                ' /tmp/controller.yaml'.format(release_id))
+            cmd='fuel2 role download -r {} -n controller -f yaml'
+                ' -d /tmp'.format(release_id))
 
         self.show_step(4)
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd="sed -i '/conflicts/,+1 d' /tmp/controller.yaml")
+            cmd="sed -i '/conflicts/,+1 d' {}".format(role_descr))
 
         self.show_step(5)
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd='fuel role --rel {} --update --file'
-                ' /tmp/controller.yaml'.format(release_id))
+            cmd='fuel2 role update -r {} -n controller'
+                ' -d /tmp -f yaml'.format(release_id))
 
         if NEUTRON_SEGMENT_TYPE:
-            nst = '--nst={0}'.format(NEUTRON_SEGMENT_TYPE)
+            nst = '--nst={0} '.format(NEUTRON_SEGMENT_TYPE)
         else:
             nst = ''
         self.show_step(6)
-        cmd = ('fuel env create --name={0} --release={1} '
-               '{2} --json'.format(self.__class__.__name__,
-                                   release_id, nst))
+        cmd = ('fuel2 env create -f json -r {0}'
+               ' {1}{2}'.format(release_id, nst,
+                               self.__class__.__name__))
         env_result = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd=cmd,
             jsonify=True
         )['stdout_json']
+        logger.info(env_result)
         cluster_id = env_result['id']
         self.show_step(7)
-        cmd = ('fuel --env-id={0} node set --node {1} --role=controller,'
-               'compute'.format(cluster_id, node_ids[0]))
+        cmd = ('fuel2 env add nodes -e {0} -n {1} -r controller'
+               ' compute'.format(cluster_id, node_ids[0]))
         result = self.ssh_manager.execute(
             ip=self.ssh_manager.admin_ip,
             cmd=cmd,
@@ -109,29 +112,29 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
         Scenario:
             1. Create environment using fuel-qa
             2. SSH to the master node
-            3. Create new file "role.yaml" and paste the above:
-
+            3. Create new file "release_2/tag.yaml" and paste the above:
                    meta:
-                       conflicts:
-                           - controller
-                           - compute
-
-                       description: New role
-
-                       has_primary: true
-
-                       name: Test role
-
+                     has_primary: false
+                   name: test-tag
+            4. Define new tag with command:
+               fuel2 tag create -r 2 -n tag -f yaml
+            5. Create new file "release_2/role.yaml" and paste the above:
+                   meta:
+                     conflicts:
+                       - controller
+                       - compute
+                     description: New role
+                     name: Test role
+                     tags:
+                       - test-tag
                    name: test-role
                    volumes_roles_mapping:
                    - allocate_size: min
-
                      id: os
-
-            4. Create new role with command:
-               fuel role --rel 2 --create --file role.yaml
-            5. Go to the Fuel UI and try to create a new environment
-            6. Add new node to the environment, choose test-role
+            6. Create new role with command:
+               fuel2 role create -r 2 -n role -f yaml
+            7. Go to the Fuel UI and try to create a new environment
+            8. Add new node to the environment, choose test-role
                and try to add compute or controller role to the same node
 
         Duration 20m
@@ -142,37 +145,51 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
                            self.fuel_web.client.list_nodes()])
         release_id = self.fuel_web.get_releases_list_for_os(
             release_name=OPENSTACK_RELEASE)[0]
-        templates_path = os.path.join(
-            '{0}/fuelweb_test/config_templates/'.format(os.environ.get(
-                "WORKSPACE", "./")), 'create_role.yaml')
         self.show_step(2)
-        if os.path.exists(templates_path):
-            self.ssh_manager.upload_to_remote(self.ssh_manager.admin_ip,
-                                              templates_path, '/tmp')
         self.show_step(3)
+        tag_template_path = os.path.join(
+            '{0}/fuelweb_test/config_templates/'.format(os.environ.get(
+                "WORKSPACE", "./")), 'create_tag.yaml')
+        if os.path.exists(tag_template_path):
+            self.ssh_manager.upload_to_remote(self.ssh_manager.admin_ip,
+                                              tag_template_path, '/tmp')
         self.show_step(4)
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd='fuel role --rel {} --create --file'
-                ' /tmp/create_role.yaml'.format(release_id))
+            cmd='fuel2 tag create -r {} -n create_tag'
+                ' -f yaml -d /tmp'.format(release_id))
+
+        self.show_step(5)
+        role_template_path = os.path.join(
+            '{0}/fuelweb_test/config_templates/'.format(os.environ.get(
+                "WORKSPACE", "./")), 'create_role.yaml')
+
+        if os.path.exists(role_template_path):
+            self.ssh_manager.upload_to_remote(self.ssh_manager.admin_ip,
+                                              role_template_path, '/tmp')
+        self.show_step(6)
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd='fuel2 role create -r {} -n create_role'
+                ' -f yaml -d /tmp'.format(release_id))
 
         if NEUTRON_SEGMENT_TYPE:
-            nst = '--nst={0}'.format(NEUTRON_SEGMENT_TYPE)
+            nst = '--nst={0} '.format(NEUTRON_SEGMENT_TYPE)
         else:
             nst = ''
-        self.show_step(5)
-        cmd = ('fuel env create --name={0} --release={1} '
-               '{2} --json'.format(self.__class__.__name__,
-                                   release_id, nst))
+        self.show_step(7)
+        cmd = ('fuel2 env create -f json -r {0}'
+               ' {1}{2}'.format(release_id, nst,
+                                self.__class__.__name__))
         env_result = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd=cmd,
             jsonify=True
         )['stdout_json']
         cluster_id = env_result['id']
-        self.show_step(6)
-        cmd = ('fuel --env-id={0} node set --node {1}'
-               ' --role=test-role'.format(cluster_id, node_ids[0]))
+        self.show_step(8)
+        cmd = ('fuel2 env add nodes -e {0} -n {1}'
+               ' -r test-role'.format(cluster_id, node_ids[0]))
         result = self.ssh_manager.execute(
             ip=self.ssh_manager.admin_ip,
             cmd=cmd,
@@ -180,9 +197,9 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
         assert_equal(result['exit_code'], 0,
                      "Can't assign controller and compute node"
                      " to node id {}".format(node_ids[0]))
-        cmd = ('fuel --env-id={0} node set --node {1}'
-               ' --role=test-role,controller,'
-               'compute'.format(cluster_id, node_ids[1]))
+        cmd = ('fuel2 env add nodes -e {0} -n {1}'
+               ' -r test-role controller'
+               ' compute'.format(cluster_id, node_ids[1]))
         result = self.ssh_manager.execute(
             ip=self.ssh_manager.admin_ip,
             cmd=cmd,
@@ -201,28 +218,30 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
         Scenario:
             1. Create environment using fuel-qa
             2. SSH to the master node
-            3. Create new file "role.yaml" and paste the following:
-
+            3. Create new file "release_2/tag.yaml" and paste the above:
+                   meta:
+                     has_primary: true
+                   name: test-primary-tag
+            4. Define new tag with command:
+               fuel2 tag create -r 2 -n tag -f yaml
+            5. Create new file "role.yaml" and paste the following:
                    meta:
                      conflicts:
                        - controller
                        - compute
-
                      description: New role
-
                      has_primary: true
-
-                     name: Test role
-
-                   name: test-role
+                     name: Test primary role
+                     tags:
+                       - test-primary-tag
+                   name: test-primary-role
                    volumes_roles_mapping:
                    - allocate_size: min
-
                      id: os
-
-            4. Upload yaml to nailgun using Fuel CLI
-            5. Create new role with command:
-               fuel role --rel 2 --create --file role.yaml
+            6. Create new role with command:
+               fuel2 role create -r 2 -n role -f yaml
+            7. Go to the Fuel UI and try to create a new environment
+            8. Add new node to the environment, choose test-primary-role
 
         Duration 20m
         """
@@ -232,38 +251,50 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
                            self.fuel_web.client.list_nodes()])
         release_id = self.fuel_web.get_releases_list_for_os(
             release_name=OPENSTACK_RELEASE)[0]
-        templates_path = os.path.join(
-            '{0}/fuelweb_test/config_templates/'.format(os.environ.get(
-                "WORKSPACE", "./")), 'create_primary_role.yaml')
         self.show_step(2)
         self.show_step(3)
-        if os.path.exists(templates_path):
+        tag_template_path = os.path.join(
+            '{0}/fuelweb_test/config_templates/'.format(os.environ.get(
+                "WORKSPACE", "./")), 'create_primary_tag.yaml')
+        if os.path.exists(tag_template_path):
             self.ssh_manager.upload_to_remote(self.ssh_manager.admin_ip,
-                                              templates_path, '/tmp')
+                                              tag_template_path, '/tmp')
         self.show_step(4)
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd='fuel role --rel {} --create --file'
-                ' /tmp/create_primary_role.yaml'.format(release_id))
+            cmd='fuel2 tag create -r {} -n create_primary-tag'
+                ' -f yaml -d /tmp'.format(release_id))
+
+        self.show_step(5)
+        role_template_path = os.path.join(
+            '{0}/fuelweb_test/config_templates/'.format(os.environ.get(
+                "WORKSPACE", "./")), 'create_primary_role.yaml')
+        if os.path.exists(role_template_path):
+            self.ssh_manager.upload_to_remote(self.ssh_manager.admin_ip,
+                                              role_template_path, '/tmp')
+        self.show_step(6)
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd='fuel2 role create -r {} -n create_role'
+                ' -f yaml -d /tmp'.format(release_id))
 
         if NEUTRON_SEGMENT_TYPE:
-            nst = '--nst={0}'.format(NEUTRON_SEGMENT_TYPE)
+            nst = '--nst={0} '.format(NEUTRON_SEGMENT_TYPE)
         else:
             nst = ''
-        self.show_step(5)
-        cmd = ('fuel env create --name={0} --release={1} '
-               '{2} --json'.format(self.__class__.__name__,
-                                   release_id, nst))
+        self.show_step(7)
+        cmd = ('fuel2 env create -f json -r {0}'
+               ' {1}{2}'.format(release_id, nst,
+                                self.__class__.__name__))
         env_result = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd=cmd,
             jsonify=True
         )['stdout_json']
         cluster_id = env_result['id']
-
-        cmd = ('fuel --env-id={0} node set --node {1}'
-               ' --role=test-primary-role'.format(cluster_id,
-                                                  node_ids[0]))
+        self.show_step(8)
+        cmd = ('fuel2 env add nodes -e {0} -n {1}'
+               ' -r test-primary-role'.format(cluster_id, node_ids[0]))
         result = self.ssh_manager.execute(
             ip=self.ssh_manager.admin_ip,
             cmd=cmd,
@@ -282,31 +313,33 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
         Scenario:
             1. Create environment using fuel-qa
             2. SSH to the master node
-            3. Create new file "role.yaml" with the following content:
-
-                    meta:
-                        conflicts:
-                            - controller
-                            - compute
-
-                        description: New role
-
-                        name: Test role
-
-                    name: test-role
-                    volumes_roles_mapping:
-                    - allocate_size: min
-
-                        id: os
-
-            4. Create new role with command:
-               fuel role --rel 2 --create --file role.yaml
-            5. Go to the Fuel UI and try to create a new environment
-            6. Check if new role exists in the list of roles
-            7. Add new nodes to the environment: controller, compute
-            8. Go to the console and try to delete roles:
-               fuel role --rel 2 --delete --role <role name from step 3>
-               fuel role --rel 2 --delete --role controller
+            3. Create new file "release_2/tag.yaml" and paste the above:
+                   meta:
+                     has_primary: false
+                   name: test-tag
+            4. Define new tag with command:
+               fuel2 tag create -r 2 -n tag -f yaml
+            5. Create new file "release_2/role.yaml" and paste the above:
+                   meta:
+                     conflicts:
+                       - controller
+                       - compute
+                     description: New role
+                     name: Test role
+                     tags:
+                       - test-tag
+                   name: test-role
+                   volumes_roles_mapping:
+                   - allocate_size: min
+                     id: os
+            6. Create new role with command:
+               fuel2 role create -r 2 -n role -f yaml
+            7. Check if new role exists in the list of roles
+            8. Go to the Fuel UI and try to create a new environment
+            9. Add new node to the environment: controller
+            10. Go to the console and try to delete roles:
+                fuel2 role delete -r 2 -n test-role
+                fuel2 role delete -r 2 -n controller
 
         Duration 20m
         """
@@ -316,56 +349,72 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
                            self.fuel_web.client.list_nodes()])
         release_id = self.fuel_web.get_releases_list_for_os(
             release_name=OPENSTACK_RELEASE)[0]
-        templates_path = os.path.join(
-            '{0}/fuelweb_test/config_templates/'.format(os.environ.get(
-                "WORKSPACE", "./")), 'create_role.yaml')
         self.show_step(2)
         self.show_step(3)
-        if os.path.exists(templates_path):
+        tag_template_path = os.path.join(
+            '{0}/fuelweb_test/config_templates/'.format(os.environ.get(
+                "WORKSPACE", "./")), 'create_tag.yaml')
+        if os.path.exists(tag_template_path):
             self.ssh_manager.upload_to_remote(self.ssh_manager.admin_ip,
-                                              templates_path, '/tmp')
+                                              tag_template_path, '/tmp')
         self.show_step(4)
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd='fuel role --rel {} --create --file'
-                ' /tmp/create_role.yaml'.format(release_id))
+            cmd='fuel2 tag create -r {} -n create_tag'
+                ' -f yaml -d /tmp'.format(release_id))
+
+        self.show_step(5)
+        role_template_path = os.path.join(
+            '{0}/fuelweb_test/config_templates/'.format(os.environ.get(
+                "WORKSPACE", "./")), 'create_role.yaml')
+
+        if os.path.exists(role_template_path):
+            self.ssh_manager.upload_to_remote(self.ssh_manager.admin_ip,
+                                              role_template_path, '/tmp')
+        self.show_step(6)
+        self.ssh_manager.execute_on_remote(
+            ip=self.ssh_manager.admin_ip,
+            cmd='fuel2 role create -r {} -n create_role'
+                ' -f yaml -d /tmp'.format(release_id))
+
+        self.show_step(7)
+        cmd = 'fuel2 role list -r {} -c name --noindent'.format(release_id)
         result = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd='fuel role --rel {}'.format(release_id))['stdout']
+            cmd=cmd)['stdout']
 
         roles = [i.strip() for i in result]
         assert_true('test-role' in roles,
                     "role is not in the list {}".format(roles))
 
         if NEUTRON_SEGMENT_TYPE:
-            nst = '--nst={0}'.format(NEUTRON_SEGMENT_TYPE)
+            nst = '--nst={0} '.format(NEUTRON_SEGMENT_TYPE)
         else:
             nst = ''
-        self.show_step(5)
-        self.show_step(6)
-        cmd = ('fuel env create --name={0} --release={1} '
-               '{2} --json'.format(self.__class__.__name__,
-                                   release_id, nst))
+        self.show_step(8)
+        cmd = ('fuel2 env create -f json -r {0}'
+               ' {1}{2}'.format(release_id, nst,
+                                self.__class__.__name__))
         env_result = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd=cmd,
             jsonify=True
         )['stdout_json']
         cluster_id = env_result['id']
-        self.show_step(7)
-        cmd = ('fuel --env-id={0} node set --node {1}'
-               ' --role=controller'.format(cluster_id, node_ids[0]))
+        self.show_step(9)
+        cmd = ('fuel2 env add nodes -e {0} -n {1}'
+               ' -r controller'.format(cluster_id, node_ids[0]))
         result = self.ssh_manager.execute(
             ip=self.ssh_manager.admin_ip,
             cmd=cmd,
         )
         assert_equal(result['exit_code'], 0,
-                     "Can't assign controller and"
-                     " compute node to node id {}".format(node_ids[0]))
+                     "Can't assign controller"
+                     " role to node id {}".format(node_ids[0]))
 
-        self.show_step(8)
-        cmd = ('fuel role --rel {} --delete'
-               ' --role test-role'.format(release_id))
+        self.show_step(10)
+        cmd = ('fuel2 role delete -r {}'
+               ' -n test-role'.format(release_id))
         result = self.ssh_manager.execute(
             ip=self.ssh_manager.admin_ip,
             cmd=cmd,
@@ -375,17 +424,19 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
 
         result = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd='fuel role --rel {}'.format(release_id))['stdout']
+            cmd=('fuel2 role list -r {} -c name'
+                 ' --noindent').format(release_id))['stdout']
+
         roles = [i.strip() for i in result]
         assert_true('test-role' not in roles,
-                    "role is not in the list {}".format(roles))
-        cmd = ('fuel role --rel {} --delete'
-               ' --role controller'.format(release_id))
+                    "role is in the list {}".format(roles))
+
+        cmd = ('fuel2 role delete -r {}'
+               ' -n controller'.format(release_id))
         result = self.ssh_manager.execute(
             ip=self.ssh_manager.admin_ip,
             cmd=cmd,
         )
-
         assert_equal(result['exit_code'], 1,
                      "Controller role shouldn't be able to be deleted")
 
@@ -401,13 +452,12 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
             1. Setup master node
             2. SSH to the master node
             3. Download to file controller role with command:
-               fuel role --rel 2 --role controller --file controller.yaml
+               fuel2 role download -r 2 -n controller -f yaml -d /tmp
             4. Modify created file: change "id" value at
                the "volumes_roles_mapping" to something incorrect,
-               for ex.: "id: blabla"
-            5. Save file and upload it to the nailgun with:
-               fuel role --rel 2 --role controller --update --file
-               controller.yaml
+               for ex.: "id: blabla". Save file.
+            5. Update role from file with command:
+               fuel2 role update -r 2 -n controller -d /tmp -f yaml
                There should be an error message and role shouldn't be updated.
 
         Duration 20m
@@ -416,23 +466,24 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
         self.env.revert_snapshot("ready_with_3_slaves")
         release_id = self.fuel_web.get_releases_list_for_os(
             release_name=OPENSTACK_RELEASE)[0]
+        role_descr = '/tmp/releases_{}/controller.yaml'.format(release_id)
 
         self.show_step(2)
         self.show_step(3)
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd='fuel role --rel {} --role controller --file'
-                ' /tmp/controller.yaml'.format(release_id))
+            cmd='fuel2 role download -r {} -n controller -f yaml'
+                ' -d /tmp'.format(release_id))
 
         self.show_step(4)
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd="sed -i -r 's/id: os/id: blabla/' /tmp/controller.yaml")
+            cmd="sed -i -r 's/id: os/id: blabla/' {}".format(role_descr))
 
         self.show_step(5)
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd='fuel role --rel {} --role controller --update --file'
-                ' /tmp/controller.yaml'.format(release_id),
+            cmd='fuel2 role update -r {} -n controller'
+                ' -d /tmp -f yaml'.format(release_id),
             assert_ec_equal=[1])
         self.env.make_snapshot("cli_incorrect_update_role")
