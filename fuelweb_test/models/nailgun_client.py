@@ -187,7 +187,10 @@ class NailgunClient(object):
 
     @logwrap
     def get_task(self, task_id):
-        return self._get(url="/tasks/{}".format(task_id)).json()
+        res = self._get(url="/tasks/{}".format(task_id)).json()
+        logger.error("Task id {}, task progress {}".format(
+            res['id'], res['progress']))
+        return res
 
     @logwrap
     def get_tasks(self):
