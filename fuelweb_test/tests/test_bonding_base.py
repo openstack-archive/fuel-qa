@@ -22,7 +22,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 class BondingTest(TestBasic):
     def __init__(self):
-        self.BOND_CONFIG = [
+        self.OLD_SERIALIZATION_BOND_CONFIG = [
             {
                 'mac': None,
                 'mode': 'active-backup',
@@ -55,6 +55,41 @@ class BondingTest(TestBasic):
             }
         ]
 
+        self.NEW_SERIALIZATION_BOND_CONFIG = [
+            {
+                'mac': None,
+                'mode': 'active-backup',
+                'name': 'bond0',
+                'slaves': [
+                    {'name': iface_alias('eth5')},
+                    {'name': iface_alias('eth4')},
+                    {'name': iface_alias('eth3')},
+                    {'name': iface_alias('eth2')}
+                ],
+                'state': None,
+                'type': 'bond',
+                'assigned_networks': [],
+                'attributes': {
+                    'type__': {'type': 'hidden', 'value': 'linux'}
+                }
+            },
+            {
+                'mac': None,
+                'mode': 'active-backup',
+                'name': 'bond1',
+                'slaves': [
+                    {'name': iface_alias('eth1')},
+                    {'name': iface_alias('eth0')}
+                ],
+                'state': None,
+                'type': 'bond',
+                'assigned_networks': [],
+                'attributes': {
+                    'type__': {'type': 'hidden', 'value': 'linux'}
+                }
+            }
+        ]
+
         self.INTERFACES = {
             'bond0': [
                 'public',
@@ -65,6 +100,20 @@ class BondingTest(TestBasic):
             'bond1': ['fuelweb_admin']
         }
         super(BondingTest, self).__init__()
+        self.__cluster_id = None
+
+    @property
+    def cluster_id(self):
+        if self.__cluster_id is None:
+            self.__cluster_id = self.fuel_web.get_last_created_cluster()
+        return self.__cluster_id
+
+    @property
+    def bond_config(self):
+        if self._is_old_interface_serialization_scheme():
+            return self.OLD_SERIALIZATION_BOND_CONFIG
+        else:
+            return self.NEW_SERIALIZATION_BOND_CONFIG
 
     @staticmethod
     def get_bond_interfaces(bond_config, bond_name):
@@ -75,7 +124,13 @@ class BondingTest(TestBasic):
                     bond_slaves.append(slave['name'])
         return bond_slaves
 
-    def check_interfaces_config_after_reboot(self, cluster_id):
+    def _is_old_interface_serialization_scheme(self):
+        node = self.fuel_web.client.list_cluster_nodes(self.cluster_id)[0]
+        interface = self.fuel_web.client.get_node_interfaces(node['id'])[0]
+        if 'interface_properties' in interface.keys():
+            return True
+
+    def check_interfaces_config_after_reboot(self):
         network_settings = dict()
         skip_interfaces = {
             r'^pub-base$', r'^vr_pub-base$', r'^vr-base$', r'^mgmt-base$',
@@ -83,7 +138,7 @@ class BondingTest(TestBasic):
             r'^(tap|qr-|qg-|p_).*$', r'^v_vrouter.*$',
             r'^v_(management|public)$'}
 
-        nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        nodes = self.fuel_web.client.list_cluster_nodes(self.cluster_id)
 
         for node in nodes:
             with self.env.d_env.get_ssh_to_remote(node['ip']) as remote:
@@ -133,7 +188,7 @@ class BondingTest(TestBasic):
 class BondingTestDPDK(BondingTest):
     def __init__(self):
         super(BondingTestDPDK, self).__init__()
-        self.BOND_CONFIG = [
+        self.OLD_SERIALIZATION_BOND_CONFIG = [
             {
                 'mac': None,
                 'mode': 'active-backup',
@@ -179,6 +234,87 @@ class BondingTestDPDK(BondingTest):
                 'bond_properties': {'mode': 'active-backup',
                                     'type__': 'linux'},
             },
+        ]
+
+        self.NEW_SERIALIZATION_BOND_CONFIG = [
+            {
+                'mac': None,
+                'mode': 'active-backup',
+                'name': 'bond0',
+                'slaves': [
+                    {'name': iface_alias('eth3')},
+                    {'name': iface_alias('eth2')}
+                ],
+                'state': None,
+                'type': 'bond',
+                'assigned_networks': [],
+                'meta': {
+                    'dpdk': {'available': True}
+                },
+                'attributes': {
+                    'type__': {'type': 'hidden', 'value': 'linux'},
+                    'dpdk': {
+                        'enabled': {
+                            'type': 'checkbox',
+                            'value': False,
+                            'weight': 10,
+                            'label': 'DPDK enabled'},
+                        'metadata': {'weight': 40, 'label': 'DPDK'}
+                    }
+                }
+            },
+            {
+                'mac': None,
+                'mode': 'active-backup',
+                'name': 'bond1',
+                'slaves': [
+                    {'name': iface_alias('eth1')},
+                    {'name': iface_alias('eth0')}
+                ],
+                'state': None,
+                'type': 'bond',
+                'assigned_networks': [],
+                'meta': {
+                    'dpdk': {'available': True}
+                },
+                'attributes': {
+                    'type__': {'type': 'hidden', 'value': 'linux'},
+                    'dpdk': {
+                        'enabled': {
+                            'type': 'checkbox',
+                            'value': False,
+                            'weight': 10,
+                            'label': 'DPDK enabled'},
+                        'metadata': {'weight': 40, 'label': 'DPDK'}
+                    }
+                }
+            },
+            {
+                'mac': None,
+                'mode': 'active-backup',
+                'name': 'bond2',
+                'slaves': [
+                    {'name': iface_alias('eth5')},
+                    {'name': iface_alias('eth4')}
+                ],
+                'state': None,
+                'type': 'bond',
+                'assigned_networks': [],
+                'meta': {
+                    'dpdk': {'available': True}
+                },
+                'attributes': {
+                    'type__': {'type': 'hidden', 'value': 'linux'},
+                    'dpdk': {
+                        'enabled': {
+                            'type': 'checkbox',
+                            'value': False,
+                            'weight': 10,
+                            'label': 'DPDK enabled'},
+                        'metadata': {'weight': 40, 'label': 'DPDK'}
+                    }
+                }
+            }
         ]
 
         self.INTERFACES = {
