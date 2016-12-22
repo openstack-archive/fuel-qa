@@ -97,9 +97,9 @@ class SupportDPDK(TestDPDK):
     """SupportDPDK."""
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["deploy_cluster_with_dpdk"])
+          groups=["deploy_cluster_with_dpdk_vlan"])
     @log_snapshot_after_test
-    def deploy_cluster_with_dpdk(self):
+    def deploy_cluster_with_dpdk_vlan(self):
         """Deploy cluster with DPDK
 
         Scenario:
@@ -117,7 +117,7 @@ class SupportDPDK(TestDPDK):
             12. Run instance on compute with DPDK and check its availability
                 via floating IP
 
-        Snapshot: deploy_cluster_with_dpdk
+        Snapshot: deploy_cluster_with_dpdk_vlan
 
         """
         self.env.revert_snapshot("ready_with_3_slaves")
@@ -181,12 +181,12 @@ class SupportDPDK(TestDPDK):
 
         self.check_dpdk_instance_connectivity(os_conn, cluster_id)
 
-        self.env.make_snapshot("deploy_cluster_with_dpdk")
+        self.env.make_snapshot("deploy_cluster_with_dpdk_vlan")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["check_can_not_enable_dpdk_with_tun"])
+          groups=["deploy_cluster_with_dpdk_tun"])
     @log_snapshot_after_test
-    def check_can_not_enable_dpdk_with_tun(self):
+    def deploy_cluster_with_dpdk_tun(self):
         """Check can not enable DPDK on tun network
 
         Scenario:
@@ -194,7 +194,18 @@ class SupportDPDK(TestDPDK):
             2. Set KVM as Hypervisor
             3. Add controller and compute nodes
             4. Configure HugePages for compute nodes
-            5. Try configure private network in DPDK mode
+            5. Configure private network in DPDK mode
+            6. Run network verification
+            7. Deploy environment
+            8. Run network verification
+            9. Run OSTF
+            10. Reboot compute
+            11. Run OSTF
+            12. Run instance on compute with DPDK and check its availability
+                via floating IP
+
+        Snapshot: deploy_cluster_with_dpdk_tun
+
         """
         self.env.revert_snapshot("ready_with_3_slaves")
 
@@ -226,10 +237,38 @@ class SupportDPDK(TestDPDK):
             compute['id'], hp_2mb=256, hp_dpdk_mb=128)
 
         self.show_step(5)
-        assert_raises(
-            exceptions.BadRequest,
-            self.fuel_web.enable_dpdk, compute['id'],
-            forceEnable=True)
+        self.fuel_web.enable_dpdk(compute['id'])
+
+        self.show_step(6)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(7)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+
+        self.show_step(8)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(9)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.show_step(10)
+        # reboot compute
+        self.fuel_web.warm_restart_nodes(
+            [self.fuel_web.get_devops_node_by_nailgun_node(compute)])
+
+        # Wait until OpenStack services are UP
+        self.fuel_web.assert_os_services_ready(cluster_id)
+
+        self.show_step(11)
+        self.fuel_web.run_ostf(cluster_id=cluster_id)
+
+        self.show_step(12)
+        os_conn = os_actions.OpenStackActions(
+            self.fuel_web.get_public_vip(cluster_id))
+
+        self.check_dpdk_instance_connectivity(os_conn, cluster_id)
+
+        self.env.make_snapshot("deploy_cluster_with_dpdk_tun")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["check_can_not_enable_dpdk_on_non_dedicated_iface"])
@@ -287,7 +326,7 @@ class SupportDPDK(TestDPDK):
         assert_raises(
             exceptions.BadRequest,
             self.fuel_web.enable_dpdk, compute['id'],
-            forceEnable=True)
+            force_enable=True)
 
 
 @test(groups=["support_dpdk_bond"])
