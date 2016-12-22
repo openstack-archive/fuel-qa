@@ -80,7 +80,7 @@ class BondingHAOneController(BondingTest):
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
                 node['id'], interfaces_dict=deepcopy(self.INTERFACES),
-                raw_data=deepcopy(self.BOND_CONFIG)
+                raw_data=deepcopy(self.bond_config)
             )
         self.show_step(5)
         self.fuel_web.verify_network(cluster_id)
@@ -147,7 +147,7 @@ class BondingHAOneController(BondingTest):
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
                 node['id'], interfaces_dict=deepcopy(self.INTERFACES),
-                raw_data=deepcopy(self.BOND_CONFIG)
+                raw_data=deepcopy(self.bond_config)
             )
 
         self.show_step(5)
@@ -205,9 +205,8 @@ class BondingHAOneController(BondingTest):
 
         self.show_step(4)
         nailgun_nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
-        invalid_bond_conf = deepcopy(self.BOND_CONFIG)
+        invalid_bond_conf = deepcopy(self.bond_config)
         invalid_bond_conf[1]['mode'] = '802.3ad'
-        invalid_bond_conf[1]['bond_properties']['mode'] = '802.3ad'
         interfaces_dict = deepcopy(self.INTERFACES)
 
         exp_code = 400
@@ -307,7 +306,7 @@ class BondingHA(BondingTest):
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
                 node['id'], interfaces_dict=deepcopy(self.INTERFACES),
-                raw_data=deepcopy(self.BOND_CONFIG)
+                raw_data=deepcopy(self.bond_config)
             )
 
         self.show_step(5)
@@ -330,7 +329,7 @@ class BondingHA(BondingTest):
         self.show_step(9)
         self.show_step(10)
         self.show_step(11)
-        self.check_interfaces_config_after_reboot(cluster_id)
+        self.check_interfaces_config_after_reboot()
         self.fuel_web.assert_ha_services_ready(cluster_id)
 
         self.show_step(12)
@@ -400,7 +399,7 @@ class BondingHA(BondingTest):
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
                 node['id'], interfaces_dict=deepcopy(self.INTERFACES),
-                raw_data=deepcopy(self.BOND_CONFIG)
+                raw_data=deepcopy(self.bond_config)
             )
 
         self.show_step(5)
@@ -423,7 +422,7 @@ class BondingHA(BondingTest):
         self.show_step(9)
         self.show_step(10)
         self.show_step(11)
-        self.check_interfaces_config_after_reboot(cluster_id)
+        self.check_interfaces_config_after_reboot()
         self.fuel_web.assert_ha_services_ready(cluster_id)
 
         self.show_step(12)
@@ -488,7 +487,7 @@ class BondingHA(BondingTest):
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
                 node['id'], interfaces_dict=deepcopy(self.INTERFACES),
-                raw_data=deepcopy(self.BOND_CONFIG)
+                raw_data=deepcopy(self.bond_config)
             )
 
         self.show_step(5)
