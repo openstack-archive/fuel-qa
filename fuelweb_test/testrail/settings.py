@@ -82,7 +82,7 @@ class TestRailSettings(object):
             'TESTRAIL_CENTOS_RELEASE', 'Centos 6.5'))
     if ubuntu_enabled:
         operation_systems.append(os.environ.get(
-            'TESTRAIL_UBUNTU_RELEASE', 'Ubuntu 14.04'))
+            'TESTRAIL_UBUNTU_RELEASE', 'Ubuntu 16.04'))
     stauses = {
         'passed': ['passed'],
         'failed': ['failed', 'product_failed', 'test_failed', 'infra_failed'],
