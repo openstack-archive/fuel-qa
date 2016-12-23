@@ -406,7 +406,8 @@ class ServicesReconfiguration(TestBasic):
         uptimes = self.get_service_uptime(controllers, service_name)
 
         self.show_step(4)
-        task = self.fuel_web.client.apply_configuration(cluster_id)
+        task = self.fuel_web.client.apply_configuration(cluster_id,
+                                                        role="controller")
 
         self.show_step(5)
         self.fuel_web.assert_task_success(task, timeout=900, interval=5)
@@ -539,7 +540,8 @@ class ServicesReconfiguration(TestBasic):
             cluster_id)
 
         self.show_step(3)
-        task = self.fuel_web.client.apply_configuration(cluster_id)
+        task = self.fuel_web.client.apply_configuration(cluster_id,
+                                                        role="controller")
 
         self.show_step(4)
         self.fuel_web.task_wait(task, timeout=3600, interval=30)
@@ -587,7 +589,8 @@ class ServicesReconfiguration(TestBasic):
         uptimes = self.get_service_uptime(controllers, 'nova-api')
 
         self.show_step(4)
-        task = self.fuel_web.client.apply_configuration(cluster_id)
+        task = self.fuel_web.client.apply_configuration(cluster_id,
+                                                        role="controller")
 
         self.show_step(5)
         self.fuel_web.assert_task_success(task, timeout=900, interval=5)
@@ -1084,7 +1087,8 @@ class ServicesReconfiguration(TestBasic):
         controller_env_2 = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id_2, ['controller'])
         uptimes = self.get_service_uptime(controller_env_1, service_name)
-        task = self.fuel_web.client.apply_configuration(cluster_id_1)
+        task = self.fuel_web.client.apply_configuration(cluster_id_1,
+                                                        role="controller")
 
         self.show_step(10)
         self.fuel_web.assert_task_success(task, timeout=900, interval=5)
@@ -1109,7 +1113,8 @@ class ServicesReconfiguration(TestBasic):
         self.fuel_web.client.upload_configuration(config_revert,
                                                   cluster_id_2)
         uptimes = self.get_service_uptime(controller_env_2, service_name)
-        task = self.fuel_web.client.apply_configuration(cluster_id_2)
+        task = self.fuel_web.client.apply_configuration(cluster_id_2,
+                                                        role="controller")
         self.show_step(15)
         self.fuel_web.assert_task_success(task, timeout=900, interval=5)
 
@@ -1406,7 +1411,8 @@ class ServicesReconfiguration(TestBasic):
         uptimes = self.get_service_uptime(controllers, service_name)
 
         self.show_step(4)
-        task = self.fuel_web.client.apply_configuration(cluster_id)
+        task = self.fuel_web.client.apply_configuration(cluster_id,
+                                                        role="controller")
 
         self.show_step(5)
         self.fuel_web.assert_task_success(task, timeout=900, interval=5)
