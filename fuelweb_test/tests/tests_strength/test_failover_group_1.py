@@ -275,7 +275,7 @@ class FailoverGroup1(TestBasic):
 
         self.show_step(2)
         target_controller = self.fuel_web.get_nailgun_primary_node(
-            self.fuel_web.get_devops_node_by_nailgun_node(controllers[0]))
+            self.env.d_env.nodes().slaves[0])
         self.fuel_web.warm_restart_nodes([target_controller])
 
         self.show_step(3)
@@ -318,7 +318,7 @@ class FailoverGroup1(TestBasic):
 
         self.show_step(2)
         target_controller = self.fuel_web.get_nailgun_primary_node(
-            self.fuel_web.get_devops_node_by_nailgun_node(controllers[0]))
+            self.env.d_env.nodes().slaves[0])
         self.fuel_web.cold_restart_nodes([target_controller])
 
         self.show_step(3)
