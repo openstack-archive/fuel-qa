@@ -229,6 +229,13 @@ class FillRootActions(object):
             int(controller_space_on_root) - self.rabbit_disk_free_limit - 1
         )
 
+        if int(controller_space_to_filled) < 1:
+            logger.info(
+                "Nothing to do."
+                " Free space in root partition already less than {}.".format(
+                    self.rabbit_disk_free_limit))
+            return
+
         logger.info("Need to fill space on root - {}".format(
             controller_space_to_filled))
 
@@ -315,13 +322,25 @@ class FillRootActions(object):
     def clean_up_space_on_root(self):
         """Clean up space on root filesystem on primary controller"""
 
-        with self.fuel_web.get_ssh_for_node(
-                self.primary_controller.name) as remote:
-            remote.check_call('rm /root/bigfile /root/bigfile2')
+        node = self.fuel_web.get_nailgun_node_by_name(
+            self.primary_controller.name)
 
-            remote.check_call(
-                'crm node status-attr {} delete "#health_disk"'.format(
-                    self.primary_controller_fqdn))
+        bigfile_2 = ssh_manager.isfile_on_remote(
+            ip=node['ip'],
+            path='/root/bigfile2')
+
+        path = str("/root/bigfile {}".format(
+            "/root/bigfile2" if bigfile_2 else ""))
+        ssh_manager.rm_rf_on_remote(
+            ip=node['ip'],
+            path=path)
+
+        delete_attr = str(
+            'crm node status-attr {} delete "#health_disk"'.format(
+                self.primary_controller_fqdn))
+        ssh_manager.check_call(
+            ip=node['ip'],
+            command=delete_attr)
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action
