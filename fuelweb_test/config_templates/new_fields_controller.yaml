@@ -10,15 +10,15 @@ neutron_plugin_ml2:
 neutron_dhcp_agent_config:
   fuel_qa/service_reconfiguration_4:
     value: "InProgress"
-    notify: "Service[neutron-server]"
+    notify: "Service[neutron-dhcp-service]"
 neutron_l3_agent_config:
   fuel_qa/service_reconfiguration_5:
     value: "InProgress"
-    notify: "Service[neutron-server]"
+    notify: "Service[neutron-l3]"
 neutron_metadata_agent_config:
   fuel_qa/service_reconfiguration_6:
     value: "InProgress"
-    notify: "Service[neutron-server]"
+    notify: "Service[neutron-metadata]"
 neutron_api_config:
   fuel_qa/service_reconfiguration_7:
     value: "InProgress"
