@@ -73,7 +73,7 @@ class TestDPDK(TestBasic):
 
         server = os_conn.create_server_for_migration(neutron=True,
                                                      label=net_name,
-                                                     flavor=flavor_id)
+                                                     flavor_id=flavor_id)
         os_conn.verify_instance_status(server, 'ACTIVE')
 
         float_ip = os_conn.assign_floating_ip(server)
