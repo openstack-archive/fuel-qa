@@ -28,19 +28,14 @@ from fuelweb_test.tests.test_bonding_base import BondingTest
 @test(groups=["bonding_ha_one_controller", "bonding"])
 class TestOffloading(BondingTest):
 
-    offloadings_1 = ['generic-receive-offload',
-                     'generic-segmentation-offload',
-                     'tcp-segmentation-offload']
+    offloadings_1 = {'generic-receive-offload': False,
+                     'generic-segmentation-offload': False,
+                     'tcp-segmentation-offload': False,
+                     'large-receive-offload': False}
 
-    offloadings_2 = ['rx-all',
-                     'rx-vlan-offload',
-                     'tx-vlan-offload']
-
-    @staticmethod
-    def prepare_offloading_modes(interfaces, offloading_types, state):
-        modes = [{'name': name, 'state': state} for name in offloading_types]
-        return [{'name': interface, 'offloading_modes': deepcopy(modes)}
-                for interface in interfaces]
+    offloadings_2 = {'rx-all': True,
+                     'rx-vlan-offload': True,
+                     'tx-vlan-offload': True}
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["offloading_bond_neutron_vlan", "bonding"])
@@ -92,23 +87,25 @@ class TestOffloading(BondingTest):
         self.show_step(4)
         bond0 = self.get_bond_interfaces(self.bond_config, 'bond0')
         bond1 = self.get_bond_interfaces(self.bond_config, 'bond1')
-        offloadings_1 = []
-        offloadings_2 = []
+        offloadings_1 = {}
+        offloadings_2 = {}
         for node in nodes:
             modes = self.fuel_web.get_offloading_modes(node['id'], bond0)
             for name in self.offloadings_1:
                 if name in modes and name not in offloadings_1:
-                    offloadings_1.append(name)
+                    offloadings_1[name] = self.offloadings_1[name]
             modes = self.fuel_web.get_offloading_modes(node['id'], bond1)
             for name in self.offloadings_2:
                 if name in modes and name not in offloadings_2:
-                    offloadings_2.append(name)
+                    offloadings_2[name] = self.offloadings_2[name]
 
         assert_true(len(offloadings_1) > 0, "No types for disable offloading")
         assert_true(len(offloadings_2) > 0, "No types for enable offloading")
 
-        modes = self.prepare_offloading_modes(['bond0'], offloadings_1, False)
-        modes += self.prepare_offloading_modes(['bond1'], offloadings_2, True)
+        offloadings = {
+            'bond0': offloadings_1,
+            'bond1': offloadings_2
+        }
 
         self.show_step(5)
         for node in nodes:
@@ -116,9 +113,9 @@ class TestOffloading(BondingTest):
                 node['id'],
                 interfaces_dict=deepcopy(self.INTERFACES),
                 raw_data=deepcopy(self.bond_config))
-            for offloading in modes:
+            for offloading in offloadings:
                 self.fuel_web.update_offloads(
-                    node['id'], deepcopy(offloading), offloading['name'])
+                    node['id'], offloadings[offloading], offloading)
 
         self.show_step(6)
         self.fuel_web.verify_network(cluster_id)
@@ -200,23 +197,25 @@ class TestOffloading(BondingTest):
         self.show_step(4)
         bond0 = self.get_bond_interfaces(self.bond_config, 'bond0')
         bond1 = self.get_bond_interfaces(self.bond_config, 'bond1')
-        offloadings_1 = []
-        offloadings_2 = []
+        offloadings_1 = {}
+        offloadings_2 = {}
         for node in nodes:
             modes = self.fuel_web.get_offloading_modes(node['id'], bond0)
             for name in self.offloadings_1:
                 if name in modes and name not in offloadings_1:
-                    offloadings_1.append(name)
+                    offloadings_1[name] = self.offloadings_1[name]
             modes = self.fuel_web.get_offloading_modes(node['id'], bond1)
             for name in self.offloadings_2:
                 if name in modes and name not in offloadings_2:
-                    offloadings_2.append(name)
+                    offloadings_2[name] = self.offloadings_2[name]
 
         assert_true(len(offloadings_1) > 0, "No types for disable offloading")
         assert_true(len(offloadings_2) > 0, "No types for enable offloading")
 
-        modes = self.prepare_offloading_modes(['bond0'], offloadings_1, False)
-        modes += self.prepare_offloading_modes(['bond1'], offloadings_2, True)
+        offloadings = {
+            'bond0': offloadings_1,
+            'bond1': offloadings_2
+        }
 
         self.show_step(5)
         for node in nodes:
@@ -224,9 +223,9 @@ class TestOffloading(BondingTest):
                 node['id'],
                 interfaces_dict=deepcopy(self.INTERFACES),
                 raw_data=deepcopy(self.bond_config))
-            for offloading in modes:
+            for offloading in offloadings:
                 self.fuel_web.update_offloads(
-                    node['id'], deepcopy(offloading), offloading['name'])
+                    node['id'], offloadings[offloading], offloading)
 
         self.show_step(6)
         self.fuel_web.verify_network(cluster_id)
