@@ -5,6 +5,8 @@ meta:
   description: New role
   has_primary: true
   name: Test primary role
+  tags:
+    - test-primary-tag
 name: test-primary-role
 volumes_roles_mapping:
 - allocate_size: min
