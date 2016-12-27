@@ -1,0 +1,6 @@
+configuration:
+  package:
+    mc:
+      ensure: present
+    virt-what:
+      ensure: absent
