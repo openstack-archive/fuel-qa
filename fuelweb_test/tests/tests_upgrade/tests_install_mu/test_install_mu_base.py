@@ -79,7 +79,7 @@ class MUInstallBase(test_cli_base.CommandLine):
 
     def _prepare_for_update_mos_mu(self, cluster_id):
         logger.info('Prepare Enviroment')
-        mos_mu_path = 'cd {} ;'.format(settings.MOS_MU_PATH)
+        mos_mu_path = 'cd {} &&'.format(settings.MOS_MU_PATH)
         ext_vars = '\'{{"env_id":{0}, "snapshot_repo":"{1}"}}\'' \
                    ''.format(cluster_id,
                              settings.MOS_UBUNTU_MIRROR_ID)
@@ -210,7 +210,26 @@ class MUInstallBase(test_cli_base.CommandLine):
         self.assert_cli_task_success(task, timeout=settings.DEPLOYMENT_TIMEOUT)
 
         if settings.USE_MOS_MU_FOR_UPGRADE:
-            mos_mu_path = 'cd {} ;'.format(settings.MOS_MU_PATH)
+            mos_mu_path = 'cd {} &&'.format(settings.MOS_MU_PATH)
+
+            nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+            cmd_ceph_ver = "ceph version | egrep -o '[0-9]*\.[0-9]*\.[0-9]*'"
+            cmd_kernel_ver = "uname -r"
+            kernel_before = {}
+            ceph_before = {}
+            ceph_detected = False
+            for node in nodes:
+                logger.info("Get current version of kernel and ceph on node {}"
+                            "".format(node['hostname']))
+                with self.fuel_web.get_ssh_for_nailgun_node(node) as remote:
+                    out = remote.execute(cmd_kernel_ver).stdout[0]
+                    logger.info("Kernel version: {}".format(out))
+                    kernel_before[node['hostname']] = out
+                    if 'ceph-osd' in node['roles']:
+                        ceph_detected = True
+                        out = remote.execute(cmd_ceph_ver).stdout[0]
+                        ceph_before[node['hostname']] = out
+                        logger.info("Ceph version: {}".format(out))
 
             logger.info('Upgrade kernel on 4.4')
             command = \
@@ -221,20 +240,22 @@ class MUInstallBase(test_cli_base.CommandLine):
                 ip=self.ssh_manager.admin_ip,
                 command=command)
 
-            logger.info('Update ceph')
-            command = \
-                '{0} ansible-playbook playbooks/update_ceph.yml -e \'' \
-                '{{"env_id":{1},"restart_ceph":false}}\''.format(mos_mu_path,
-                                                                 cluster_id)
-            self.ssh_manager.check_call(
-                ip=self.ssh_manager.admin_ip,
-                command=command)
+            if ceph_detected:
+                logger.info('Update ceph')
+                command = \
+                    '{0} ansible-playbook playbooks/update_ceph.yml -e \'' \
+                    '{{"env_id":{1},"restart_ceph":false}}\'' \
+                    ''.format(mos_mu_path, cluster_id)
+                self.ssh_manager.check_call(
+                    ip=self.ssh_manager.admin_ip,
+                    command=command)
 
             if apply_patches:
                 logger.info('Apply patches')
                 command = \
                     '{0} ansible-playbook playbooks/mos9_apply_patches.yml' \
-                    ' -e \'{{"env_id":{1}}}\''.format(mos_mu_path, cluster_id)
+                    ' -e \'{{"env_id":{1}, "health_check":false}}\''.format(
+                        mos_mu_path, cluster_id)
                 self.ssh_manager.check_call(
                     ip=self.ssh_manager.admin_ip,
                     command=command)
@@ -246,6 +267,20 @@ class MUInstallBase(test_cli_base.CommandLine):
             self.ssh_manager.check_call(
                 ip=self.ssh_manager.admin_ip,
                 command=command)
+
+            for node in nodes:
+                logger.info("Check version of kernel and ceph on node {}"
+                            "".format(node['hostname']))
+                with self.fuel_web.get_ssh_for_nailgun_node(node) as remote:
+                    out = remote.execute(cmd_kernel_ver).stdout[0]
+                    logger.info("Kernel version: {}".format(out))
+                    assert_true(kernel_before[node['hostname']] != out,
+                                "Kernel wasn't updated")
+                    if 'ceph-osd' in node['roles']:
+                        out = remote.execute(cmd_ceph_ver).stdout[0]
+                        logger.info("Ceph version: {}".format(out))
+                        assert_true(ceph_before[node['hostname']] != out,
+                                    "Ceph wasn't updated")
 
     def _redeploy_noop(self, cluster_id, timeout=settings.DEPLOYMENT_TIMEOUT):
         logger.info("Run the configuration check on your environment using "
@@ -339,7 +374,7 @@ class MUInstallBase(test_cli_base.CommandLine):
         self.show_step(self.next_step)
         self.env.admin_actions.wait_for_fuel_ready(timeout=600)
 
-    def apply_customization(self, cluster_id, patch_file, path):
+    def apply_customization(self, cluster_id, patch_file, path, verify=False):
         file_name = patch_file.split('/')[-1]
         logger.info("Apply patch {0} on all nodes in cluster {1}".format(
             file_name, cluster_id))
@@ -349,27 +384,62 @@ class MUInstallBase(test_cli_base.CommandLine):
             logger.debug("Apply patch on {}".format(node['hostname']))
             with self.fuel_web.get_ssh_for_nailgun_node(node) as remote:
                 remote.upload(patch_file, './')
-                remote.execute('cd {0} && patch -p1 < ~/{1}'.format(
-                    path, file_name))
+                if verify:
+                    out = remote.execute('cd {0} && patch -N --dry-run -p1 < '
+                                         '~/{1}'.format(path, file_name))
+                    logger.debug(out)
+                    assert_true('Reversed (or previously applied) patch '
+                                'detected!' in ''.join(out.stdout) and
+                                out.exit_code == 1)
+                else:
+                    remote.execute('cd {0} && patch -p1 < ~/{1}'.format(
+                        path, file_name))
+
+    def update_package(self, cluster_id, pkg_name):
+        proposed_repo = "http://mirror.fuel-infra.org/mos-repos/ubuntu/" \
+                        "snapshots/{}".format(settings.MOS_UBUNTU_MIRROR_ID)
+        nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+        for node in nodes:
+            logger.info("Update pkg {0} on {1}".format(pkg_name,
+                                                       node['hostname']))
+            with self.fuel_web.get_ssh_for_nailgun_node(node) as remote:
+                remote.execute("add-apt-repository '{0} mos9.0-proposed main"
+                               " restricted'".format(proposed_repo))
+                remote.execute("echo -e 'Package: *\nPin: release "
+                               "a=mos9.0-proposed, n=mos9.0, o=Mirantis,"
+                               " l=mos9.0\nPin-Priority: 1050\n' >>"
+                               " /etc/apt/preferences")
+                remote.execute("wget -qO - {}/archive-mos9.0-proposed.key |"
+                               " sudo apt-key add -".format(proposed_repo))
+                remote.execute("apt update && apt install {} -y".format(
+                    pkg_name))
+                remote.execute("add-apt-repository -r '{0} mos9.0-proposed "
+                               "main restricted'".format(proposed_repo))
 
     def get_customization_via_mos_mu(self, cluster_id):
         self._redeploy_noop(cluster_id)
 
-        mos_mu_path = 'cd {} ;'.format(settings.MOS_MU_PATH)
+        mos_mu_path = 'cd {} &&'.format(settings.MOS_MU_PATH)
 
         logger.info('Gathering code customizations')
-        command = \
-            '{0} ansible-playbook playbooks/gather_customizations.yml -e \'' \
-            '{{"env_id":{1}}}\''.format(mos_mu_path, cluster_id)
+        ext_vars = '\'{{"env_id":{0}, "snapshot_repo":"{1}", ' \
+                   '"srcs_list_tmpl":"sources.list.with.proposed.j2", ' \
+                   '"unknown_upgradable_pkgs":"keep"}}\'' \
+                   ''.format(cluster_id,
+                             settings.MOS_UBUNTU_MIRROR_ID)
+
+        cmd = '{0} ansible-playbook playbooks/gather_customizations.yml -e ' \
+              '{1}'.format(mos_mu_path, ext_vars)
 
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            command=command)
+            command=cmd)
 
         logger.info('Verify patches')
         command = \
             '{0} ansible-playbook playbooks/verify_patches.yml -e \'' \
-            '{{"env_id":{1}}}\''.format(mos_mu_path, cluster_id)
+            '{{"env_id":{1}, "ignore_applied_patches":true}}\'' \
+            ''.format(mos_mu_path, cluster_id)
 
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,

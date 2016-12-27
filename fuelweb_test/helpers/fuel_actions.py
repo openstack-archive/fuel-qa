@@ -323,11 +323,10 @@ class AdminActions(BaseActions):
 
     def prepare_admin_node_for_mos_mu(self):
         """Prepare master node for update via mos-playbooks tool"""
-        mos_mu_path = 'cd {} ;'.format(MOS_MU_PATH)
+        mos_mu_path = 'cd {} &&'.format(MOS_MU_PATH)
 
         logger.info('Searching for mos-playbooks package')
-        search_command = 'yum search mos-playbooks'
-
+        search_command = 'yum search mos-playbooks && yum search mos-release'
         search_result = self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
             command=search_command)
@@ -336,24 +335,33 @@ class AdminActions(BaseActions):
             "Warning: No matches found for: " not in search_result.stderr_str,
             "mos-release wasn't found")
 
-        logger.info('Installing mos-playbooks package')
-        install_command = 'yum install -y mos-playbooks'
-
+        logger.info('Installing mos-release package mos-playbooks package')
+        install_command = 'yum install -y mos-release'
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
             command=install_command)
 
-        logger.info('Install ansible')
-        prepare_command = '{} ./install_ansible.sh'.format(mos_mu_path)
-
+        # Delete this after release 9.2
+        logger.warning('Remove mos92-updates.repo with proposed-latest repo')
+        cmd = "rm /etc/yum.repos.d/mos92-updates.repo"
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            command=prepare_command)
+            command=cmd)
+        # Delete this after release 9.2
+
+        logger.info('Installing mos-playbooks package')
+        # install_command = 'yum install -y mos-playbooks'
+        install_command = 'yum install -y mos-playbooks && ' \
+                          'yum install -y git && git clone ' \
+                          'https://github.com/aepifanov/mos_mu.git && ' \
+                          'cd mos_mu && git checkout 9.2'
+        self.ssh_manager.check_call(
+            ip=self.ssh_manager.admin_ip,
+            command=install_command)
 
         logger.info('Prepare Fuel node')
         command = '{0} ansible-playbook playbooks/mos9_prepare_fuel.yml' \
                   ''.format(mos_mu_path)
-
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
             command=command)

@@ -400,6 +400,24 @@ class MUInstallNoHA(MUInstallBase):
             "install_mu_no_ha_scale", is_make=True)
 
     @test(depends_on_groups=["install_mu_no_ha_scale"],
+          groups=["install_mu_no_ha_scale_90"])
+    @log_snapshot_after_test
+    def install_mu_no_ha_scale_90(self):
+        """Add node for updated cluster after installing MU
+
+        Scenario:
+            1. Run install_mu_no_ha_scale test for 9.0 environment (Stub)
+
+        Duration: 1m
+        """
+
+        assert_true(settings.FORCE_DISABLE_UPDATES, "FORCE DISABLE UPDATES is "
+                                                    "False ! Fuel environment "
+                                                    "isn't 9.0")
+
+        self.show_step(1)
+
+    @test(depends_on_groups=["install_mu_no_ha_scale"],
           groups=["install_mu_no_ha_failover"])
     @log_snapshot_after_test
     def install_mu_no_ha_failover(self):
@@ -726,6 +744,85 @@ class MUInstallNoHA(MUInstallBase):
             8. Check Fuel services
             9. Install MU for cluster, update kernel, ceph, apply
             customization and restart all nodes
+            10. Check customization
+            11. Verify networks
+            12. Run OSTF
+
+        Duration: 90m
+        Snapshot: install_mu_no_ha_base
+        """
+
+        if settings.USE_MOS_MU_FOR_UPGRADE is not True:
+            raise exceptions.FuelQAVariableNotSet(
+                (settings.USE_MOS_MU_FOR_UPGRADE),
+                'True')
+        self.check_run("mos_mu_customization_included")
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.show_step(1)
+        self.env.revert_snapshot("deploy_multirole_compute_cinder")
+
+        self.show_step(2)
+        pkg_file = 'fuelweb_test/tests/tests_upgrade/tests_install_mu/' \
+                   'edbd3135.diff'
+        pkg_path = '/usr/lib/python2.7/dist-packages'
+        self.apply_customization(cluster_id, pkg_file, pkg_path)
+
+        self.show_step(3)
+        repo_url = settings.UPGRADE_CLUSTER_FROM_PROPOSED_RPM
+        key = settings.UPGRADE_CLUSTER_FROM_PROPOSED_RPM_KEY
+        self._add_centos_test_proposed_repo(repo_url, key)
+
+        self.show_step(4)
+        self.env.admin_actions.prepare_admin_node_for_mos_mu()
+
+        self.show_step(5)
+        self._prepare_for_update_mos_mu(cluster_id)
+
+        self.show_step(6)
+        self.get_customization_via_mos_mu(cluster_id)
+
+        self.show_step(7)
+        self.env.admin_actions.admin_install_updates_mos_mu()
+
+        self.show_step(8)
+        self.env.admin_actions.wait_for_fuel_ready(timeout=600)
+
+        self.show_step(9)
+        self._install_mu(cluster_id, repos=self.repos, apply_patches=True)
+
+        self.show_step(10)
+        self.apply_customization(cluster_id, pkg_file, pkg_path, verify=True)
+
+        self.show_step(11)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(12)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['ha', 'smoke',
+                                              'sanity'])
+
+        self.env.make_snapshot(
+            "mos_mu_customization_included", is_make=True)
+
+    @test(depends_on_groups=["deploy_multirole_compute_cinder"],
+          groups=["mos_mu_customization_pkg"])
+    @log_snapshot_after_test
+    def mos_mu_customization_pkg(self):
+        """Install MU to no HA cluster
+
+        Scenario:
+            1. Revert snapshot deploy_multirole_compute_cinder
+            2. Update package that will be included in mu
+            3. Enable updates repo
+            4. Prepare master node for update
+            5. Prepare env for update
+            6. Get customization
+            7. Update master node
+            8. Check Fuel services
+            9. Install MU for cluster, update kernel, ceph, apply
+            customization and restart all nodes
             10. Verify networks
             11. Run OSTF
 
@@ -745,10 +842,7 @@ class MUInstallNoHA(MUInstallBase):
         self.env.revert_snapshot("deploy_multirole_compute_cinder")
 
         self.show_step(2)
-        patch_file = 'fuelweb_test/tests/tests_upgrade/tests_install_mu/' \
-                     'edbd3135.diff'
-        path = '/usr/lib/python2.7/dist-packages'
-        self.apply_customization(cluster_id, patch_file, path)
+        self.update_package(cluster_id, "libvirt-sanlock")
 
         self.show_step(3)
         repo_url = settings.UPGRADE_CLUSTER_FROM_PROPOSED_RPM
@@ -783,3 +877,91 @@ class MUInstallNoHA(MUInstallBase):
 
         self.env.make_snapshot(
             "mos_mu_customization_included", is_make=True)
+
+    @test(depends_on_groups=["deploy_multirole_compute_cinder"],
+          groups=["mos_mu_customization_excluded"])
+    @log_snapshot_after_test
+    def mos_mu_customization_excluded(self):
+        """Install MU to no HA cluster
+
+        Scenario:
+            1. Revert snapshot deploy_multirole_compute_cinder
+            2. Apply customization package that will not be included in mu
+            3. Apply customization of config file that will not be included
+            in mu
+            4. Enable updates repo
+            5. Prepare master node for update
+            6. Prepare env for update
+            7. Get customization
+            8. Update master node
+            9. Check Fuel services
+            10. Install MU for cluster, update kernel, ceph, apply
+            customization and restart all nodes
+            11. Check customizations
+            12. Verify networks
+            13. Run OSTF
+
+        Duration: 90m
+        Snapshot: install_mu_no_ha_base
+        """
+
+        if settings.USE_MOS_MU_FOR_UPGRADE is not True:
+            raise exceptions.FuelQAVariableNotSet(
+                (settings.USE_MOS_MU_FOR_UPGRADE),
+                'True')
+        self.check_run("mos_mu_customization_excluded")
+
+        cluster_id = self.fuel_web.get_last_created_cluster()
+
+        self.show_step(1)
+        self.env.revert_snapshot("deploy_multirole_compute_cinder")
+
+        self.show_step(2)
+        pkg_file = 'fuelweb_test/tests/tests_upgrade/tests_install_mu/' \
+                   'patch.diff'
+        pkg_path = '/usr/lib/python2.7/dist-packages/neutron'
+        self.apply_customization(cluster_id, pkg_file, pkg_path)
+
+        self.show_step(3)
+        conf_file = 'fuelweb_test/tests/tests_upgrade/tests_install_mu/' \
+                    'nova.conf.diff'
+        conf_path = '/etc/nova'
+        self.apply_customization(cluster_id, conf_file, conf_path)
+
+        self.show_step(4)
+        repo_url = settings.UPGRADE_CLUSTER_FROM_PROPOSED_RPM
+        key = settings.UPGRADE_CLUSTER_FROM_PROPOSED_RPM_KEY
+        self._add_centos_test_proposed_repo(repo_url, key)
+
+        self.show_step(5)
+        self.env.admin_actions.prepare_admin_node_for_mos_mu()
+
+        self.show_step(6)
+        self._prepare_for_update_mos_mu(cluster_id)
+
+        self.show_step(7)
+        self.get_customization_via_mos_mu(cluster_id)
+
+        self.show_step(8)
+        self.env.admin_actions.admin_install_updates_mos_mu()
+
+        self.show_step(9)
+        self.env.admin_actions.wait_for_fuel_ready(timeout=600)
+
+        self.show_step(10)
+        self._install_mu(cluster_id, repos=self.repos, apply_patches=True)
+
+        self.show_step(11)
+        self.apply_customization(cluster_id, pkg_file, pkg_path, verify=True)
+        self.apply_customization(cluster_id, conf_file, conf_path, verify=True)
+
+        self.show_step(12)
+        self.fuel_web.verify_network(cluster_id)
+
+        self.show_step(13)
+        self.fuel_web.run_ostf(
+            cluster_id=cluster_id, test_sets=['ha', 'smoke',
+                                              'sanity'])
+
+        self.env.make_snapshot(
+            "mos_mu_customization_excluded", is_make=True)

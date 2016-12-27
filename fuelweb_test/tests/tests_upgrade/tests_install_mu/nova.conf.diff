@@ -1,0 +1,11 @@
+--- a/nova.conf	2016-12-22 10:23:42.752465601 +0000
++++ b/nova.conf	2016-12-22 15:23:29.681739432 +0000
+@@ -454,7 +454,7 @@
+ # Deprecated group/name - [DATABASE]/sql_idle_timeout
+ # Deprecated group/name - [sql]/idle_timeout
+ #idle_timeout = 3600
+-idle_timeout = 3600
++idle_timeout = 3666
+ 
+ # Minimum number of SQL connections to keep open in a pool. (integer value)
+ # Deprecated group/name - [DEFAULT]/sql_min_pool_size
