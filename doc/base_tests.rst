@@ -11,6 +11,11 @@ Base Test Case
 .. automodule:: fuelweb_test.tests.base_test_case
    :members:
 
+Release tests
+-------------
+.. automodule:: fuelweb_test.tests.test_releases.test_release_plugins
+   :members:
+
 Admin Node Tests
 ----------------
 .. automodule:: fuelweb_test.tests.test_admin_node
