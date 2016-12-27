@@ -348,7 +348,7 @@ class SupportDPDKBond(BondingTestDPDK, TestDPDK):
         for node in nailgun_nodes:
             self.fuel_web.update_node_networks(
                 node['id'], interfaces_dict=deepcopy(self.INTERFACES),
-                raw_data=deepcopy(self.BOND_CONFIG)
+                raw_data=deepcopy(self.bond_config)
             )
 
         computes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(

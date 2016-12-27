@@ -90,8 +90,8 @@ class TestOffloading(BondingTest):
         nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
 
         self.show_step(4)
-        bond0 = self.get_bond_interfaces(self.BOND_CONFIG, 'bond0')
-        bond1 = self.get_bond_interfaces(self.BOND_CONFIG, 'bond1')
+        bond0 = self.get_bond_interfaces(self.bond_config, 'bond0')
+        bond1 = self.get_bond_interfaces(self.bond_config, 'bond1')
         offloadings_1 = []
         offloadings_2 = []
         for node in nodes:
@@ -115,7 +115,7 @@ class TestOffloading(BondingTest):
             self.fuel_web.update_node_networks(
                 node['id'],
                 interfaces_dict=deepcopy(self.INTERFACES),
-                raw_data=deepcopy(self.BOND_CONFIG))
+                raw_data=deepcopy(self.bond_config))
             for offloading in modes:
                 self.fuel_web.update_offloads(
                     node['id'], deepcopy(offloading), offloading['name'])
@@ -198,8 +198,8 @@ class TestOffloading(BondingTest):
         nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
 
         self.show_step(4)
-        bond0 = self.get_bond_interfaces(self.BOND_CONFIG, 'bond0')
-        bond1 = self.get_bond_interfaces(self.BOND_CONFIG, 'bond1')
+        bond0 = self.get_bond_interfaces(self.bond_config, 'bond0')
+        bond1 = self.get_bond_interfaces(self.bond_config, 'bond1')
         offloadings_1 = []
         offloadings_2 = []
         for node in nodes:
@@ -223,7 +223,7 @@ class TestOffloading(BondingTest):
             self.fuel_web.update_node_networks(
                 node['id'],
                 interfaces_dict=deepcopy(self.INTERFACES),
-                raw_data=deepcopy(self.BOND_CONFIG))
+                raw_data=deepcopy(self.bond_config))
             for offloading in modes:
                 self.fuel_web.update_offloads(
                     node['id'], deepcopy(offloading), offloading['name'])
