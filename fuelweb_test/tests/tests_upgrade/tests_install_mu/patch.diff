@@ -1,0 +1,10 @@
+--- a/version.py	2016-10-19 09:41:04.000000000 +0000
++++ b/version.py	2016-12-07 11:32:16.311593931 +0000
+@@ -12,6 +12,7 @@
+ #    License for the specific language governing permissions and limitations
+ #    under the License.
+
++# Customization test-comment
+ import pbr.version
+
+ version_info = pbr.version.VersionInfo('neutron')
