@@ -17,10 +17,10 @@ import random
 
 from devops.helpers import helpers as devops_helpers
 from proboscis.asserts import assert_raises
-from proboscis.asserts import assert_true
 from proboscis import test
 from keystoneauth1 import exceptions
 
+from fuelweb_test.helpers.checkers import check_settings_requirements
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -37,16 +37,7 @@ class TestDPDK(TestBasic):
 
     def __init__(self):
         super(TestDPDK, self).__init__()
-        self.check_settings_requirements()
-
-    def check_settings_requirements(self):
-        bad_params = set()
-        for param, value in self.tests_requirements.items():
-            if getattr(settings, param) != value:
-                bad_params.add('{0}={1}'.format(param, value))
-        assert_true(not bad_params,
-                    'Can not start tests, the following settings are '
-                    'not set properly: {0}'.format(', '.join(bad_params)))
+        check_settings_requirements(self.tests_requirements)
 
     def check_dpdk_instance_connectivity(self, os_conn, cluster_id,
                                          mem_page_size='2048'):
