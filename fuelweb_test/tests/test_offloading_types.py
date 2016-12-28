@@ -36,20 +36,14 @@ class TestOffloading(TestBasic):
         settings.iface_alias('eth4'): ['storage'],
     }
 
-    offloadings_1 = ['generic-receive-offload',
-                     'generic-segmentation-offload',
-                     'tcp-segmentation-offload',
-                     'large-receive-offload']
+    offloadings_1 = {'generic-receive-offload': False,
+                     'generic-segmentation-offload': False,
+                     'tcp-segmentation-offload': False,
+                     'large-receive-offload': False}
 
-    offloadings_2 = ['rx-all',
-                     'rx-vlan-offload',
-                     'tx-vlan-offload']
-
-    @staticmethod
-    def prepare_offloading_modes(interface, types, state):
-        return [{'name': interface,
-                 'offloading_modes': [{'name': name, 'state': state,
-                                       'sub': []} for name in types]}]
+    offloadings_2 = {'rx-all': True,
+                     'rx-vlan-offload': True,
+                     'tx-vlan-offload': True}
 
     @staticmethod
     def check_offloading_modes(nodes, offloadings, iface, state):
@@ -109,31 +103,32 @@ class TestOffloading(TestBasic):
         nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
 
         self.show_step(4)
-        offloadings_1 = []
-        offloadings_2 = []
+        offloadings_1 = {}
+        offloadings_2 = {}
         for node in nodes:
             modes = self.fuel_web.get_offloading_modes(node['id'], [iface1])
             for name in self.offloadings_1:
                 if name in modes and name not in offloadings_1:
-                    offloadings_1.append(name)
+                    offloadings_1[name] = self.offloadings_1[name]
             modes = self.fuel_web.get_offloading_modes(node['id'], [iface2])
             for name in self.offloadings_2:
                 if name in modes and name not in offloadings_2:
-                    offloadings_2.append(name)
+                    offloadings_2[name] = self.offloadings_2[name]
 
         assert_true(len(offloadings_1) > 0, "No types for disable offloading")
         assert_true(len(offloadings_2) > 0, "No types for enable offloading")
 
-        modes = self.prepare_offloading_modes(iface1, offloadings_1, False)
-        modes += self.prepare_offloading_modes(iface2, offloadings_2, True)
-
+        offloadings = {
+            iface1: offloadings_1,
+            iface2: offloadings_2
+        }
         for node in nodes:
             self.fuel_web.update_node_networks(
                 node['id'],
                 interfaces_dict=deepcopy(self.interfaces))
-            for offloading in modes:
+            for offloading in offloadings:
                 self.fuel_web.update_offloads(
-                    node['id'], deepcopy(offloading), offloading['name'])
+                    node['id'], offloadings[offloading], offloading)
 
         self.show_step(5)
         self.fuel_web.verify_network(cluster_id)
@@ -202,31 +197,32 @@ class TestOffloading(TestBasic):
         nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
 
         self.show_step(4)
-        offloadings_1 = []
-        offloadings_2 = []
+        offloadings_1 = {}
+        offloadings_2 = {}
         for node in nodes:
             modes = self.fuel_web.get_offloading_modes(node['id'], [iface1])
             for name in self.offloadings_1:
                 if name in modes and name not in offloadings_1:
-                    offloadings_1.append(name)
+                    offloadings_1[name] = self.offloadings_1[name]
             modes = self.fuel_web.get_offloading_modes(node['id'], [iface2])
             for name in self.offloadings_2:
                 if name in modes and name not in offloadings_2:
-                    offloadings_2.append(name)
+                    offloadings_2[name] = self.offloadings_2[name]
 
         assert_true(len(offloadings_1) > 0, "No types for disable offloading")
         assert_true(len(offloadings_2) > 0, "No types for enable offloading")
 
-        modes = self.prepare_offloading_modes(iface1, offloadings_1, False)
-        modes += self.prepare_offloading_modes(iface2, offloadings_2, True)
-
+        offloadings = {
+            iface1: offloadings_1,
+            iface2: offloadings_2
+        }
         for node in nodes:
             self.fuel_web.update_node_networks(
                 node['id'],
                 interfaces_dict=deepcopy(self.interfaces))
-            for offloading in modes:
+            for offloading in offloadings:
                 self.fuel_web.update_offloads(
-                    node['id'], deepcopy(offloading), offloading['name'])
+                    node['id'], offloadings[offloading], offloading)
 
         self.show_step(5)
         self.fuel_web.verify_network(cluster_id)
