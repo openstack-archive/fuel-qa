@@ -39,7 +39,8 @@ def replace_ubuntu_repos(repos_attr, upstream_host):
         repos = add_ubuntu_extra_mirrors(repos=repos)
     if help_data.FORCE_DISABLE_UPDATES:
         repos = [repo for repo in repos if
-                 'ubuntu' in repo['name'] or repo['name'] == 'mos']
+                 'ubuntu' in repo['name'] or repo['name'] == 'mos' or
+                 repo['name'] == 'mos-holdback']
 
     return repos
 
