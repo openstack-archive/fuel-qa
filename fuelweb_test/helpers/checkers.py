@@ -34,21 +34,15 @@ import yaml
 
 from core.helpers.log_helpers import logwrap
 
+from fuelweb_test import settings
 from fuelweb_test import logger
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.utils import check_config
 from fuelweb_test.helpers.utils import get_ini_config
 from fuelweb_test.helpers.utils import get_mongo_partitions
-from fuelweb_test.settings import EXTERNAL_DNS
-from fuelweb_test.settings import EXTERNAL_NTP
-from fuelweb_test.settings import OPENSTACK_RELEASE
-from fuelweb_test.settings import OPENSTACK_RELEASE_UBUNTU
-from fuelweb_test.settings import POOLS
-from fuelweb_test.settings import PUBLIC_TEST_IP
-from fuelweb_test.settings import SSH_IMAGE_CREDENTIALS
 
 
-cirros_auth = SSHAuth(**SSH_IMAGE_CREDENTIALS)
+cirros_auth = SSHAuth(**settings.SSH_IMAGE_CREDENTIALS)
 ssh_manager = SSHManager()
 
 
@@ -794,7 +788,8 @@ def check_stats_private_info(collector_remote, postgres_actions,
         'nailgun', 'select id from action_logs;').split('\n')]
     sent_stats = str(collector_remote.get_installation_info_data(master_uuid))
     logger.debug('installation structure is {0}'.format(sent_stats))
-    used_networks = [POOLS[net_name][0] for net_name in POOLS.keys()]
+    used_networks = [settings.POOLS[net_name][0]
+                     for net_name in settings.POOLS.keys()]
     has_no_private_data = True
 
     logger.debug("Looking for private data in the installation structure, "
@@ -829,7 +824,7 @@ def check_kernel(kernel, expected_kernel):
 @logwrap
 def external_dns_check(ip):
     logger.info("External dns check")
-    provided_dns = EXTERNAL_DNS
+    provided_dns = settings.EXTERNAL_DNS
     logger.debug("provided to test dns is {}".format(provided_dns))
     cluster_dns = []
     for dns in provided_dns:
@@ -846,7 +841,7 @@ def external_dns_check(ip):
     command_hostname = ''.join(
         ssh_manager.execute(ip,
                             "host {0} | awk {{'print $5'}}"
-                            .format(PUBLIC_TEST_IP))
+                            .format(settings.PUBLIC_TEST_IP))
         ["stdout"]).rstrip()
     hostname = 'google-public-dns-a.google.com.'
     assert_equal(command_hostname, hostname,
@@ -884,7 +879,7 @@ def verify_bootstrap_on_node(ip, os_type, uuid=None):
 @logwrap
 def external_ntp_check(ip, vrouter_vip):
     logger.info("External ntp check")
-    provided_ntp = EXTERNAL_NTP
+    provided_ntp = settings.EXTERNAL_NTP
     logger.debug("provided to test ntp is {}".format(provided_ntp))
     cluster_ntp = []
     for ntp in provided_ntp:
@@ -1120,7 +1115,7 @@ def check_repo_managment(ip):
     :type ip: node ip
         :rtype Dict
     """
-    if OPENSTACK_RELEASE == OPENSTACK_RELEASE_UBUNTU:
+    if settings.OPENSTACK_RELEASE == settings.OPENSTACK_RELEASE_UBUNTU:
         cmd = "apt-get clean all && apt-get update > /dev/null"
     else:
         cmd = "yum -y clean all && yum check-update > /dev/null"
@@ -1438,7 +1433,7 @@ def ping6_from_instance(through_host, instance_ip, target_ip):
             "{dst_address:s}".format(
                 ping='ping6',
                 count=10,
-                deadline=20,
+                deadline=40,
                 packetsize=1452,
                 dst_address=target_ip),
         auth=cirros_auth
@@ -1456,3 +1451,13 @@ def ping6_from_instance(through_host, instance_ip, target_ip):
             code=res['exit_code'],
             stdout=res['stdout_str'],
             stderr=res['stderr_str']))
+
+
+def check_settings_requirements(tests_requirements):
+    bad_params = set()
+    for param, value in tests_requirements.items():
+        if getattr(settings, param) != value:
+            bad_params.add('{0}={1}'.format(param, value))
+    assert_true(not bad_params,
+                'Can not start tests, the following settings are '
+                'not set properly: {0}'.format(', '.join(bad_params)))
