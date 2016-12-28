@@ -20,6 +20,7 @@ from proboscis.asserts import assert_raises
 from proboscis import test
 from keystoneauth1 import exceptions
 
+from fuelweb_test.helpers.checkers import check_firewall_driver
 from fuelweb_test.helpers.checkers import check_settings_requirements
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
@@ -105,7 +106,8 @@ class SupportDPDK(TestDPDK):
             9. Run OSTF
             10. Reboot compute
             11. Run OSTF
-            12. Run instance on compute with DPDK and check its availability
+            12. Check option "firewall_driver" in config files
+            13. Run instance on compute with DPDK and check its availability
                 via floating IP
 
         Snapshot: deploy_cluster_with_dpdk
@@ -167,6 +169,9 @@ class SupportDPDK(TestDPDK):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.show_step(12)
+        check_firewall_driver(compute['ip'], compute['roles'][0], 'noop')
+
+        self.show_step(13)
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
 
