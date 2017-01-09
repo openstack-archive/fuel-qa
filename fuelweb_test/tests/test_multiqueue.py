@@ -112,7 +112,7 @@ class TestMultiqueue(TestBasic):
             cluster_id)['private_net']
         server = os_conn.create_server_for_migration(neutron=True,
                                                      label=net_name,
-                                                     flavor=flavor_id)
+                                                     flavor_id=flavor_id)
         os_conn.verify_instance_status(server, 'ACTIVE')
 
         self.show_step(self.next_step)
