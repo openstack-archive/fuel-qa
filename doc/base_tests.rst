@@ -818,3 +818,8 @@ Test Multiqueue
 ---------------
 .. automodule:: fuelweb_test.tests.test_multiqueue
    :members:
+
+Test OVS firewall driver
+------------------------
+.. automodule:: fuelweb_test.tests.test_ovs_firewall
+   :members:
