@@ -19,6 +19,7 @@ import json
 import os
 import re
 from time import sleep
+import traceback
 
 from devops.error import TimeoutError
 from devops.helpers.helpers import wait_pass
@@ -1550,3 +1551,15 @@ def check_settings_requirements(tests_requirements):
     assert_true(not bad_params,
                 'Can not start tests, the following settings are '
                 'not set properly: {0}'.format(', '.join(bad_params)))
+
+
+def check_response_code(expected_code, err_msg, func, *args, **kwargs):
+    try:
+        func(*args, **kwargs)
+    except exceptions.HttpError as e:
+        if e.http_status != expected_code:
+            raise
+        logger.warning('Ignoring exception: {!r}'.format(e))
+        logger.debug(traceback.format_exc())
+    else:
+        raise Exception(err_msg)
