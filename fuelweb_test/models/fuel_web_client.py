@@ -1208,6 +1208,17 @@ class FuelWebClient29(object):
             return self.get_devops_node_by_mac(nailgun_node['mac'])
 
     @logwrap
+    def get_devops_node_by_nailgun_node_id(self, nailgun_node_id):
+        """Return devops node by nailgun node id
+
+        :type nailgun_node_id: int
+        :rtype: Node or None
+        """
+        nailgun_node = [node for node in self.client.list_nodes() if
+                        node['id'] == nailgun_node_id].pop()
+        return self.get_devops_node_by_mac(nailgun_node['mac'])
+
+    @logwrap
     def get_devops_node_by_nailgun_fqdn(self, fqdn):
         """Return devops node with nailgun fqdn
 
@@ -3144,8 +3155,7 @@ class FuelWebClient29(object):
     def check_sriov(self, nailgun_node_id):
         nailgun_node_ifaces = self.client.get_node_interfaces(
             nailgun_node_id)
-        devops_node = self.get_devops_node_by_nailgun_node(
-            nailgun_node_id)
+        devops_node = self.get_devops_node_by_nailgun_node_id(nailgun_node_id)
         devops_sriov_macs = [i.mac_address for i in devops_node.interfaces
                              if 'sriov' in i.features]
         nailgun_sriov_nics = []
@@ -3179,7 +3189,7 @@ class FuelWebClient29(object):
                     'sriov']['sriov_totalvfs']
             else:
                 interface['attributes']['sriov']['enabled']['value'] = True
-                interface['attributes']['sriov']['numvfs'] = \
+                interface['attributes']['sriov']['numvfs']['value'] = \
                     interface['meta']['sriov']['totalvfs']
 
         self.client.put_node_interfaces(
