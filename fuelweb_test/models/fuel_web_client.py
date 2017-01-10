@@ -3197,8 +3197,10 @@ class FuelWebClient29(object):
     def check_sriov(self, nailgun_node_id):
         nailgun_node_ifaces = self.client.get_node_interfaces(
             nailgun_node_id)
+        nailgun_node = [node for node in self.client.list_nodes() if
+                        node['id'] == nailgun_node_id].pop()
         devops_node = self.get_devops_node_by_nailgun_node(
-            nailgun_node_id)
+            nailgun_node)
         devops_sriov_macs = [i.mac_address for i in devops_node.interfaces
                              if 'sriov' in i.features]
         nailgun_sriov_nics = []
