@@ -381,6 +381,11 @@ Test task ensurability
 .. automodule:: fuelweb_test.tests.tests_lcm.test_ensurability
   :members:
 
+Test LCM tags
+-------------
+.. automodule:: fuelweb_test.tests.tests_lcm.test_tags
+  :members:
+
 Test unlock settings tab
 ------------------------
 .. automodule:: fuelweb_test.tests.test_unlock_settings_tab
