@@ -920,3 +920,107 @@ class NailgunClient(object):
                    '/overrides'.format(env_id=env_id, resource=resource,
                                        node_id=node_id)
         return self._put(endpoint, json=data)
+
+    @logwrap
+    def add_new_role(self, rel_id, data):
+        """Uses POST to create new role with data
+
+        :param rel_id: str or int
+        :param data: data in dict format
+        """
+
+        endpoint = '/releases/{rel_id}/roles'.format(rel_id=rel_id)
+        return self._post(endpoint, json=data)
+
+    @logwrap
+    def update_role_data(self, rel_id, role_name, data):
+        """Update tag's data
+
+        :param rel_id: str or int
+        :param role_name: str
+        :param data: data in dict format
+        """
+        endpoint = '/releases/{rel_id}/roles/{role_name}'.format(
+            rel_id=rel_id, role_name=role_name)
+        return self._put(endpoint, json=data).json()
+
+    @logwrap
+    def get_role_data(self, rel_id, role_name):
+        """Gets tag's data
+
+        :param rel_id: str or int
+        :param role_name: str
+        """
+        endpoint = '/releases/{rel_id}/roles/{role_name}'.format(
+            rel_id=rel_id, role_name=role_name)
+        return self._get(endpoint).json()
+
+    @logwrap
+    def add_new_tag(self, parent_id, data, parent='releases'):
+        """Uses POST to create new tag with data
+
+        :param parent_id: str or int
+        :param data: data in dict format
+        :param parent: str
+
+        Parent could be 'releases' or 'clusters'
+        """
+
+        endpoint = '/{parent}/{id}/tags'.format(
+            parent=parent, id=parent_id)
+        return self._post(endpoint, json=data)
+
+    @logwrap
+    def get_tag_data(self, parent_id, tag_name, parent='releases'):
+        """Gets tag's data
+
+        :param parent_id: str or int
+        :param tag_name: str
+        :param parent: str
+
+        Parent could be 'releases' or 'clusters'
+        """
+        endpoint = '/{parent}/{id}/tags/{tag_name}'.format(
+            parent=parent, id=parent_id, tag_name=tag_name)
+        return self._get(endpoint).json()
+
+    @logwrap
+    def update_tag_data(self, parent_id, tag_name, data, parent='releases'):
+        """Update tag's data
+
+        :param parent_id: str or int
+        :param tag_name: str
+        :param data: data in dict format
+        :param parent: str
+
+        Parent could be 'releases' or 'clusters'
+        """
+        endpoint = '/{parent}/{id}/tags/{tag_name}'.format(
+            parent=parent, id=parent_id, tag_name=tag_name)
+        return self._put(endpoint, json=data).json()
+
+    @logwrap
+    def del_tag(self, parent_id, tag_name, parent='releases'):
+        """Delete tag
+
+        :param parent_id: str or int
+        :param tag_name: str
+        :param parent: str
+
+        Parent could be 'releases' or 'clusters'
+        """
+        endpoint = '/{parent}/{id}/tags/{tag_name}'.format(
+            parent=parent, id=parent_id, tag_name=tag_name)
+        return self._delete(endpoint)
+
+    @logwrap
+    def get_all_tags(self, parent_id, parent='releases'):
+        """Get all tags from parent
+
+        :param parent_id: str or int
+        :param parent: str
+
+        Parent could be 'releases' or 'clusters'
+        """
+        endpoint = '/{parent}/{id}/tags'.format(parent=parent, id=parent_id)
+        return self._get(endpoint).json()
