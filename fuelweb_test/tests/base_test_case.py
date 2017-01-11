@@ -314,7 +314,7 @@ class TestBasic(object):
             logger.exception("Could not upload package")
 
         logger.debug("Override resolv.conf")
-        cmd = "echo {} > /etc/resolv.conf".format(settings.DNS)
+        cmd = "echo 'nameserver {}' > /etc/resolv.conf".format(settings.DNS)
         ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
 
         logger.debug("Update host information")
