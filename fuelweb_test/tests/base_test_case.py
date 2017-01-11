@@ -19,12 +19,14 @@ from proboscis import TestProgram
 from proboscis import SkipTest
 from proboscis import test
 from proboscis.asserts import assert_equal
+from proboscis.asserts import assert_true
 
 from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers import replace_repos
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import erase_data_from_hdd
+from fuelweb_test.helpers.utils import get_process_uptime
 from fuelweb_test.helpers.utils import get_test_method_name
 from fuelweb_test.helpers.utils import TimeStat
 from fuelweb_test.helpers.utils import YamlEditor
@@ -234,6 +236,9 @@ class TestBasic(object):
                 self.env.admin_actions.admin_install_updates_mos_mu()
             else:
                 self.env.admin_actions.admin_install_updates()
+
+            self.admin_reboot_and_wait(settings.REBOOT_MASTER_AFTER_UPDATE)
+
         if settings.MULTIPLE_NETWORKS:
             self.env.describe_other_admin_interfaces(
                 self.env.d_env.nodes().admin)
@@ -251,6 +256,30 @@ class TestBasic(object):
             ))
         if force_ssl:
             self.env.enable_force_https(self.ssh_manager.admin_ip)
+
+    def admin_reboot_and_wait(self, reboot=False):
+        if not reboot:
+            logger.info(
+                "Reboot is switched off due to "
+                "REBOOT_MASTER_AFTER_UPDATE={}".format(reboot))
+            return
+        admin_node = self.env.d_env.nodes().admin
+        admin_remote = self.ssh_manager.get_remote(self.ssh_manager.admin_ip)
+        uptime_old = get_process_uptime(admin_remote, 'systemd')
+        try:
+            admin_remote.execute('reboot')
+            time.sleep(300)
+            self.env.wait_ssh_available(timeout=300)
+        except Exception:
+            logger.info("Reboot failed. Hard resetting admin node",
+                        exc_info=True)
+            admin_node.reset()
+            time.sleep(300)
+            self.env.wait_ssh_available()
+        # sh_manager.update_connection fails with auth errors, use re-defining
+        admin_remote = self.ssh_manager.get_remote(self.ssh_manager.admin_ip)
+        assert_true(uptime_old > get_process_uptime(admin_remote, 'systemd'),
+                    "Uptime was not changed, restart failed")
 
     def reinstall_master_node(self):
         """Erase boot sector and run setup_environment"""
