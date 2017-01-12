@@ -30,7 +30,7 @@ from gates_tests.helpers import exceptions
 @test(groups=["prepare_mu_installing"])
 class MUInstallBase(test_cli_base.CommandLine):
     if settings.USE_MOS_MU_FOR_UPGRADE:
-        repos = 'mos9.2'
+        repos = 'mos9.2-updates'
     else:
         repos = 'proposed'
 
@@ -80,7 +80,8 @@ class MUInstallBase(test_cli_base.CommandLine):
     def _prepare_for_update_mos_mu(self, cluster_id):
         logger.info('Prepare Enviroment')
         mos_mu_path = 'cd {} &&'.format(settings.MOS_MU_PATH)
-        ext_vars = '\'{{"env_id":{0}, "snapshot_repo":"{1}"}}\'' \
+        ext_vars = '\'{{"env_id":{0}, "snapshot_repo":"snapshots/{1}", ' \
+                   '"snapshot_suite":"mos9.0-proposed"}}\'' \
                    ''.format(cluster_id,
                              settings.MOS_UBUNTU_MIRROR_ID)
         cmd = '{0} ansible-playbook playbooks/mos9_prepare_env.yml -e ' \
@@ -244,7 +245,7 @@ class MUInstallBase(test_cli_base.CommandLine):
                 logger.info('Update ceph')
                 command = \
                     '{0} ansible-playbook playbooks/update_ceph.yml -e \'' \
-                    '{{"env_id":{1},"restart_ceph":false}}\'' \
+                    '{{"env_id":{1}, "restart_ceph":false}}\'' \
                     ''.format(mos_mu_path, cluster_id)
                 self.ssh_manager.check_call(
                     ip=self.ssh_manager.admin_ip,
@@ -254,7 +255,8 @@ class MUInstallBase(test_cli_base.CommandLine):
                 logger.info('Apply patches')
                 command = \
                     '{0} ansible-playbook playbooks/mos9_apply_patches.yml' \
-                    ' -e \'{{"env_id":{1}, "health_check":false}}\''.format(
+                    ' -e \'{{"env_id":{1}, "health_check":false, ' \
+                    '"ignore_applied_patches":true}}\''.format(
                         mos_mu_path, cluster_id)
                 self.ssh_manager.check_call(
                     ip=self.ssh_manager.admin_ip,
@@ -422,7 +424,7 @@ class MUInstallBase(test_cli_base.CommandLine):
         mos_mu_path = 'cd {} &&'.format(settings.MOS_MU_PATH)
 
         logger.info('Gathering code customizations')
-        ext_vars = '\'{{"env_id":{0}, "snapshot_repo":"{1}", ' \
+        ext_vars = '\'{{"env_id":{0}, "snapshot_repo":"snapshots/{1}", ' \
                    '"srcs_list_tmpl":"sources.list.with.proposed.j2", ' \
                    '"unknown_upgradable_pkgs":"keep"}}\'' \
                    ''.format(cluster_id,

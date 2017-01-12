@@ -832,7 +832,7 @@ class MUInstallNoHA(MUInstallBase):
             raise exceptions.FuelQAVariableNotSet(
                 (settings.USE_MOS_MU_FOR_UPGRADE),
                 'True')
-        self.check_run("mos_mu_customization_included")
+        self.check_run("mos_mu_customization_pkg")
 
         cluster_id = self.fuel_web.get_last_created_cluster()
 
@@ -873,7 +873,7 @@ class MUInstallNoHA(MUInstallBase):
             cluster_id=cluster_id, test_sets=['ha', 'smoke', 'sanity'])
 
         self.env.make_snapshot(
-            "mos_mu_customization_included", is_make=True)
+            "mos_mu_customization_pkg", is_make=True)
 
     @test(depends_on_groups=["deploy_multirole_compute_cinder"],
           groups=["mos_mu_customization_excluded"])
@@ -950,7 +950,6 @@ class MUInstallNoHA(MUInstallBase):
 
         self.show_step(11)
         self.apply_customization(cluster_id, pkg_file, pkg_path, verify=True)
-        self.apply_customization(cluster_id, conf_file, conf_path, verify=True)
 
         self.show_step(12)
         self.fuel_web.verify_network(cluster_id)
