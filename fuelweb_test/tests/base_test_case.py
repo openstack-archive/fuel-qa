@@ -26,6 +26,7 @@ from fuelweb_test import settings
 from fuelweb_test.helpers import replace_repos
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import erase_data_from_hdd
+from fuelweb_test.helpers.utils import generate_yum_repos_config
 from fuelweb_test.helpers.utils import get_process_uptime
 from fuelweb_test.helpers.utils import get_test_method_name
 from fuelweb_test.helpers.utils import TimeStat
@@ -309,6 +310,21 @@ class TestBasic(object):
                 ip=ssh.admin_ip,
                 source=settings.FUEL_RELEASE_PATH.rstrip('/'),
                 target=pack_path)
+
+            if settings.RPM_REPOS_YAML:
+                with ssh.open_on_remote(
+                        ip=ssh.admin_ip,
+                        path='/etc/yum.repos.d/custom.repo',
+                        mode="w") as f:
+                    f.write(generate_yum_repos_config(settings.RPM_REPOS_YAML))
+
+            if settings.DEB_REPOS_YAML:
+                ssh = SSHManager()
+                pack_path = "/root/default_deb_repos.yaml"
+                ssh.upload_to_remote(
+                    ip=ssh.admin_ip,
+                    source=settings.DEB_REPOS_YAML,
+                    target=pack_path)
 
         except Exception:
             logger.exception("Could not upload package")
