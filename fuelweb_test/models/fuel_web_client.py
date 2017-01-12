@@ -17,7 +17,6 @@ from __future__ import division
 import logging
 import re
 import time
-import traceback
 
 import distutils
 import devops
@@ -129,6 +128,11 @@ class FuelWebClient29(object):
         self.fuel_client = FuelClient(session=self._session)
 
         self.security = SecurityChecks(self.client, self._environment)
+
+        # Dictionaries that contain fuel-devops node to nailgun node
+        # mapping data
+        self._devops_nailgun_mapping = {}  # devops to nailgun node id mapping
+        self._nailgun_node_nics = {}  # nailgun node nics macs cache
 
         super(FuelWebClient29, self).__init__()
 
@@ -1170,14 +1174,14 @@ class FuelWebClient29(object):
             if base_node_name in node['name']:
                 return node
 
-    @logwrap
-    def get_nailgun_node_by_devops_node(self, devops_node):
-        """Return slave node description.
-        Returns dict with nailgun slave node description if node is
-        registered. Otherwise return None.
+    def _update_nailgun_node_nics(self):
         """
-        d_macs = {netaddr.EUI(i.mac_address) for i in devops_node.interfaces}
-        logger.debug('Verify that nailgun api is running')
+        Retrieve list of nodes from nailgun, for each node retrieve list of
+        network interfaces and put mac addresses of those NICs to
+        self._nailgun_node_nics dictionary for use by
+        _find_nailgun_node_id_for_devops_node function.
+        :return:
+        """
         attempts = ATTEMPTS
         nodes = []
         while attempts > 0:
@@ -1187,25 +1191,76 @@ class FuelWebClient29(object):
             try:
                 nodes = self.client.list_nodes()
                 logger.debug('Got nodes %s', nodes)
-                attempts = 0
-            except Exception:
-                logger.debug(traceback.format_exc())
+                break
+            except exceptions.ClientException:
+                logger.debug('Failed to get list of nodes', exc_info=True)
                 attempts -= 1
                 time.sleep(TIMEOUT)
-        logger.debug('Look for nailgun node by macs %s', d_macs)
-        for nailgun_node in nodes:
-            node_nics = self.client.get_node_interfaces(nailgun_node['id'])
+        for node in nodes:
+            node_nics = self.client.get_node_interfaces(node['id'])
             macs = {netaddr.EUI(nic['mac'])
                     for nic in node_nics if nic['type'] == 'ether'}
-            logger.debug('Look for macs returned by nailgun {0}'.format(macs))
-            # Because our HAproxy may create some interfaces
-            if d_macs.issubset(macs):
-                nailgun_node['devops_name'] = devops_node.name
-                return nailgun_node
-        # On deployed environment MAC addresses of bonded network interfaces
-        # are changes and don't match addresses associated with devops node
-        if BONDING:
-            return self.get_nailgun_node_by_base_name(devops_node.name)
+            logger.debug('Node id:%s name:%s nic_macs:%r',
+                         node['id'], node['name'], macs)
+            self._nailgun_node_nics[node['id']] = macs
+        logger.debug('Resulting nailgun node nics dictionary: %r',
+                     self._nailgun_node_nics)
+
+    def _find_nailgun_node_id_for_devops_node(self, devops_node):
+        """
+        Find Nailgun node id based on set of devops_node NIC macs.
+        :param devops_node: fuel-devops node object
+        :return: Nailgun node id or None
+        """
+        devops_macs = {netaddr.EUI(iface.mac_address)
+                       for iface in devops_node.interfaces}
+        for node_id, nailgun_macs in self._nailgun_node_nics.items():
+            # nailgun_macs can contain some interfaces
+            if devops_macs.issubset(nailgun_macs):
+                return node_id
+        return None
+
+    @logwrap
+    def get_nailgun_node_by_devops_node(self, devops_node):
+        """Return slave node description.
+        Returns dict with nailgun slave node description if node is
+        registered. Otherwise return None.
+        """
+        # First get Nailgun node id
+        assert devops_node is not None
+        if devops_node.id in self._devops_nailgun_mapping:
+            nailgun_node_id = self._devops_nailgun_mapping[devops_node.id]
+            logger.debug('Found cached devops -> nailgun mapping: %s -> %s',
+                         devops_node.id, nailgun_node_id)
+        else:
+            # Find nics in cached self._nailgun_node_nics
+            nailgun_node_id = self._find_nailgun_node_id_for_devops_node(
+                devops_node)
+            if nailgun_node_id is None:
+                # Update self._nailgun_node_nics with new values
+                self._update_nailgun_node_nics()
+                # Try to find node again
+                nailgun_node_id = self._find_nailgun_node_id_for_devops_node(
+                    devops_node)
+                # If not found after mac address cache update, try finding
+                # node by name (if BONDING is True)
+                if BONDING and nailgun_node_id is None:
+                    # On deployed environment MAC addresses of bonded network
+                    # interfaces are changes and don't match addresses
+                    # associated with devops node
+                    nailgun_node = self.get_nailgun_node_by_base_name(
+                        devops_node.name)
+                    if nailgun_node is not None:
+                        nailgun_node_id = nailgun_node['id']
+            # Cache devops node id -> nailgun node id mapping
+            self._devops_nailgun_mapping[devops_node.id] = nailgun_node_id
+            logger.debug('Caching devops -> nailgun mapping: %s -> %s',
+                         devops_node.id, nailgun_node_id)
+        # Then retrieve Nailgun node dict using Nailgun node id
+        if nailgun_node_id is not None:
+            return self.client.get_node_by_id(nailgun_node_id)
+        else:
+            return None
 
     @logwrap
     def get_nailgun_node_by_fqdn(self, fqdn):
