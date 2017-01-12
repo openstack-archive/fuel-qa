@@ -775,3 +775,6 @@ MOS_MU_PATH = os.environ.get("MOS_MU_PATH", 'mos_playbooks/mos_mu')
 # Remove after 9.1 release
 CUDET_UBUNTU_DB_URL = os.environ.get("CUDET_UBUNTU_DB_URL")
 CUDET_CENTOS_DB_URL = os.environ.get("CUDET_CENTOS_DB_URL")
+
+RPM_REPOS_YAML = os.environ.get("RPM_REPOS_YAML")
+DEB_REPOS_YAML = os.environ.get("DEB_REPOS_YAML")
