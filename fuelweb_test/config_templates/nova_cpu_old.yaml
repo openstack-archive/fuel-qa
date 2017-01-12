@@ -1,8 +1,9 @@
 ---
-nova_config:
-  DEFAULT/cpu_allocation_ratio:
-    ensure: absent
-    notify: "Service[nova-scheduler]"
-service:
-  nova-scheduler:
-    ensure: running
+configuration:
+  nova_config:
+    DEFAULT/cpu_allocation_ratio:
+      ensure: absent
+      notify: "Service[nova-scheduler]"
+  service:
+    nova-scheduler:
+      ensure: running

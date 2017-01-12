@@ -1,64 +1,65 @@
 ---
-keystone_config:
-  ldap/url:
-    value: ldap://dc.example.com
-  ldap/user:
-    value: CN=ldap,OU=Users,DC=example,DC=com
-  ldap/password:
-    value: ldap_test
-  ldap/suffix:
-    value: DC=example,DC=com
-  ldap/use_dumb_member:
-    value: "True"
-  ldap/dumb_member:
-    value: CN=ldap,OU=Users,DC=example,DC=com
-  ldap/user_tree_dn:
-    value: OU=Users,DC=example,DC=com
-  ldap/user_objectclass:
-    value: person
-  ldap/user_filter:
-    ensure: absent
-  ldap/user_id_attribute:
-    value: cn
-  ldap/user_name_attribute:
-    value: cn
-  ldap/user_mail_attribute:
-    value: mail
-  ldap/user_pass_attribute:
-    ensure: absent
-  ldap/user_enabled_attribute:
-    value: userAccountControl
-  ldap/user_enabled_mask:
-    value: "2"
-  ldap/user_enabled_default:
-    value: "512"
-  ldap/user_attribute_ignore:
-    value: password,tenant_id,tenants
-  ldap/user_allow_create:
-    value: "False"
-  ldap/user_allow_update:
-    value: "False"
-  ldap/user_allow_delete:
-    value: "False"
-  ldap/role_tree_dn:
-    value: OU=Roles,DC=example,DC=com
-  ldap/role_filter:
-    ensure: absent
-  ldap/role_objectclass:
-    value: organizationalRole
-  ldap/role_id_attribute:
-    value: cn
-  ldap/role_name_attribute:
-    value: ou
-  ldap/role_name_attribute:
-    value: roleOccupant
-  ldap/role_attribute_ignore:
-    ensure: absent
-  ldap/role_allow_create:
-    value: "True"
-  ldap/role_allow_create:
-    value: "True"
-  ldap/role_allow_create:
-    value: "True"
-  identity/driver:
-    value: keystone.identity.backends.ldap.Identity
+configuration:
+  keystone_config:
+    ldap/url:
+      value: ldap://dc.example.com
+    ldap/user:
+      value: CN=ldap,OU=Users,DC=example,DC=com
+    ldap/password:
+      value: ldap_test
+    ldap/suffix:
+      value: DC=example,DC=com
+    ldap/use_dumb_member:
+      value: "True"
+    ldap/dumb_member:
+      value: CN=ldap,OU=Users,DC=example,DC=com
+    ldap/user_tree_dn:
+      value: OU=Users,DC=example,DC=com
+    ldap/user_objectclass:
+      value: person
+    ldap/user_filter:
+      ensure: absent
+    ldap/user_id_attribute:
+      value: cn
+    ldap/user_name_attribute:
+      value: cn
+    ldap/user_mail_attribute:
+      value: mail
+    ldap/user_pass_attribute:
+      ensure: absent
+    ldap/user_enabled_attribute:
+      value: userAccountControl
+    ldap/user_enabled_mask:
+      value: "2"
+    ldap/user_enabled_default:
+      value: "512"
+    ldap/user_attribute_ignore:
+      value: password,tenant_id,tenants
+    ldap/user_allow_create:
+      value: "False"
+    ldap/user_allow_update:
+      value: "False"
+    ldap/user_allow_delete:
+      value: "False"
+    ldap/role_tree_dn:
+      value: OU=Roles,DC=example,DC=com
+    ldap/role_filter:
+      ensure: absent
+    ldap/role_objectclass:
+      value: organizationalRole
+    ldap/role_id_attribute:
+      value: cn
+    ldap/role_name_attribute:
+      value: ou
+    ldap/role_name_attribute:
+      value: roleOccupant
+    ldap/role_attribute_ignore:
+      ensure: absent
+    ldap/role_allow_create:
+      value: "True"
+    ldap/role_allow_create:
+      value: "True"
+    ldap/role_allow_create:
+      value: "True"
+    identity/driver:
+      value: keystone.identity.backends.ldap.Identity

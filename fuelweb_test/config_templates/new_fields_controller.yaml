@@ -1,53 +1,54 @@
 ---
-neutron_config:
-  fuel_qa/service_reconfiguration_1:
-    value: "InProgress"
-    notify: "Service[neutron-server]"
-neutron_plugin_ml2:
-  fuel_qa/service_reconfiguration_2:
-    value: "InProgress"
-    notify: "Service[neutron-server]"
-neutron_dhcp_agent_config:
-  fuel_qa/service_reconfiguration_4:
-    value: "InProgress"
-    notify: "Service[neutron-server]"
-neutron_l3_agent_config:
-  fuel_qa/service_reconfiguration_5:
-    value: "InProgress"
-    notify: "Service[neutron-server]"
-neutron_metadata_agent_config:
-  fuel_qa/service_reconfiguration_6:
-    value: "InProgress"
-    notify: "Service[neutron-server]"
-neutron_api_config:
-  fuel_qa/service_reconfiguration_7:
-    value: "InProgress"
-    notify: "Service[neutron-server]"
-keystone_config:
-  fuel_qa/service_reconfiguration_8:
-    value: "InProgress"
-nova_config:
-  fuel_qa/service_reconfiguration_9:
-    value: "InProgress"
-    notify:
-    - "Service[nova-scheduler]"
-    - "Service[nova-novncproxy]"
-    - "Service[nova-conductor]"
-    - "Service[nova-api]"
-    - "Service[nova-consoleauth]"
-    - "Service[nova-cert]"
-service:
-  neutron-server:
-    ensure: running
-  nova-scheduler:
-    ensure: running
-  nova-novncproxy:
-    ensure: running
-  nova-conductor:
-    ensure: running
-  nova-api:
-    ensure: running
-  nova-consoleauth:
-    ensure: running
-  nova-cert:
-    ensure: running
+configuration:
+  neutron_config:
+    fuel_qa/service_reconfiguration_1:
+      value: "InProgress"
+      notify: "Service[neutron-server]"
+  neutron_plugin_ml2:
+    fuel_qa/service_reconfiguration_2:
+      value: "InProgress"
+      notify: "Service[neutron-server]"
+  neutron_dhcp_agent_config:
+    fuel_qa/service_reconfiguration_4:
+      value: "InProgress"
+      notify: "Service[neutron-server]"
+  neutron_l3_agent_config:
+    fuel_qa/service_reconfiguration_5:
+      value: "InProgress"
+      notify: "Service[neutron-server]"
+  neutron_metadata_agent_config:
+    fuel_qa/service_reconfiguration_6:
+      value: "InProgress"
+      notify: "Service[neutron-server]"
+  neutron_api_config:
+    fuel_qa/service_reconfiguration_7:
+      value: "InProgress"
+      notify: "Service[neutron-server]"
+  keystone_config:
+    fuel_qa/service_reconfiguration_8:
+      value: "InProgress"
+  nova_config:
+    fuel_qa/service_reconfiguration_9:
+      value: "InProgress"
+      notify:
+      - "Service[nova-scheduler]"
+      - "Service[nova-novncproxy]"
+      - "Service[nova-conductor]"
+      - "Service[nova-api]"
+      - "Service[nova-consoleauth]"
+      - "Service[nova-cert]"
+  service:
+    neutron-server:
+      ensure: running
+    nova-scheduler:
+      ensure: running
+    nova-novncproxy:
+      ensure: running
+    nova-conductor:
+      ensure: running
+    nova-api:
+      ensure: running
+    nova-consoleauth:
+      ensure: running
+    nova-cert:
+      ensure: running
