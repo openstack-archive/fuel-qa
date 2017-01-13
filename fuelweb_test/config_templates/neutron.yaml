@@ -13,4 +13,6 @@ neutron_config:
 service:
   neutron-server:
     ensure: running
+configuration_options:
+    create: false
 
