@@ -20,15 +20,19 @@ from proboscis import test
 from proboscis import SkipTest
 
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.tests.base_test_case import TestBasic
+from fuelweb_test.tests.tests_upgrade.upgrade_base import OSUpgradeBase
 from fuelweb_test import logger
 
 
 @test(groups=["clone_env_for_os_upgrade", "cluster_upgrade_extension"],
       depends_on_groups=["upgrade_ceph_ha_restore"])
-class TestCloneEnv(TestBasic):
+class TestCloneEnv(OSUpgradeBase):
 
     snapshot = 'upgrade_ceph_ha_restore'
+
+    def __init__(self):
+        super(TestCloneEnv, self).__init__()
+        self.old_cluster_name = self.cluster_names["ceph_ha"]
 
     @test(groups=["test_clone_environment"])
     @log_snapshot_after_test
@@ -60,8 +64,7 @@ class TestCloneEnv(TestBasic):
         cluster_id = self.fuel_web.get_last_created_cluster()
         cluster = self.fuel_web.client.get_cluster(cluster_id)
 
-        release_id = self.fuel_web.get_next_deployable_release_id(
-            cluster["release_id"])
+        release_id = self.upgrade_release()
 
         data = {
             "name": "new_test_cluster",
@@ -164,9 +167,7 @@ class TestCloneEnv(TestBasic):
         self.env.revert_snapshot(self.snapshot)
 
         cluster_id = self.fuel_web.get_last_created_cluster()
-        cluster = self.fuel_web.client.get_cluster(cluster_id)
-        release_id = self.fuel_web.get_next_deployable_release_id(
-            cluster["release_id"])
+        release_id = self.upgrade_release()
 
         data = {
             "release_id": release_id
@@ -309,10 +310,7 @@ class TestCloneEnv(TestBasic):
         self.env.revert_snapshot(self.snapshot)
 
         cluster_id = self.fuel_web.get_last_created_cluster()
-        cluster = self.fuel_web.client.get_cluster(cluster_id)
-
-        release_id = self.fuel_web.get_next_deployable_release_id(
-            cluster["release_id"])
+        release_id = self.upgrade_release()
 
         data = {
             "name": "new_test_cluster",
