@@ -21,15 +21,19 @@ from proboscis import SkipTest
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
-from fuelweb_test.tests.base_test_case import TestBasic
+from fuelweb_test.tests.tests_upgrade.upgrade_base import OSUpgradeBase
 
 
 @test(groups=["reassign_node_for_os_upgrade", "os_upgrade",
               "cluster_upgrade_extension"],
       depends_on_groups=["upgrade_ceph_ha_restore"])
-class TestReassignNode(TestBasic):
+class TestReassignNode(OSUpgradeBase):
 
     snapshot = 'upgrade_ceph_ha_restore'
+
+    def __init__(self):
+        super(TestReassignNode, self).__init__()
+        self.old_cluster_name = self.cluster_names["ceph_ha"]
 
     @test(groups=["reassign_node_to_cloned_environment"])
     @log_snapshot_after_test
@@ -49,10 +53,7 @@ class TestReassignNode(TestBasic):
         self.env.revert_snapshot(self.snapshot)
 
         cluster_id = self.fuel_web.get_last_created_cluster()
-        cluster = self.fuel_web.client.get_cluster(cluster_id)
-        release_id = self.fuel_web.get_next_deployable_release_id(
-            cluster["release_id"]
-        )
+        release_id = self.upgrade_release()
 
         data = {
             "name": "new_test_cluster",
@@ -163,10 +164,7 @@ class TestReassignNode(TestBasic):
         self.env.revert_snapshot(self.snapshot)
 
         cluster_id = self.fuel_web.get_last_created_cluster()
-        cluster = self.fuel_web.client.get_cluster(cluster_id)
-        release_id = self.fuel_web.get_next_deployable_release_id(
-            cluster["release_id"]
-        )
+        release_id = self.upgrade_release()
 
         data = {
             "name": "new_test_cluster",
@@ -201,10 +199,7 @@ class TestReassignNode(TestBasic):
         self.env.revert_snapshot(self.snapshot)
 
         cluster_id = self.fuel_web.get_last_created_cluster()
-        cluster = self.fuel_web.client.get_cluster(cluster_id)
-        release_id = self.fuel_web.get_next_deployable_release_id(
-            cluster["release_id"]
-        )
+        release_id = self.upgrade_release()
 
         data = {
             "name": "new_test_cluster",
@@ -243,10 +238,7 @@ class TestReassignNode(TestBasic):
         self.env.revert_snapshot(self.snapshot)
 
         cluster_id = self.fuel_web.get_last_created_cluster()
-        cluster = self.fuel_web.client.get_cluster(cluster_id)
-        release_id = self.fuel_web.get_next_deployable_release_id(
-            cluster["release_id"]
-        )
+        release_id = self.upgrade_release()
 
         data = {
             "name": "new_test_cluster",
