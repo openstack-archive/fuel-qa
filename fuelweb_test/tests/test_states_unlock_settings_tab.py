@@ -352,6 +352,8 @@ class UnlockSettingsTabStates(TestBasic):
                                                    progress=10)
         self.show_step(6)
         self.fuel_web.stop_deployment_wait(self.cluster_id)
+        self.fuel_web.wait_nodes_get_online_state(
+            self.env.d_env.nodes().slaves[:5], timeout=10 * 60)
         self.show_step(7)
         new_cluster_settings = self.get_cluster_attributes()
         self.show_step(8)
