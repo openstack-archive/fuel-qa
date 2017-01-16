@@ -147,7 +147,7 @@ class SupportDPDK(TestDPDK):
 
         self.show_step(4)
         self.fuel_web.setup_hugepages(
-            compute['id'], hp_2mb=256, hp_dpdk_mb=128)
+            compute['id'], hp_2mb=256, hp_dpdk_mb=1024)
 
         self.show_step(5)
         self.fuel_web.enable_dpdk(compute['id'])
@@ -234,7 +234,7 @@ class SupportDPDK(TestDPDK):
 
         self.show_step(4)
         self.fuel_web.setup_hugepages(
-            compute['id'], hp_2mb=256, hp_dpdk_mb=128)
+            compute['id'], hp_2mb=256, hp_dpdk_mb=1024)
 
         self.show_step(5)
         self.fuel_web.enable_dpdk(compute['id'])
@@ -311,7 +311,7 @@ class SupportDPDK(TestDPDK):
 
         self.show_step(4)
         self.fuel_web.setup_hugepages(
-            compute['id'], hp_2mb=256, hp_dpdk_mb=128)
+            compute['id'], hp_2mb=256, hp_dpdk_mb=1024)
 
         self.show_step(5)
         assigned_networks = {
@@ -398,7 +398,7 @@ class SupportDPDKBond(BondingTestDPDK, TestDPDK):
         self.show_step(5)
         for node in computes:
             self.fuel_web.setup_hugepages(
-                node['id'], hp_2mb=256, hp_dpdk_mb=128)
+                node['id'], hp_2mb=256, hp_dpdk_mb=1024)
 
         self.show_step(6)
         for node in computes:
