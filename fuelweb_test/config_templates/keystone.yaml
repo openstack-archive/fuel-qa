@@ -2,3 +2,7 @@
 keystone_config:
   token/expiration:
     value: 300
+    notify: Service[apache2]
+service:
+  apache2:
+    ensure: running
