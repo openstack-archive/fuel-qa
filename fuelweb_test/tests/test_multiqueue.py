@@ -159,25 +159,8 @@ class TestMultiqueue(TestBasic):
         assert_true(settings.HARDWARE['slave_node_cpu'] >= 6)
         assert_true(settings.HARDWARE['numa_nodes'] >= 2)
 
-    @test(groups=["multiqueue_with_dpdk_and_numa"],
-          depends_on_groups=["prepare_slaves_5"])
-    def multiqueue_with_dpdk_and_numa(self):
-        """Deploy cluster with DPDK+Cpu Pin for multiqueue check
+    def multiqueue_with_dpdk_and_numa(self, neutron_seg_type):
 
-        Scenario:
-        1. Create cluster - Neutron VLAN, Ceph for all
-        2. Add 3 controllers and 3 compute+ceph-osd nodes
-        3. Configure dpdk, cpu pinning and hugepages on all computes
-        4. Deploy cluster
-        5. Run OSTF
-        6. Edit TestVM metadata - add hw_vif_multiqueue_enabled=true
-        7. Create aggregate with "pinned=true" metadata for 2 computes
-        8. Create flavor
-        9. Spawn 2 instances, allocate floating IP to both
-        10. Enable queues in instances and check it
-        11. Check connectivity between instances
-
-        """
         self.check_cpu_pinning_requirements()
         self.env.revert_snapshot("ready_with_5_slaves")
         self.env.bootstrap_nodes([self.env.d_env.get_node(name='slave-06')])
@@ -186,6 +169,8 @@ class TestMultiqueue(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             settings={
+                "net_provider": settings.NEUTRON,
+                "net_segment_type": neutron_seg_type,
                 'volumes_lvm': False,
                 'volumes_ceph': True,
                 'images_ceph': True,
@@ -209,7 +194,7 @@ class TestMultiqueue(TestBasic):
             cluster_id, ['compute'], role_status='pending_roles')
         for compute in computes:
             self.fuel_web.setup_hugepages(
-                compute['id'], hp_2mb=512, hp_dpdk_mb=256)
+                compute['id'], hp_2mb=512, hp_dpdk_mb=1024)
             self.fuel_web.enable_dpdk(compute['id'])
             self.fuel_web.enable_cpu_pinning(
                 compute['id'],
@@ -318,3 +303,47 @@ class TestMultiqueue(TestBasic):
         assert_equal(
             result.exit_code, 0,
             "Instances does not have connectivity between each other!")
+
+    @test(groups=["test_multiqueue_with_dpdk_and_numa_on_vlan",
+                  "test_multiqueue_acceptance"],
+          depends_on_groups=["prepare_slaves_5"])
+    def test_multiqueue_with_dpdk_and_numa_on_vlan(self):
+        """Deploy cluster with DPDK+Cpu Pin for multiqueue check on VLAN
+
+        Scenario:
+        1. Create cluster - Neutron VLAN, Ceph for all
+        2. Add 3 controllers and 3 compute+ceph-osd nodes
+        3. Configure dpdk, cpu pinning and hugepages on all computes
+        4. Deploy cluster
+        5. Run OSTF
+        6. Edit TestVM metadata - add hw_vif_multiqueue_enabled=true
+        7. Create aggregate with "pinned=true" metadata for 2 computes
+        8. Create flavor
+        9. Spawn 2 instances, allocate floating IP to both
+        10. Enable queues in instances and check it
+        11. Check connectivity between instances
+
+        """
+        self.multiqueue_with_dpdk_and_numa(settings.NEUTRON_SEGMENT['vlan'])
+
+    @test(groups=["test_multiqueue_with_dpdk_and_numa_on_tun",
+                  "test_multiqueue_acceptance"],
+          depends_on_groups=["prepare_slaves_5"])
+    def test_multiqueue_with_dpdk_and_numa_on_tun(self):
+        """Deploy cluster with DPDK+Cpu Pin for multiqueue check on TUN
+
+        Scenario:
+        1. Create cluster - Neutron TUN(VxLAN), Ceph for all
+        2. Add 3 controllers and 3 compute+ceph-osd nodes
+        3. Configure dpdk, cpu pinning and hugepages on all computes
+        4. Deploy cluster
+        5. Run OSTF
+        6. Edit TestVM metadata - add hw_vif_multiqueue_enabled=true
+        7. Create aggregate with "pinned=true" metadata for 2 computes
+        8. Create flavor
+        9. Spawn 2 instances, allocate floating IP to both
+        10. Enable queues in instances and check it
+        11. Check connectivity between instances
+
+        """
+        self.multiqueue_with_dpdk_and_numa(settings.NEUTRON_SEGMENT['tun'])
