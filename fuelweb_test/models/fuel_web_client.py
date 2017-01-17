@@ -3187,10 +3187,9 @@ class FuelWebClient29(object):
                 target_interface = interface
                 break
 
-        if target_interface['type'] == 'bond':
-            target_interface['bond_properties']['type__'] = 'dpdkovs'
-
         if 'interface_properties' in target_interface.keys():
+            if target_interface['type'] == 'bond':
+                target_interface['bond_properties']['type__'] = 'dpdkovs'
             logger.debug("Using old interface serialization scheme")
             target_interface['interface_properties']['dpdk'][
                 'enabled'] = switch_to
