@@ -6,3 +6,5 @@ nova_config:
 service:
   nova-compute:
     ensure: running
+configuration_options:
+  create: false
