@@ -1752,10 +1752,9 @@ class FuelWebClient29(object):
         else:
             logger.debug("Using new interface serialization scheme")
             offloading_types = set([
-                offloading_type
+                offloading_type['name']
                 for iface in target_ifaces
-                for offloading_type in
-                iface['attributes']['offloading']['modes']['value']])
+                for offloading_type in iface['meta']['offloading_modes']])
         return list(offloading_types)
 
     @logwrap
@@ -3191,10 +3190,9 @@ class FuelWebClient29(object):
                 target_interface = interface
                 break
 
-        if target_interface['type'] == 'bond':
-            target_interface['bond_properties']['type__'] = 'dpdkovs'
-
         if 'interface_properties' in target_interface.keys():
+            if target_interface['type'] == 'bond':
+                target_interface['bond_properties']['type__'] = 'dpdkovs'
             logger.debug("Using old interface serialization scheme")
             target_interface['interface_properties']['dpdk'][
                 'enabled'] = switch_to
