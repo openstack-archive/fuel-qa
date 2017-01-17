@@ -34,6 +34,7 @@ from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
 from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
 from fuelweb_test.settings import KEYSTONE_CREDS
 from fuelweb_test.settings import MOS_MU_PATH
+from fuelweb_test.settings import MOS_UBUNTU_MIRROR_ID
 from fuelweb_test.settings import PLUGIN_PACKAGE_VERSION
 from fuelweb_test.settings import FUEL_SETTINGS_YAML
 from fuelweb_test.settings import NESSUS_IMAGE_PATH
@@ -416,8 +417,11 @@ class AdminActions(BaseActions):
 
         logger.info('Update Fuel node')
         update_command = \
-            '{} ansible-playbook playbooks/update_fuel.yml ' \
-            '-e \'{{"rebuild_bootstrap":false}}\''.format(mos_mu_path)
+            '{0} ansible-playbook playbooks/update_fuel.yml ' \
+            '-e \'{{"rebuild_bootstrap":false, ' \
+            '"snapshot_repo":"snapshots/{1}", ' \
+            '"snapshot_suite":"mos9.0-proposed"}}\'' \
+            ''.format(mos_mu_path, MOS_UBUNTU_MIRROR_ID)
 
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
