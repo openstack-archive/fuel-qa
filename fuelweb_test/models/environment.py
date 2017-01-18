@@ -503,6 +503,19 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
             ('admin'), 22), timeout=timeout)
 
     @logwrap
+    def wait_api_available(self,
+                               timeout=settings.WAIT_FOR_PROVISIONING_TIMEOUT):
+        wait_pass(lambda: tcp_ping_(
+            self.d_env.nodes(
+            ).admin.get_ip_address_by_network_name
+            ('admin'), 8001), timeout=timeout)
+
+        wait_pass(lambda: tcp_ping_(
+            self.d_env.nodes(
+            ).admin.get_ip_address_by_network_name
+            ('admin'), 8000), timeout=timeout)
+
+    @logwrap
     def wait_for_fuelmenu(self,
                           timeout=settings.WAIT_FOR_PROVISIONING_TIMEOUT):
 
