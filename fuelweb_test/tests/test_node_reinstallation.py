@@ -454,7 +454,8 @@ class ErrorNodeReinstallation(TestBasic):
         self.fuel_web.run_ostf(cluster_id, test_sets=['ha', 'smoke', 'sanity'])
 
 
-@test(groups=["partition_preservation"])
+@test(groups=["partition_preservation"],
+      enabled=False)
 class PartitionPreservation(TestBasic):
     """PartitionPreservation."""  # TODO documentation
 
