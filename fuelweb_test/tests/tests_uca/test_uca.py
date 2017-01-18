@@ -23,7 +23,8 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
-@test(groups=["deploy_from_uca"])
+@test(groups=["deploy_from_uca"],
+      enabled=False)
 class UCATest(TestBasic):
     """Tests for "enable deployment from ubuntu cloud archive" feature.
     Deploy several cluster using Ubuntu+UCA release then validate packages
