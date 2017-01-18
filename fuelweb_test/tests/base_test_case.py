@@ -272,12 +272,14 @@ class TestBasic(object):
             admin_remote.execute('reboot')
             time.sleep(300)
             self.env.wait_ssh_available(timeout=300)
+            self.env.admin_actions.wait_for_fuel_ready()
         except Exception:
             logger.info("Reboot failed. Hard resetting admin node",
                         exc_info=True)
             admin_node.reset()
             time.sleep(300)
             self.env.wait_ssh_available()
+            self.env.admin_actions.wait_for_fuel_ready()
         # sh_manager.update_connection fails with auth errors, use re-defining
         admin_remote = self.ssh_manager.get_remote(self.ssh_manager.admin_ip)
         assert_true(uptime_old > get_process_uptime(admin_remote, 'systemd'),
