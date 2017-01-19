@@ -98,8 +98,8 @@ class SupportDPDK(TestDPDK):
             1. Create new environment with VLAN segmentation for Neutron
             2. Set KVM as Hypervisor
             3. Add controller and compute nodes
-            4. Configure HugePages for compute nodes
-            5. Configure private network in DPDK mode
+            4. Configure private network in DPDK mode
+            5. Configure HugePages for compute nodes
             6. Run network verification
             7. Deploy environment
             8. Run network verification
@@ -139,11 +139,11 @@ class SupportDPDK(TestDPDK):
             cluster_id, ['compute'], role_status='pending_roles')[0]
 
         self.show_step(4)
-        self.fuel_web.setup_hugepages(
-            compute['id'], hp_2mb=256, hp_dpdk_mb=1024)
+        self.fuel_web.enable_dpdk(compute['id'])
 
         self.show_step(5)
-        self.fuel_web.enable_dpdk(compute['id'])
+        self.fuel_web.setup_hugepages(
+            compute['id'], hp_2mb=256, hp_dpdk_mb=1024)
 
         self.show_step(6)
         self.fuel_web.verify_network(cluster_id)
@@ -189,8 +189,8 @@ class SupportDPDK(TestDPDK):
             1. Create new environment with VXLAN segmentation for Neutron
             2. Set KVM as Hypervisor
             3. Add controller and compute nodes
-            4. Configure HugePages for compute nodes
-            5. Configure private network in DPDK mode
+            4. Configure private network in DPDK mode
+            5. Configure HugePages for compute nodes
             6. Run network verification
             7. Deploy environment
             8. Run network verification
@@ -229,11 +229,11 @@ class SupportDPDK(TestDPDK):
             cluster_id, ['compute'], role_status='pending_roles')[0]
 
         self.show_step(4)
-        self.fuel_web.setup_hugepages(
-            compute['id'], hp_2mb=256, hp_dpdk_mb=1024)
+        self.fuel_web.enable_dpdk(compute['id'])
 
         self.show_step(5)
-        self.fuel_web.enable_dpdk(compute['id'])
+        self.fuel_web.setup_hugepages(
+            compute['id'], hp_2mb=256, hp_dpdk_mb=1024)
 
         self.show_step(6)
         self.fuel_web.verify_network(cluster_id)
@@ -276,8 +276,7 @@ class SupportDPDK(TestDPDK):
             1. Create new environment with VLAN segmentation for Neutron
             2. Set KVM as Hypervisor
             3. Add controller and compute nodes
-            4. Configure HugePages for compute nodes
-            5. Add private and storage networks to interface
+            4. Add private and storage networks to interface
                and try enable DPDK mode
         """
         self.env.revert_snapshot("ready_with_3_slaves")
@@ -306,10 +305,6 @@ class SupportDPDK(TestDPDK):
             cluster_id, ['compute'], role_status='pending_roles')[0]
 
         self.show_step(4)
-        self.fuel_web.setup_hugepages(
-            compute['id'], hp_2mb=256, hp_dpdk_mb=1024)
-
-        self.show_step(5)
         assigned_networks = {
             settings.iface_alias('eth0'): ['fuelweb_admin'],
             settings.iface_alias('eth1'): ['public'],
@@ -345,8 +340,8 @@ class SupportDPDKBond(BondingTestDPDK, TestDPDK):
             3. Add 2 nodes with compute and cinder roles
             4. Setup bonding for all interfaces: 1 for admin, 1 for private
                and 1 for public/storage/management networks
-            5. Configure HugePages for compute nodes
-            6. Enable DPDK for bond with private network on all computes
+            5. Enable DPDK for bond with private network on all computes
+            6. Configure HugePages for compute nodes
             7. Run network verification
             8. Deploy the cluster
             9. Run network verification
@@ -393,12 +388,12 @@ class SupportDPDKBond(BondingTestDPDK, TestDPDK):
 
         self.show_step(5)
         for node in computes:
-            self.fuel_web.setup_hugepages(
-                node['id'], hp_2mb=256, hp_dpdk_mb=1024)
+            self.fuel_web.enable_dpdk(node['id'])
 
         self.show_step(6)
         for node in computes:
-            self.fuel_web.enable_dpdk(node['id'])
+            self.fuel_web.setup_hugepages(
+                node['id'], hp_2mb=256, hp_dpdk_mb=1024)
 
         self.show_step(7)
         self.fuel_web.verify_network(cluster_id)

@@ -193,9 +193,9 @@ class TestMultiqueue(TestBasic):
         computes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['compute'], role_status='pending_roles')
         for compute in computes:
+            self.fuel_web.enable_dpdk(compute['id'])
             self.fuel_web.setup_hugepages(
                 compute['id'], hp_2mb=512, hp_dpdk_mb=1024)
-            self.fuel_web.enable_dpdk(compute['id'])
             self.fuel_web.enable_cpu_pinning(
                 compute['id'],
                 cpu_count=settings.HARDWARE["slave_node_cpu"] - 1)
