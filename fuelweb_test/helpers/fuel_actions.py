@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from functools import partial
 import os
 import re
 
@@ -70,16 +71,20 @@ class BaseActions(object):
     def new_packages(self, packages):
         self.__new_packages = packages
 
-
-class AdminActions(BaseActions):
-    """ All actions relating to the admin node."""
-
     @logwrap
     def is_fuel_service_ready(self, service):
         result = self.ssh_manager.execute(
             ip=self.admin_ip,
             cmd="timeout 5 fuel-utils check_service {0}".format(service))
         return result['exit_code'] == 0
+
+    @logwrap
+    def wait_for_fuel_service_ready(self, service, timeout=300):
+        wait(lambda: partial(self.is_fuel_service_ready, service=service),
+             timeout=timeout,
+             timeout_msg="Fuel service '{0}' is not ready, "
+                         "please check the output of "
+                         "'fuel-utils check_service {0}'".format(service))
 
     @logwrap
     def is_fuel_ready(self):
@@ -93,6 +98,10 @@ class AdminActions(BaseActions):
         wait(lambda: self.is_fuel_ready, timeout=timeout,
              timeout_msg="Fuel services are not ready, please check the "
                          "output of 'fuel-utils check_all")
+
+
+class AdminActions(BaseActions):
+    """ All actions relating to the admin node."""
 
     @logwrap
     @retry()
@@ -454,6 +463,7 @@ class NailgunActions(BaseActions):
             logger.debug('Uploading new nailgun settings: {}'.format(
                 ng_settings))
         self.restart_service("nailgun")
+        self.wait_for_fuel_service_ready("nailgun")
 
     def set_collector_address(self, host, port, ssl=False):
         base_cfg_file = ('/usr/lib/python2.7/site-packages/'
