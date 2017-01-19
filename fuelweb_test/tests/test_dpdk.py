@@ -169,6 +169,8 @@ class SupportDPDK(TestDPDK):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.show_step(12)
+        compute = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['compute'])[0]
         check_firewall_driver(compute['ip'], compute['roles'][0], 'noop')
 
         self.show_step(13)
@@ -197,7 +199,8 @@ class SupportDPDK(TestDPDK):
             9. Run OSTF
             10. Reboot compute
             11. Run OSTF
-            12. Run instance on compute with DPDK and check its availability
+            12. Check option "firewall_driver" in config files
+            13. Run instance on compute with DPDK and check its availability
                 via floating IP
 
         Snapshot: deploy_cluster_with_dpdk_tun
@@ -259,6 +262,11 @@ class SupportDPDK(TestDPDK):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
         self.show_step(12)
+        compute = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['compute'])[0]
+        check_firewall_driver(compute['ip'], compute['roles'][0], 'noop')
+
+        self.show_step(13)
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
 
