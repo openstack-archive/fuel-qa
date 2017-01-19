@@ -12,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from proboscis import SkipTest
 from proboscis import test
 from proboscis.asserts import assert_equal
 # pylint: disable=import-error
@@ -83,7 +84,10 @@ class SSL_Tests(TestBasic):
         self.show_step(2)
         self.show_step(3)
         self.show_step(4)
-        self.env.revert_snapshot("master_node_with_https_only")
+        snapshot_name = 'master_node_with_https_only'
+        if not self.env.d_env.has_snapshot(snapshot_name):
+            raise SkipTest('Snapshot {} not found'.format(snapshot_name))
+        self.env.revert_snapshot(snapshot_name)
         self.show_step(5)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
