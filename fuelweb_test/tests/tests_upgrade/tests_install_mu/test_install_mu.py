@@ -266,14 +266,13 @@ class MUInstallNoHA(MUInstallBase):
               "--restart-rabbit --restart-mysql".format(3)
         std_out = self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            command=cmd
+            command=cmd, expected=[1]
         ).stderr_str
         logger.debug(pretty_log(std_out))
 
         # "fuel2 update" command don't have json output
         assert_true(
-            "HTTPError: 404 Client Error" and
-            "Cluster not found" in std_out,
+            "404 Client Error" in std_out and "Cluster not found" in std_out,
             "fuel2 update command accept wrong cluster_id: \n{}".format(
                 std_out))
 
