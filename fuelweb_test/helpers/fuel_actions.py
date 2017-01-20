@@ -463,6 +463,13 @@ class NailgunActions(BaseActions):
             logger.debug('Uploading new nailgun settings: {}'.format(
                 ng_settings))
         self.restart_service("nailgun")
+        # TODO(vkhlyunev): REWORK NAILGUN RESTART
+        # if nailgun service is restarted fuel-qa's keystone session does not
+        # know about it and tries to reuse tcp session which is closed on
+        # fuel side. We should restart it properly but right now
+        # lets give it to tcp keep-alive mechanism
+        import time
+        time.sleep(10)
         self.wait_for_fuel_service_ready("nailgun")
 
     def set_collector_address(self, host, port, ssl=False):
