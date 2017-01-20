@@ -144,8 +144,9 @@ class TestMultipath(base_test_case.TestBasic):
         with TimeStat("setup_environment", is_uniq=True):
             self.env.setup_environment()
             self.fuel_post_install_actions()
-            if REPLACE_DEFAULT_REPOS and REPLACE_DEFAULT_REPOS_ONLY_ONCE:
-                self.fuel_web.replace_default_repos()
+        self.check_fuel_version()
+        if REPLACE_DEFAULT_REPOS and REPLACE_DEFAULT_REPOS_ONLY_ONCE:
+            self.fuel_web.replace_default_repos()
         self.fuel_web.get_nailgun_version()
         self.fuel_web.change_default_network_settings()
 
