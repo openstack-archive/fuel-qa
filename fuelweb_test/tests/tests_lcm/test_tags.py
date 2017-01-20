@@ -186,7 +186,7 @@ class TagsCRUD(TestBasic):
                 "description": "New controller role",
                 "weight": 10,
                 "tags": ["controller", "database", "keystone", "neutron",
-                         "new_tag"],
+                         "rabbitmq", "new_tag"],
                 "update_required": ["compute", "cinder"],
                 "public_ip_required": True,
                 "conflicts": ["compute"],
