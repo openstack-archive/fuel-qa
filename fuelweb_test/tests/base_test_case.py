@@ -396,6 +396,7 @@ class SetupEnvironment(TestBasic):
         with TimeStat("setup_environment", is_uniq=True):
             self.env.setup_environment()
             self.fuel_post_install_actions()
+        self.env.admin_actions.wait_for_fuel_ready()
         self.check_fuel_version()
         self.env.make_snapshot("empty", is_make=True)
         self.current_log_step = 0
