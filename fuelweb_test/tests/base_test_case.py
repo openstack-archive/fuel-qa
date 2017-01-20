@@ -360,9 +360,7 @@ class TestBasic(object):
         self.fuel_post_install_actions()
 
     def check_fuel_version(self):
-        admin_ip = self.env.get_admin_node_ip()
-        cmd = "fuel fuel-version --json"
-        output = self.ssh_manager.check_call(admin_ip, cmd).stdout_json
+        output = self.fuel_web.client.get_api_version()
         fuel_release = output['release']
         err_msg = "Fuel version should be `{}` but it is `{}`".format(
             settings.FUEL_RELEASE_VERSION, fuel_release)
