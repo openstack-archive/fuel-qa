@@ -60,5 +60,3 @@ keystone_config:
     value: "True"
   ldap/role_allow_create:
     value: "True"
-  identity/driver:
-    value: keystone.identity.backends.ldap.Identity
