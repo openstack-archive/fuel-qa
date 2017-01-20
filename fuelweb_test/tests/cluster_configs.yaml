@@ -73,6 +73,9 @@
     network:
       net_provider: "neutron"
       net_segment_type: "vlan"
+    settings:
+      ceilometer: true
+      images_ceph: true
   -
     name: "3Controller_3Computes_ceph"
     nodes:
@@ -94,6 +97,8 @@
     network:
       net_provider: "neutron"
       net_segment_type: "vlan"
+    settings:
+      ephemeral_ceph: true
   -
     name: "3Controller_mongo_3Computes_ceph"
     nodes:
@@ -118,6 +123,9 @@
     network:
       net_provider: "neutron"
       net_segment_type: "vlan"
+    settings:
+      ceilometer: true
+      images_ceph: true
   -
     name: "1Controller_1Compute_1Cinder_3Ceph_Rados_vlan"
     nodes:
@@ -137,12 +145,9 @@
       net_provider: "neutron"
       net_segment_type: "vlan"
     settings:
-      volume-lvm: true
-      volume-ceph: false
-      image-ceph: true
-      rados-ceph: true
-      ephemeral-ceph: false
-      replica-ceph: 2
+      images_ceph: true
+      objects_ceph: true
+      osd_pool_size: '2'
   -
     name: "1Controller_2Computes_1Cinder_3Ceph_1Mongo_Ceph_Image_Ceilometer_vlan"
     nodes:
@@ -166,10 +171,7 @@
       net_provider: "neutron"
       net_segment_type: "vlan"
     settings:
-      volume-lvm: true
-      volume-ceph: false
-      image-ceph: true
-      rados-ceph: false
-      ephemeral-ceph: false
-      replica-ceph: 2
       ceilometer: true
+      images_ceph: true
+      osd_pool_size: '2'
+
