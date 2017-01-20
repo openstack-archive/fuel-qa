@@ -560,7 +560,7 @@ class VmBackedWithCephMigrationBasic(TestBasic):
             13. Create a volume and attach it to the VM
             14. Create filesystem on the new volume and mount it to the VM
             15. Migrate VM
-            16. Mount the volume after migration
+            16. Check that volume was mounted
             17. Check cluster and server state after migration
             18. Terminate VM
 
@@ -641,8 +641,6 @@ class VmBackedWithCephMigrationBasic(TestBasic):
         logger.info("Srv is currently in status: {:s}".format(srv.status))
 
         # Prepare to DHCP leases checks
-        net_name = self.fuel_web.get_cluster_predefined_networks_name(
-            cluster_id)['private_net']
         srv_instance_ip = os.get_nova_instance_ip(srv, net_name=net_name)
         srv_host_name = self.fuel_web.find_devops_node_by_nailgun_fqdn(
             os.get_srv_hypervisor_name(srv),
@@ -791,21 +789,21 @@ class VmBackedWithCephMigrationBasic(TestBasic):
              timeout_msg='VM ssh port ping timeout after migration')
 
         self.show_step(16)
-        logger.info("Mount volume after migration")
+        logger.info("Check that volume was mounted")
         with self.fuel_web.get_ssh_for_node("slave-01") as remote:
             out = remote.execute_through_host(
                 floating_ip.ip,
-                'sudo mount /dev/vdb /mnt',
+                'sudo mount | grep "/dev/vdb on /mnt"',
                 auth=creds)
-
-        logger.info("out of mounting volume is: {:s}".format(out['stdout']))
+        assert_true(out['stdout'] and out['exit_code'] == 0,
+                    "Volume was not mounted")
 
         with self.fuel_web.get_ssh_for_node("slave-01") as remote:
             out = remote.execute_through_host(
                 floating_ip.ip,
                 "sudo ls /mnt",
                 auth=creds)
-        assert_true("file-on-volume" in out['stdout'],
+        assert_true("file-on-volume\n" in out['stdout'],
                     "File is absent in /mnt")
 
         self.show_step(17)
@@ -888,7 +886,7 @@ class CheckCephPartitionsAfterReboot(TestBasic):
         self.show_step(6)
         for node in ["slave-02", "slave-03"]:
 
-            self.show_step(7, node)
+            self.show_step(7, node, True)
             logger.info("Get partitions for {node}".format(node=node))
             _ip = self.fuel_web.get_nailgun_node_by_name(node)['ip']
             before_reboot_partitions = [utils.get_ceph_partitions(
