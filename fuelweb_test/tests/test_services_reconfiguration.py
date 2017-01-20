@@ -399,7 +399,9 @@ class ServicesReconfiguration(TestBasic):
         self.show_step(2)
         config = utils.get_config_template('neutron')
         structured_config = get_structured_config_dict(config)
-        self.fuel_web.client.upload_configuration(config, cluster_id)
+        self.fuel_web.client.upload_configuration(config,
+                                                  cluster_id,
+                                                  role="controller")
 
         self.show_step(3)
         service_name = 'neutron-server'
@@ -537,7 +539,8 @@ class ServicesReconfiguration(TestBasic):
         structured_config = get_structured_config_dict(config)
         self.fuel_web.client.upload_configuration(
             config,
-            cluster_id)
+            cluster_id,
+            role="controller")
 
         self.show_step(3)
         task = self.fuel_web.client.apply_configuration(cluster_id,
@@ -583,7 +586,9 @@ class ServicesReconfiguration(TestBasic):
         self.show_step(2)
         config = utils.get_config_template('nova_quota')
         structured_config = get_structured_config_dict(config)
-        self.fuel_web.client.upload_configuration(config, cluster_id)
+        self.fuel_web.client.upload_configuration(config,
+                                                  cluster_id,
+                                                  role="controller")
 
         self.show_step(3)
         uptimes = self.get_service_uptime(controllers, 'nova-api')
@@ -1078,7 +1083,8 @@ class ServicesReconfiguration(TestBasic):
         config_new = utils.get_config_template('nova_cpu')
         structured_config = get_structured_config_dict(config_new)
         self.fuel_web.client.upload_configuration(config_new,
-                                                  cluster_id_1)
+                                                  cluster_id_1,
+                                                  role="controller")
 
         service_name = "nova-scheduler"
 
@@ -1111,7 +1117,8 @@ class ServicesReconfiguration(TestBasic):
         config_revert = utils.get_config_template('nova_cpu_old')
         structured_config_revert = get_structured_config_dict(config_revert)
         self.fuel_web.client.upload_configuration(config_revert,
-                                                  cluster_id_2)
+                                                  cluster_id_2,
+                                                  role="controller")
         uptimes = self.get_service_uptime(controller_env_2, service_name)
         task = self.fuel_web.client.apply_configuration(cluster_id_2,
                                                         role="controller")
@@ -1350,7 +1357,9 @@ class ServicesReconfiguration(TestBasic):
         self.show_step(7)
         config_copmute = utils.get_config_template('new_fields_compute')
         structured_config = get_structured_config_dict(config_copmute)
-        self.fuel_web.client.upload_configuration(config_copmute, cluster_id)
+        self.fuel_web.client.upload_configuration(config_copmute,
+                                                  cluster_id,
+                                                  role='compute')
 
         self.show_step(8)
         uptimes_nova = self.get_service_uptime(computes, 'nova-compute')
