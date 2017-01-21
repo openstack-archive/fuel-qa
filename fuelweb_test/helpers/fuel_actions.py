@@ -30,6 +30,8 @@ from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers.regenerate_repo import regenerate_centos_repo
 from fuelweb_test.helpers.regenerate_repo import regenerate_ubuntu_repo
 from fuelweb_test.helpers.ssh_manager import SSHManager
+from fuelweb_test.settings import AUX_MASTER_REPO_NAME
+from fuelweb_test.settings import AUX_MASTER_REPO_PRIORITY
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_FROM_GIT
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
 from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
@@ -189,6 +191,25 @@ class AdminActions(BaseActions):
             )
             if centos_files_count > 0:
                 regenerate_centos_repo(centos_repo_path)
+                # FIXME(aglarendil): correlate repo names
+                # according to the names used during
+                # installation, e.g. {fuel_version}_auxiliary
+                # LP1658063
+                # Set aux repo priority manually to avoid issues
+                # with excluded packages due to additional
+                # repos being added
+                logger.debug(
+                    "Updating aux mirror"
+                    "priority to value `{0}`".format(
+                        AUX_MASTER_REPO_PRIORITY))
+                out = self.ssh_manager.execute(
+                    ip=self.admin_ip,
+                    cmd="yum-config-manager -q --save"
+                    " --setopt={0}.priority={1}".format(
+                        AUX_MASTER_REPO_NAME, AUX_MASTER_REPO_PRIORITY)
+                )
+                _update_repo_output = ''.join(out)
+                logger.debug("Repos now are {}".format(_update_repo_output))
 
         if ubuntu_repo_path:
             ubuntu_files_count = self.ssh_manager.cond_upload(

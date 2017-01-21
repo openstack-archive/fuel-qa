@@ -609,6 +609,11 @@ EXTRA_RPM_REPOS_PRIORITY = os.environ.get('EXTRA_RPM_REPOS_PRIORITY', 20)
 AUX_DEB_REPO_PRIORITY = os.environ.get('AUX_DEB_REPO_PRIORITY', 1150)
 AUX_RPM_REPO_PRIORITY = os.environ.get('AUX_RPM_REPO_PRIORITY', 15)
 
+# Auxiliary repository settings for the master node
+AUX_MASTER_REPO_NAME = os.environ.get('AUX_MASTER_REPO_NAME', '9.0_auxiliary')
+AUX_MASTER_REPO_PRIORITY = os.environ.get(
+    'AUX_MASTER_REPO_PRIORITY', max(int(EXTRA_RPM_REPOS_PRIORITY) - 1, 1))
+
 # True: replace the default list of repositories in Nailgun
 # False: keep original list of repositories in Nailgun
 REPLACE_DEFAULT_REPOS = get_var_as_bool('REPLACE_DEFAULT_REPOS', True)
