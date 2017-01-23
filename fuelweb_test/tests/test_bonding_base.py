@@ -12,6 +12,8 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import copy
+
 from proboscis.asserts import assert_false
 
 from fuelweb_test import logger
@@ -22,73 +24,23 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 class BondingTest(TestBasic):
     def __init__(self):
-        self.OLD_SERIALIZATION_BOND_CONFIG = [
-            {
-                'mac': None,
-                'mode': 'active-backup',
-                'name': 'bond0',
-                'slaves': [
-                    {'name': iface_alias('eth5')},
-                    {'name': iface_alias('eth4')},
-                    {'name': iface_alias('eth3')},
-                    {'name': iface_alias('eth2')}
-                ],
-                'state': None,
-                'type': 'bond',
-                'assigned_networks': [],
-                'bond_properties': {'mode': 'active-backup',
-                                    'type__': 'linux'},
-            },
-            {
-                'mac': None,
-                'mode': 'active-backup',
-                'name': 'bond1',
-                'slaves': [
-                    {'name': iface_alias('eth1')},
-                    {'name': iface_alias('eth0')}
-                ],
-                'state': None,
-                'type': 'bond',
-                'assigned_networks': [],
-                'bond_properties': {'mode': 'active-backup',
-                                    'type__': 'linux'},
-            }
-        ]
+        self.TEMPLATE_OLD_SERIALIZATION_BOND_CONFIG = {
+            'mac': None,
+            'mode': 'active-backup',
+            'state': None,
+            'type': 'bond',
+            'assigned_networks': [],
+            'bond_properties': {'mode': 'active-backup',
+                                'type__': 'linux'}}
 
-        self.NEW_SERIALIZATION_BOND_CONFIG = [
-            {
-                'mac': None,
-                'mode': 'active-backup',
-                'name': 'bond0',
-                'slaves': [
-                    {'name': iface_alias('eth5')},
-                    {'name': iface_alias('eth4')},
-                    {'name': iface_alias('eth3')},
-                    {'name': iface_alias('eth2')}
-                ],
-                'state': None,
-                'type': 'bond',
-                'assigned_networks': [],
-                'attributes': {
-                    'type__': {'type': 'hidden', 'value': 'linux'}
-                }
-            },
-            {
-                'mac': None,
-                'mode': 'active-backup',
-                'name': 'bond1',
-                'slaves': [
-                    {'name': iface_alias('eth1')},
-                    {'name': iface_alias('eth0')}
-                ],
-                'state': None,
-                'type': 'bond',
-                'assigned_networks': [],
-                'attributes': {
-                    'type__': {'type': 'hidden', 'value': 'linux'}
-                }
-            }
-        ]
+        self.TEMPLATE_NEW_SERIALIZATION_BOND_CONFIG = {
+            'mac': None,
+            'mode': 'active-backup',
+            'state': None,
+            'type': 'bond',
+            'assigned_networks': [],
+            'attributes': {
+                'type__': {'type': 'hidden', 'value': 'linux'}}}
 
         self.INTERFACES = {
             'bond0': [
@@ -99,8 +51,27 @@ class BondingTest(TestBasic):
             ],
             'bond1': ['fuelweb_admin']
         }
+        self.BOND_LIST = [
+            {
+                'name': 'bond0',
+                'slaves': [
+                    {'name': iface_alias('eth5')},
+                    {'name': iface_alias('eth4')},
+                    {'name': iface_alias('eth3')},
+                    {'name': iface_alias('eth2')}
+                ]
+            },
+            {
+                'name': 'bond1',
+                'slaves': [
+                    {'name': iface_alias('eth1')},
+                    {'name': iface_alias('eth0')}]
+            }
+        ]
+        self.BOND_ATTR = {}
         super(BondingTest, self).__init__()
         self.__cluster_id = None
+        self.__bond_config = None
 
     @property
     def cluster_id(self):
@@ -110,10 +81,9 @@ class BondingTest(TestBasic):
 
     @property
     def bond_config(self):
-        if self._is_old_interface_serialization_scheme():
-            return self.OLD_SERIALIZATION_BOND_CONFIG
-        else:
-            return self.NEW_SERIALIZATION_BOND_CONFIG
+        if self.__bond_config is None:
+            self.__bond_config = self._generate_bonding_config()
+        return self.__bond_config
 
     @staticmethod
     def get_bond_interfaces(bond_config, bond_name):
@@ -129,6 +99,17 @@ class BondingTest(TestBasic):
         interface = self.fuel_web.client.get_node_interfaces(node['id'])[0]
         if 'interface_properties' in interface.keys():
             return True
+
+    def _generate_bonding_config(self):
+        bonding_config = copy.deepcopy(self.BOND_LIST)
+        if self._is_old_interface_serialization_scheme():
+            data = self.TEMPLATE_OLD_SERIALIZATION_BOND_CONFIG
+        else:
+            data = self.TEMPLATE_NEW_SERIALIZATION_BOND_CONFIG
+            data['attributes'].update(self.BOND_ATTR)
+        for bond in bonding_config:
+            bond.update(data)
+        return bonding_config
 
     def check_interfaces_config_after_reboot(self):
         network_settings = dict()
@@ -188,133 +169,30 @@ class BondingTest(TestBasic):
 class BondingTestDPDK(BondingTest):
     def __init__(self):
         super(BondingTestDPDK, self).__init__()
-        self.OLD_SERIALIZATION_BOND_CONFIG = [
+        self.TEMPLATE_OLD_SERIALIZATION_BOND_CONFIG[
+            'interface_properties'] = {'dpdk': {'available': True}}
+        self.BOND_LIST = [
             {
-                'mac': None,
-                'mode': 'active-backup',
                 'name': 'bond0',
                 'slaves': [
                     {'name': iface_alias('eth3')},
                     {'name': iface_alias('eth2')}
                 ],
-                'state': None,
-                'type': 'bond',
-                'assigned_networks': [],
-                'interface_properties': {'dpdk': {'available': True}},
-                'bond_properties': {'mode': 'active-backup',
-                                    'type__': 'linux'},
             },
             {
-                'mac': None,
-                'mode': 'active-backup',
                 'name': 'bond1',
                 'slaves': [
                     {'name': iface_alias('eth1')},
                     {'name': iface_alias('eth0')}
                 ],
-                'state': None,
-                'type': 'bond',
-                'assigned_networks': [],
-                'interface_properties': {'dpdk': {'available': True}},
-                'bond_properties': {'mode': 'active-backup',
-                                    'type__': 'linux'},
             },
             {
-                'mac': None,
-                'mode': 'active-backup',
                 'name': 'bond2',
                 'slaves': [
                     {'name': iface_alias('eth5')},
                     {'name': iface_alias('eth4')},
                 ],
-                'state': None,
-                'type': 'bond',
-                'assigned_networks': [],
-                'interface_properties': {'dpdk': {'available': True}},
-                'bond_properties': {'mode': 'active-backup',
-                                    'type__': 'linux'},
             },
-        ]
-
-        self.NEW_SERIALIZATION_BOND_CONFIG = [
-            {
-                'mac': None,
-                'mode': 'active-backup',
-                'name': 'bond0',
-                'slaves': [
-                    {'name': iface_alias('eth3')},
-                    {'name': iface_alias('eth2')}
-                ],
-                'state': None,
-                'type': 'bond',
-                'assigned_networks': [],
-                'meta': {
-                    'dpdk': {'available': True}
-                },
-                'attributes': {
-                    'type__': {'type': 'hidden', 'value': 'linux'},
-                    'dpdk': {
-                        'enabled': {
-                            'type': 'checkbox',
-                            'value': False,
-                            'weight': 10,
-                            'label': 'DPDK enabled'},
-                        'metadata': {'weight': 40, 'label': 'DPDK'}
-                    }
-                }
-            },
-            {
-                'mac': None,
-                'mode': 'active-backup',
-                'name': 'bond1',
-                'slaves': [
-                    {'name': iface_alias('eth1')},
-                    {'name': iface_alias('eth0')}
-                ],
-                'state': None,
-                'type': 'bond',
-                'assigned_networks': [],
-                'meta': {
-                    'dpdk': {'available': True}
-                },
-                'attributes': {
-                    'type__': {'type': 'hidden', 'value': 'linux'},
-                    'dpdk': {
-                        'enabled': {
-                            'type': 'checkbox',
-                            'value': False,
-                            'weight': 10,
-                            'label': 'DPDK enabled'},
-                        'metadata': {'weight': 40, 'label': 'DPDK'}
-                    }
-                }
-            },
-            {
-                'mac': None,
-                'mode': 'active-backup',
-                'name': 'bond2',
-                'slaves': [
-                    {'name': iface_alias('eth5')},
-                    {'name': iface_alias('eth4')}
-                ],
-                'state': None,
-                'type': 'bond',
-                'assigned_networks': [],
-                'meta': {
-                    'dpdk': {'available': True}
-                },
-                'attributes': {
-                    'type__': {'type': 'hidden', 'value': 'linux'},
-                    'dpdk': {
-                        'enabled': {
-                            'type': 'checkbox',
-                            'value': False,
-                            'weight': 10,
-                            'label': 'DPDK enabled'},
-                        'metadata': {'weight': 40, 'label': 'DPDK'}
-                    }
-                }
-            }
         ]
 
         self.INTERFACES = {
@@ -326,3 +204,49 @@ class BondingTestDPDK(BondingTest):
             'bond1': ['fuelweb_admin'],
             'bond2': ['private'],
         }
+
+        self.BOND_ATTR = {
+            'dpdk': {
+                'enabled': {
+                    'type': 'checkbox',
+                    'value': False,
+                    'weight': 10,
+                    'label': 'DPDK enabled'},
+                'metadata': {'weight': 40, 'label': 'DPDK'}
+            }}
+
+
+class BondingTestOffloading(BondingTest):
+    def __init__(self):
+        super(BondingTestOffloading, self).__init__()
+        self.BOND_ATTR = {
+            "offloading": {
+                "disable": {
+                    "type": "checkbox",
+                    "value": False,
+                    "weight": 10,
+                    "label": "Disable offloading"
+                },
+                "modes": {
+                    "value": {
+                        "rx-vlan-offload": None,
+                        "tx-scatter-gather": None,
+                        "scatter-gather": None,
+                        "generic-segmentation-offload": None,
+                        "tx-nocache-copy": None,
+                        "tx-checksumming": None,
+                        "generic-receive-offload": None,
+                        "tx-checksum-ip-generic": None,
+                        "rx-all": None,
+                        "rx-fcs": None,
+                        "tcp-segmentation-offload": None,
+                        "tx-tcp-segmentation": None,
+                        "rx-checksumming": None},
+                    "type": "offloading_modes",
+                    "description": "Offloading modes",
+                    "weight": 20,
+                    "label": "Offloading modes"},
+                "metadata": {
+                    "weight": 10,
+                    "label": "Offloading"}
+            }}

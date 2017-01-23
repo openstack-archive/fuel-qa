@@ -22,11 +22,11 @@ from fuelweb_test.helpers.checkers import check_offload
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import settings
 from fuelweb_test.tests.base_test_case import SetupEnvironment
-from fuelweb_test.tests.test_bonding_base import BondingTest
+from fuelweb_test.tests.test_bonding_base import BondingTestOffloading
 
 
 @test(groups=["bonding_ha_one_controller", "bonding"])
-class TestOffloading(BondingTest):
+class TestOffloading(BondingTestOffloading):
 
     offloadings_1 = {'generic-receive-offload': False,
                      'generic-segmentation-offload': False,
