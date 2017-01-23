@@ -77,14 +77,14 @@ class AdminActions(BaseActions):
     def is_fuel_service_ready(self, service):
         result = self.ssh_manager.execute(
             ip=self.admin_ip,
-            cmd="timeout 5 fuel-utils check_service {0}".format(service))
+            cmd="timeout 15 fuel-utils check_service {0}".format(service))
         return result['exit_code'] == 0
 
     @logwrap
     def is_fuel_ready(self):
         result = self.ssh_manager.execute(
             ip=self.admin_ip,
-            cmd="timeout 15 fuel-utils check_all")
+            cmd="timeout 60 fuel-utils check_all")
         return result['exit_code'] == 0
 
     @logwrap
