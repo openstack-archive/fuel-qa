@@ -307,6 +307,7 @@ class TestMultiqueue(TestBasic):
     @test(groups=["test_multiqueue_with_dpdk_and_numa_on_vlan",
                   "test_multiqueue_acceptance"],
           depends_on_groups=["prepare_slaves_5"])
+    @log_snapshot_after_test
     def test_multiqueue_with_dpdk_and_numa_on_vlan(self):
         """Deploy cluster with DPDK+Cpu Pin for multiqueue check on VLAN
 
@@ -329,6 +330,7 @@ class TestMultiqueue(TestBasic):
     @test(groups=["test_multiqueue_with_dpdk_and_numa_on_tun",
                   "test_multiqueue_acceptance"],
           depends_on_groups=["prepare_slaves_5"])
+    @log_snapshot_after_test
     def test_multiqueue_with_dpdk_and_numa_on_tun(self):
         """Deploy cluster with DPDK+Cpu Pin for multiqueue check on TUN
 
