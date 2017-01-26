@@ -80,12 +80,16 @@ class MUInstallBase(test_cli_base.CommandLine):
     def _prepare_for_update_mos_mu(self, cluster_id):
         logger.info('Prepare Enviroment')
         mos_mu_path = 'cd {} &&'.format(settings.MOS_MU_PATH)
-        ext_vars = '\'{{"env_id":{0}, "snapshot_repo":"snapshots/{1}", ' \
-                   '"snapshot_suite":"mos9.0-proposed"}}\'' \
-                   ''.format(cluster_id,
-                             settings.MOS_UBUNTU_MIRROR_ID)
+        if settings.MOS_UBUNTU_MIRROR_ID:
+            ext_vars = ', "snapshot_repo":"snapshots/{1}", ' \
+                       '"snapshot_suite":"mos9.0-proposed"' \
+                       ''.format(settings.MOS_UBUNTU_MIRROR_ID)
+        else:
+            ext_vars = ''
+
         cmd = '{0} ansible-playbook playbooks/mos9_prepare_env.yml -e ' \
-              '{1}'.format(mos_mu_path, ext_vars)
+              '\'{{"env_id":{1}{2}}}\''.format(mos_mu_path, cluster_id,
+                                               ext_vars)
 
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
@@ -424,14 +428,16 @@ class MUInstallBase(test_cli_base.CommandLine):
         mos_mu_path = 'cd {} &&'.format(settings.MOS_MU_PATH)
 
         logger.info('Gathering code customizations')
-        ext_vars = '\'{{"env_id":{0}, "snapshot_repo":"snapshots/{1}", ' \
-                   '"srcs_list_tmpl":"sources.list.with.proposed.j2", ' \
-                   '"unknown_upgradable_pkgs":"keep"}}\'' \
-                   ''.format(cluster_id,
-                             settings.MOS_UBUNTU_MIRROR_ID)
+        if settings.MOS_UBUNTU_MIRROR_ID:
+            ext_vars = ', "snapshot_repo":"snapshots/{1}", ' \
+                       '"srcs_list_tmpl":"sources.list.with.proposed.j2"' \
+                       ''.format(settings.MOS_UBUNTU_MIRROR_ID)
+        else:
+            ext_vars = ''
 
         cmd = '{0} ansible-playbook playbooks/gather_customizations.yml -e ' \
-              '{1}'.format(mos_mu_path, ext_vars)
+              '\'{{"env_id":{1}, "unknown_upgradable_pkgs":"keep"{2}}}\'' \
+              ''.format(mos_mu_path, cluster_id, ext_vars)
 
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,

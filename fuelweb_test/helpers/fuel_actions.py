@@ -425,12 +425,17 @@ class AdminActions(BaseActions):
         mos_mu_path = 'cd {} ;'.format(MOS_MU_PATH)
 
         logger.info('Update Fuel node')
+        if MOS_UBUNTU_MIRROR_ID:
+            ext_vars = ', "snapshot_repo":"snapshots/{1}", ' \
+                       '"snapshot_suite":"mos9.0-proposed"' \
+                       ''.format(MOS_UBUNTU_MIRROR_ID)
+        else:
+            ext_vars = ''
+
         update_command = \
             '{0} ansible-playbook playbooks/update_fuel.yml ' \
-            '-e \'{{"rebuild_bootstrap":false, ' \
-            '"snapshot_repo":"snapshots/{1}", ' \
-            '"snapshot_suite":"mos9.0-proposed"}}\'' \
-            ''.format(mos_mu_path, MOS_UBUNTU_MIRROR_ID)
+            '-e \'{{"rebuild_bootstrap":false{1}}}\'' \
+            ''.format(mos_mu_path, ext_vars)
 
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
