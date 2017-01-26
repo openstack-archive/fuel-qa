@@ -13,10 +13,12 @@
 #    under the License.
 
 from functools import partial
+import logging
 import os
 import re
 
 from devops.helpers.helpers import wait
+from devops.helpers.helpers import wait_pass
 from devops.models import DiskDevice
 from devops.models import Node
 from devops.models import Volume
@@ -24,6 +26,7 @@ from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 
 from core.helpers.log_helpers import logwrap
+from core.helpers.log_helpers import QuietLogger
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import retry
@@ -459,18 +462,17 @@ class NailgunActions(BaseActions):
         cfg_file = '/etc/nailgun/settings.yaml'
         with YamlEditor(file_path=cfg_file, ip=self.admin_ip) as ng_settings:
             ng_settings.content.update(settings)
-
             logger.debug('Uploading new nailgun settings: {}'.format(
                 ng_settings))
         self.restart_service("nailgun")
-        # TODO(vkhlyunev): REWORK NAILGUN RESTART
-        # if nailgun service is restarted fuel-qa's keystone session does not
-        # know about it and tries to reuse tcp session which is closed on
-        # fuel side. We should restart it properly but right now
-        # lets give it to tcp keep-alive mechanism
-        import time
-        time.sleep(10)
         self.wait_for_fuel_service_ready("nailgun")
+        # let uWSGI start nailgun properly - service readiness does not
+        # mean that it was started completely inside uwsgi
+        # fuel-client itself can handle this scenario so we can just run any
+        # "fuel %action%" command and wait until it completed
+        # also this small check will indicate that
+        # nailgun was started correctly
+        self.ssh_manager.check_call(ip=self.admin_ip, command="fuel release")
 
     def set_collector_address(self, host, port, ssl=False):
         base_cfg_file = ('/usr/lib/python2.7/site-packages/'
