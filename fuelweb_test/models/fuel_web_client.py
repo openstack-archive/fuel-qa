@@ -901,7 +901,9 @@ class FuelWebClient29(object):
         return attributes['editable']['repo_setup']['repos']
 
     def check_deploy_state(self, cluster_id, check_services=True,
-                           check_tasks=True):
+                           check_tasks=True, allow_partially_deploy=False):
+        self.check_cluster_status(cluster_id, allow_partially_deploy)
+
         if check_tasks:
             self.assert_all_tasks_completed(cluster_id=cluster_id)
         if check_services:
@@ -954,8 +956,8 @@ class FuelWebClient29(object):
             logger.info('Deploy cluster %s', cluster_id)
             task = self.deploy_cluster(cluster_id)
             self.assert_task_success(task, interval=interval, timeout=timeout)
-            self.check_cluster_status(cluster_id, allow_partially_deploy)
-            self.check_deploy_state(cluster_id, check_services, check_tasks)
+            self.check_deploy_state(cluster_id, check_services, check_tasks,
+                                    allow_partially_deploy)
             return
 
         logger.info('Provision nodes of a cluster %s', cluster_id)
@@ -967,8 +969,8 @@ class FuelWebClient29(object):
                         cluster_id, str(retry_number + 1))
             task = self.client.deploy_nodes(cluster_id)
             self.assert_task_success(task, timeout=timeout, interval=interval)
-            self.check_cluster_status(cluster_id, allow_partially_deploy)
-            self.check_deploy_state(cluster_id, check_services, check_tasks)
+            self.check_deploy_state(cluster_id, check_services, check_tasks,
+                                    allow_partially_deploy)
         self.check_cluster_settings(cluster_id, cluster_attributes)
         self.check_network_settings(cluster_id, network_settings)
         self.check_deployment_info_save_for_task(cluster_id)
@@ -3091,6 +3093,8 @@ class FuelWebClient29(object):
             data = {}
         task = self.client.redeploy_cluster_changes(cluster_id, data)
         self.assert_task_success(task, interval=interval, timeout=timeout)
+        self.check_deploy_state(cluster_id, check_services=True,
+                                check_tasks=True, allow_partially_deploy=True)
 
     def execute_task_on_node(self, task_name, node_id,
                              cluster_id, force_exception=False,
