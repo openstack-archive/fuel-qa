@@ -74,6 +74,8 @@ class TestRailSettings(object):
     tests_include = os.environ.get('TESTRAIL_TEST_INCLUDE', None)
     tests_exclude = os.environ.get('TESTRAIL_TEST_EXCLUDE', None)
     previous_results_depth = os.environ.get('TESTRAIL_TESTS_DEPTH', 5)
+    previous_results_days_to_analyze = os.environ.get(
+        'TESTRAIL_DAYS_TO_ANALYZE', 14)
     operation_systems = []
     centos_enabled = os.environ.get('USE_CENTOS', 'false') == 'true'
     ubuntu_enabled = os.environ.get('USE_UBUNTU', 'true') == 'true'

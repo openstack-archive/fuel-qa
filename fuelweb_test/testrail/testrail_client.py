@@ -14,6 +14,8 @@
 
 from __future__ import unicode_literals
 
+import time
+
 from fuelweb_test.testrail.settings import logger
 from fuelweb_test.testrail.testrail import APIClient
 from fuelweb_test.testrail.testrail import APIError
@@ -182,7 +184,8 @@ class TestRailProject(object):
     def get_case_fields(self):
         return self.client.send_get('get_case_fields')
 
-    def get_plans(self, milestone_ids=None, limit=None, offset=None):
+    def get_plans(self, milestone_ids=None, limit=None, offset=None,
+                  created_after=None):
         plans_uri = 'get_plans/{project_id}'.format(
             project_id=self.project['id'])
         if milestone_ids:
@@ -192,6 +195,9 @@ class TestRailProject(object):
             plans_uri += '&limit={0}'.format(limit)
         if offset:
             plans_uri += '&offset={0}'.format(offset)
+        if created_after:
+            plans_uri += '&created_after={0}'.format(created_after)
+
         return self.client.send_get(plans_uri)
 
     def get_plan(self, plan_id):
@@ -260,14 +266,18 @@ class TestRailProject(object):
             if run['name'] == name:
                 return self.get_run(run_id=run['id'])
 
-    def get_previous_runs(self, milestone_id, suite_id, config_id, limit=None):
+    def get_previous_runs(self, milestone_id, suite_id, config_id, limit=None,
+                          days_to_analyze=None):
         previous_runs = []
         offset = 0
-
+        current_time = int(time.time())
+        day_in_seconds = 24 * 60 * 60
+        created_after = current_time - (day_in_seconds * days_to_analyze)
         while len(previous_runs) < limit:
             existing_plans = self.get_plans(milestone_ids=[milestone_id],
                                             limit=limit,
-                                            offset=offset)
+                                            offset=offset,
+                                            created_after=created_after)
             if not existing_plans:
                 break
 
