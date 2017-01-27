@@ -435,7 +435,8 @@ def publish_results(project, milestone_id, test_plan,
         milestone_id=milestone_id,
         suite_id=suite_id,
         config_id=config_id,
-        limit=TestRailSettings.previous_results_depth)
+        limit=TestRailSettings.previous_results_depth,
+        days_to_analyze=TestRailSettings.previous_results_days_to_analyze)
     logger.debug('Found next test runs: {0}'.format(
         [test_run['description'] for test_run in previous_tests_runs]))
     cases = project.get_cases(suite_id=suite_id)
