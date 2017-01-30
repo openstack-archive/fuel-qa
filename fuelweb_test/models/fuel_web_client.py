@@ -2773,7 +2773,7 @@ class FuelWebClient29(object):
     def get_nailgun_primary_node(self, slave, role='primary-controller'):
         # returns controller or mongo that is primary in nailgun
         with self.get_ssh_for_node(slave.name) as remote:
-            with remote.open('/etc/astute.yaml') as f:
+            with remote.open('/etc/hiera/cluster.yaml') as f:
                 data = yaml.safe_load(f)
         nodes = data['network_metadata']['nodes']
         node_name = [node['fqdn'] for node in nodes.values()
