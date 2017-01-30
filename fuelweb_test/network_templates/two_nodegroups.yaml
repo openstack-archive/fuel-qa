@@ -30,7 +30,7 @@ adv_net_template:
         storage:
           ep: br-storage
         private:
-          ep: br-prv
+          ep: br-mesh
         public:
           ep: br-ex
         management:
@@ -114,24 +114,15 @@ adv_net_template:
       private:
         transformations:
           - action: add-br
-            name: br-prv
-            provider: ovs
-          - action: add-br
-            name: br-aux
-          - action: add-patch
-            bridges:
-            - br-prv
-            - br-aux
-            provider: ovs
-            mtu: 65000
+            name: br-mesh
           - action: add-port
-            bridge: br-aux
+            bridge: br-mesh
             name: <% if4 %>
         endpoints:
-          - br-prv
+          - br-mesh
         roles:
-          private: br-prv
-          neutron/private: br-prv
+          private: br-mesh
+          neutron/mesh: br-mesh
       storage:
         transformations:
           - action: add-br
@@ -175,7 +166,7 @@ adv_net_template:
         storage:
           ep: br-storage
         private:
-          ep: br-prv
+          ep: br-mesh
         public:
           ep: br-ex
         management:
@@ -258,24 +249,15 @@ adv_net_template:
       private:
         transformations:
           - action: add-br
-            name: br-prv
-            provider: ovs
-          - action: add-br
-            name: br-aux
-          - action: add-patch
-            bridges:
-            - br-prv
-            - br-aux
-            provider: ovs
-            mtu: 65000
+            name: br-mesh
           - action: add-port
-            bridge: br-aux
+            bridge: br-mesh
             name: <% if14 %>
         endpoints:
-          - br-prv
+          - br-mesh
         roles:
-          private: br-prv
-          neutron/private: br-prv
+          private: br-mesh
+          neutron/mesh: br-mesh
       storage:
         transformations:
           - action: add-br
