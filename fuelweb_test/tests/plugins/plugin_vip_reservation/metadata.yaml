@@ -2,14 +2,14 @@ name: vip_reservation_plugin
 title: vip_reservation_plugin
 version: '3.0.0'
 description: Build plugin for test vip_reservation_plugin
-fuel_version: ['9.0']
+fuel_version: ['10.0']
 licenses: ['Apache License Version 2.0']
 authors: ['Fuel']
 homepage: 'https://github.com/openstack/fuel-plugins'
 groups: []
 releases:
 - os: ubuntu
-  version: '-9.0'
+  version: '-10.0'
   mode: ['ha']
   deployment_scripts_path: deployment_scripts/
   repository_path: repositories/ubuntu
