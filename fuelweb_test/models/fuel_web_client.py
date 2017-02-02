@@ -2773,8 +2773,14 @@ class FuelWebClient29(object):
     def get_nailgun_primary_node(self, slave, role='primary-controller'):
         # returns controller or mongo that is primary in nailgun
         with self.get_ssh_for_node(slave.name) as remote:
-            with remote.open('/etc/astute.yaml') as f:
-                data = yaml.safe_load(f)
+            try:
+                with remote.open('/etc/hiera/cluster.yaml') as f:
+                    data = yaml.safe_load(f)
+                # TODO(sbog): remove check for astute.yaml open as LP1660308
+                # for fuel-library will be merged.
+            except IOError:
+                with remote.open('/etc/astute.yaml') as f:
+                    data = yaml.safe_load(f)
         nodes = data['network_metadata']['nodes']
         node_name = [node['fqdn'] for node in nodes.values()
                      if role in node['node_roles']][0]
