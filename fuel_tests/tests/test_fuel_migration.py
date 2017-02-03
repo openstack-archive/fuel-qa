@@ -25,11 +25,11 @@ from fuelweb_test import settings
 # pylint: disable=no-member
 
 
-@pytest.fixture(scope='session')
+@pytest.fixture(scope='function')
 def fuel_master_migration(request):
     """Fixture which migrate Fuel Master to a compute"""
 
-    instance = request.node.items[-1].instance
+    instance = request.node.instance
     cluster_id = instance._storage['cluster_id']
     instance.start_fuel_migration()
     instance.check_migration_status()
