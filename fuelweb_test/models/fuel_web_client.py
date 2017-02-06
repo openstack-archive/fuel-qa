@@ -1110,7 +1110,8 @@ class FuelWebClient29(object):
     def get_cluster_block_devices(self, node_name):
         logger.info('Get %s node block devices (lsblk)', node_name)
         with self.get_ssh_for_node(node_name) as remote:
-            return remote.check_call('/bin/lsblk').stdout_str
+            # Note: 'lsblk' comand returns some undecodable symbols
+            return ''.join(remote.check_call('/bin/lsblk')['stdout'])
 
     @logwrap
     def get_pacemaker_status(self, controller_node_name):
