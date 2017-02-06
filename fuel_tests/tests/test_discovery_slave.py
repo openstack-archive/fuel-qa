@@ -148,7 +148,7 @@ class TestNodeDiskSizes(object):
         self.manager.show_step(7)
         fuel_web.verify_network(cluster_id)
 
-        self.manager.show_step(6)
+        self.manager.show_step(8)
         fuel_web.run_ostf(
             cluster_id=cluster_id,
             test_sets=['ha', 'smoke', 'sanity'])
