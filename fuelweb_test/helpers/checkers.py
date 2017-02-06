@@ -39,6 +39,8 @@ from core.helpers.log_helpers import logwrap
 
 from fuelweb_test import logger
 from fuelweb_test.helpers.ssh_manager import SSHManager
+from fuelweb_test.helpers.utils import check_config
+from fuelweb_test.helpers.utils import get_ini_config
 from fuelweb_test.helpers.utils import get_mongo_partitions
 from fuelweb_test.settings import EXTERNAL_DNS
 from fuelweb_test.settings import EXTERNAL_NTP
@@ -1484,3 +1486,26 @@ def check_package_version(ip, package_name, expected_version, condition='ge'):
                                                        expected_version)
     ssh_manager.execute_on_remote(ip, cmd, assert_ec_equal=[0],
                                   err_msg=err_msg)
+
+
+def check_firewall_driver(ip, node_role, firewall_driver):
+    """Check which firewall driver is set for security groups
+
+    :param ip: str, node ip
+    :param node_role: str, node role
+    :param firewall_driver: str, name of firewall driver for security group
+    """
+    configpaths = {
+        'compute': ['/etc/neutron/plugins/ml2/openvswitch_agent.ini'],
+        'controller': ['/etc/neutron/plugins/ml2/openvswitch_agent.ini',
+                       '/etc/neutron/plugins/ml2/ml2_conf.ini']
+    }
+    if node_role not in configpaths:
+        logger.error('Passed value of node role {!r} is invalid for '
+                     'the further check! Should use '
+                     '"compute" "controller" roles'.format(node_role))
+    for configpath in configpaths[node_role]:
+        conf_for_check = get_ini_config(
+            ssh_manager.open_on_remote(ip, configpath))
+        check_config(conf_for_check, configpath, 'securitygroup',
+                     'firewall_driver', firewall_driver)
