@@ -2163,7 +2163,7 @@ class FuelWebClient29(object):
             node.start()
         self.wait_nodes_get_online_state(devops_nodes, timeout=timeout)
 
-    def warm_restart_nodes(self, devops_nodes, timeout=4 * 60):
+    def warm_restart_nodes(self, devops_nodes, timeout=10 * 60):
         logger.info('Reboot (warm restart) nodes %s',
                     [n.name for n in devops_nodes])
         self.warm_shutdown_nodes(devops_nodes, timeout=timeout)
