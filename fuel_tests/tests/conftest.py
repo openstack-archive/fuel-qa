@@ -71,12 +71,7 @@ def snapshot(request):
     fail_snapshot = request.keywords.get('fail_snapshot', None)
 
     def test_fin():
-        if request.node.rep_call.passed:
-            if get_logs:
-                request.instance.manager.make_diagnostic_snapshot(
-                    status="test_pass",
-                    name=request.node.function.__name__)
-        elif request.node.rep_setup.failed:
+        if request.node.rep_setup.failed:
             if get_logs:
                 request.instance.manager.make_diagnostic_snapshot(
                     status="prepare_failed",
@@ -84,6 +79,11 @@ def snapshot(request):
             if fail_snapshot:
                 request.instance.manager.save_env_snapshot(
                     name="prep_fail_{}".format(request.node.function.__name__))
+        elif request.node.rep_call.passed:
+            if get_logs:
+                request.instance.manager.make_diagnostic_snapshot(
+                    status="test_pass",
+                    name=request.node.function.__name__)
         elif request.node.rep_call.failed:
             if get_logs:
                 request.instance.manager.make_diagnostic_snapshot(
