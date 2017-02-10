@@ -450,8 +450,8 @@ class TestOVSFirewallDPDK(CheckOVSFirewall):
             1. Create new environment with VLAN segmentation for Neutron
             2. Add controller and compute nodes
             3. Enable OVS firewall driver for neutron security groups
-            4. Configure HugePages for compute nodes
-            5. Configure private network in DPDK mode
+            4. Configure private network in DPDK mode
+            5. Configure HugePages for compute nodes
             6. Run network verification
             7. Deploy environment
             8. Run OSTF
@@ -489,11 +489,11 @@ class TestOVSFirewallDPDK(CheckOVSFirewall):
         self.fuel_web.set_ovs_firewall_driver(cluster_id)
 
         self.show_step(4)
-        self.fuel_web.setup_hugepages(
-            compute['id'], hp_2mb=256, hp_dpdk_mb=1024)
+        self.fuel_web.enable_dpdk(compute['id'])
 
         self.show_step(5)
-        self.fuel_web.enable_dpdk(compute['id'])
+        self.fuel_web.setup_hugepages(
+            compute['id'], hp_2mb=256, hp_dpdk_mb=1024)
 
         self.show_step(6)
         self.fuel_web.verify_network(cluster_id)
@@ -527,8 +527,8 @@ class TestOVSFirewallDPDK(CheckOVSFirewall):
             1. Create new environment with VLAN segmentation for Neutron
             2. Add controller and compute nodes
             3. Enable OVS firewall driver for neutron security groups
-            4. Configure HugePages for compute nodes
-            5. Configure private network in DPDK mode
+            4. Configure private network in DPDK mode
+            5. Configure HugePages for compute nodes
             6. Run network verification
             7. Deploy environment
             8. Run OSTF
@@ -566,11 +566,11 @@ class TestOVSFirewallDPDK(CheckOVSFirewall):
         self.fuel_web.set_ovs_firewall_driver(cluster_id)
 
         self.show_step(4)
-        self.fuel_web.setup_hugepages(
-            compute['id'], hp_2mb=256, hp_dpdk_mb=1024)
+        self.fuel_web.enable_dpdk(compute['id'])
 
         self.show_step(5)
-        self.fuel_web.enable_dpdk(compute['id'])
+        self.fuel_web.setup_hugepages(
+            compute['id'], hp_2mb=256, hp_dpdk_mb=1024)
 
         self.show_step(6)
         self.fuel_web.verify_network(cluster_id)
