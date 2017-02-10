@@ -58,14 +58,13 @@ class TestNetworkTemplatesBase(TestBasic):
                         n['name'] == nodegroup][0]
             ip_network = netaddr.IPNetwork(str(ip_nets[nodegroup]))
             ip_subnets = list(ip_network.subnet(int(ip_prefixlen)))
-            for network, interface in networks:
+            for network, _ in networks:
                 ip_subnet = ip_subnets.pop()
                 networks_data.append(
                     {
                         'name': network,
                         'cidr': str(ip_subnet),
                         'group_id': group_id,
-                        'interface': interface,
                         'gateway': None,
                         'meta': {
                             "notation": "ip_ranges",
