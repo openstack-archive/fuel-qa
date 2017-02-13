@@ -498,3 +498,10 @@ class CommandLine(TestBasic):
             cmd='cat {0}'.format(settings_file),
             yamlify=True)['stdout_yaml']
         return out
+
+    @logwrap
+    def set_public_networks_for_all_nodes(self, cluster_id):
+        settings = self.download_settings(cluster_id)
+        settings['editable']['public_network_assignment'][
+            'assign_to_all_nodes']['value'] = True
+        self.upload_settings(cluster_id, settings)
