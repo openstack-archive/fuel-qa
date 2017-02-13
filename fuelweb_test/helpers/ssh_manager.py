@@ -24,7 +24,6 @@ import traceback
 from warnings import warn
 
 import devops
-from devops.helpers.helpers import wait
 from devops.helpers.metaclasses import SingletonMeta
 from devops.helpers.ssh_client import SSHClient
 from paramiko import RSAKey
@@ -32,6 +31,7 @@ from paramiko.ssh_exception import AuthenticationException
 import six
 
 from fuelweb_test import logger
+from fuelweb_test.helpers.utils import RunLimit
 from fuelweb_test.settings import SSH_FUEL_CREDENTIALS
 from fuelweb_test.settings import SSH_SLAVE_CREDENTIALS
 
@@ -142,11 +142,14 @@ class SSHManager(six.with_metaclass(SingletonMeta, object)):
         :return:
         """
         try:
-            wait(lambda: remote.execute("cd ~")['exit_code'] == 0, timeout=20)
-        except Exception:
-            logger.info('SSHManager: Check for current '
-                        'connection fails. Try to reconnect')
+            with RunLimit(
+                    seconds=5,
+                    error_message="Socket timeout! Forcing reconnection"):
+                remote.check_call("cd ~")
+        except:
             logger.debug(traceback.format_exc())
+            logger.info('SSHManager: Check for current connection fails. '
+                        'Trying to reconnect')
             remote.reconnect()
         return remote
 
