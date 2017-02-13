@@ -351,9 +351,6 @@ NEUTRON_SEGMENT = {
 NEUTRON_SEGMENT_TYPE = NEUTRON_SEGMENT.get(
     os.environ.get('NEUTRON_SEGMENT_TYPE', None), None)
 
-# Path to a network template dedicated for reduced footprint environments
-RF_NET_TEMPLATE = os.environ.get("RF_NET_TEMPLATE", None)
-
 USE_ALL_DISKS = get_var_as_bool('USE_ALL_DISKS', True)
 
 UPLOAD_MANIFESTS = get_var_as_bool('UPLOAD_MANIFESTS', False)
