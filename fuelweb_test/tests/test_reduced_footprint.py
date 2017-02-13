@@ -239,15 +239,6 @@ class TestVirtRole(TestBasic):
 class TestVirtRoleBaremetal(TestBasic):
     """Tests for virt role on baremetal servers"""
 
-    # pylint: disable=no-self-use
-    def check_net_template_presence(self):
-        """Check for network template availability before starting any test"""
-        if not (settings.RF_NET_TEMPLATE and
-                os.path.exists(settings.RF_NET_TEMPLATE)):
-            raise AssertionError("Template for reduced footprint environment "
-                                 "is not provided")
-    # pylint: enable=no-self-use
-
     @property
     def ssh_auth(self):
         """Returns SSHAuth instance for connecting to slaves through
@@ -379,22 +370,9 @@ class TestVirtRoleBaremetal(TestBasic):
              timeout_msg="{0} didn't appear online within {1} "
                          "seconds". format(slave['name'], timeout))
 
-    @staticmethod
-    def get_network_template(template, template_dir=settings.RF_NET_TEMPLATE):
-        """Download a network template from the provided local directory
-
-        :param template: str, template name
-        :param template_dir: str, template path
-        :return: dict
-        """
-        template_path = os.path.join(template_dir, '{0}.yaml'.format(template))
-        with open(template_path) as template_file:
-            return yaml.load(template_file)
-
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["baremetal_deploy_cluster_with_virt_node"])
     @log_snapshot_after_test
-    @setup_teardown(setup=check_net_template_presence)
     def baremetal_deploy_cluster_with_virt_node(self):
         """Baremetal deployment of cluster with one virtual node
 
@@ -481,7 +459,6 @@ class TestVirtRoleBaremetal(TestBasic):
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["baremetal_deploy_virt_nodes_on_different_computes"])
     @log_snapshot_after_test
-    @setup_teardown(setup=check_net_template_presence)
     def baremetal_deploy_virt_nodes_on_different_computes(self):
         """Baremetal deployment of a cluster with virtual nodes in HA mode;
         each virtual node on a separate compute
@@ -656,7 +633,6 @@ class TestVirtRoleBaremetal(TestBasic):
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["baremetal_deploy_virt_nodes_on_one_compute"])
     @log_snapshot_after_test
-    @setup_teardown(setup=check_net_template_presence)
     def baremetal_deploy_virt_nodes_on_one_compute(self):
         """Baremetal deployment of a cluster with virtual nodes in HA mode;
         all virtual nodes on the same compute
