@@ -12,16 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
-import yaml
 
 from devops.helpers.helpers import wait
 from devops.helpers.ssh_client import SSHAuth
 from paramiko.ssh_exception import ChannelException
 from proboscis import asserts
 from proboscis import test
-
-from core.helpers.setup_teardown import setup_teardown
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -239,15 +235,6 @@ class TestVirtRole(TestBasic):
 class TestVirtRoleBaremetal(TestBasic):
     """Tests for virt role on baremetal servers"""
 
-    # pylint: disable=no-self-use
-    def check_net_template_presence(self):
-        """Check for network template availability before starting any test"""
-        if not (settings.RF_NET_TEMPLATE and
-                os.path.exists(settings.RF_NET_TEMPLATE)):
-            raise AssertionError("Template for reduced footprint environment "
-                                 "is not provided")
-    # pylint: enable=no-self-use
-
     @property
     def ssh_auth(self):
         """Returns SSHAuth instance for connecting to slaves through
@@ -282,15 +269,8 @@ class TestVirtRoleBaremetal(TestBasic):
         :param slave_ip: str, IP address of a slave node
         :return: int
         """
-        with self.ssh_manager.get_remote(self.ssh_manager.admin_ip) as admin:
-            result = admin.execute_through_host(
-                slave_ip,
-                "cat /proc/cpuinfo | grep processor | wc -l",
-                auth=self.ssh_auth,
-                timeout=60)
-        asserts.assert_equal(
-            result['exit_code'], 0,
-            "Failed to get number of CPUs on {0} slave node".format(slave_ip))
+        cmd = "cat /proc/cpuinfo | grep processor | wc -l"
+        result = self.ssh_manager.check_call(slave_ip, cmd, sudo=False)
         # pylint: disable=no-member
         cpu = int(result['stdout'][0].strip())
         # pylint: enable=no-member
@@ -302,15 +282,9 @@ class TestVirtRoleBaremetal(TestBasic):
         :param slave_ip: str, IP address of a slave node
         :return: int, total amount of RAM in GB on the given node
         """
-        with self.ssh_manager.get_remote(self.ssh_manager.admin_ip) as admin:
-            result = admin.execute_through_host(
-                slave_ip,
-                "grep -i memtotal /proc/meminfo | awk '{print $2}'",
-                auth=self.ssh_auth,
-                timeout=60)
-        asserts.assert_equal(
-            result['exit_code'], 0,
-            "Failed to get amount of RAM on {0} slave node".format(slave_ip))
+        cmd = "grep -i memtotal /proc/meminfo | awk '{print $2}'"
+        result = self.ssh_manager.check_call(slave_ip, cmd, sudo=False)
+
         # pylint: disable=no-member
         mem_in_gb = int(result['stdout'][0].strip()) // pow(1024, 2)
         # pylint: enable=no-member
@@ -351,9 +325,11 @@ class TestVirtRoleBaremetal(TestBasic):
                              "Nodes dict: {0}\nAvailable nodes: {1}"
                              .format(nodes_dict,
                                      [node['name'] for node in virt_nodes]))
-
+        nodes_groups = {}
         for virt_node, virt_node_name in zip(virt_nodes, nodes_dict):
-            new_roles = nodes_dict[virt_node_name]
+            node_group, new_roles = self.fuel_web.get_node_group_and_role(
+                virt_node_name,
+                nodes_dict)
             new_name = '{}_{}'.format(virt_node_name, "_".join(new_roles))
             data = {"cluster_id": cluster_id,
                     "pending_addition": True,
@@ -361,40 +337,30 @@ class TestVirtRoleBaremetal(TestBasic):
                     "pending_roles": new_roles,
                     "name": new_name}
             self.fuel_web.client.update_node(virt_node['id'], data)
+            if node_group not in nodes_groups.keys():
+                nodes_groups[node_group] = []
+            nodes_groups[node_group].append(virt_node_name)
+        self.fuel_web.update_nodegroups(cluster_id=cluster_id,
+                                        node_groups=nodes_groups)
 
     def wait_for_slave(self, slave, timeout=10 * 60):
         """Wait for slave ignoring connection errors that appear
         until the node is online (after reboot, environment reset, etc.)"""
         def ssh_ready(ip):
-            with self.ssh_manager.get_remote(self.ssh_manager.admin_ip) as \
-                    admin:
-                try:
-                    return admin.execute_through_host(
-                        ip, "cd ~", auth=self.ssh_auth)['exit_code'] == 0
-                except ChannelException:
-                    return False
+            try:
+                return self.ssh_manager.check_call(
+                    ip, "cd ~")['exit_code'] == 0
+            except ChannelException:
+                return False
 
         wait(lambda: ssh_ready(slave['ip']),
              timeout=timeout,
              timeout_msg="{0} didn't appear online within {1} "
                          "seconds". format(slave['name'], timeout))
 
-    @staticmethod
-    def get_network_template(template, template_dir=settings.RF_NET_TEMPLATE):
-        """Download a network template from the provided local directory
-
-        :param template: str, template name
-        :param template_dir: str, template path
-        :return: dict
-        """
-        template_path = os.path.join(template_dir, '{0}.yaml'.format(template))
-        with open(template_path) as template_file:
-            return yaml.load(template_file)
-
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["baremetal_deploy_cluster_with_virt_node"])
     @log_snapshot_after_test
-    @setup_teardown(setup=check_net_template_presence)
     def baremetal_deploy_cluster_with_virt_node(self):
         """Baremetal deployment of cluster with one virtual node
 
@@ -458,7 +424,12 @@ class TestVirtRoleBaremetal(TestBasic):
                                for i in self.fuel_web.client.list_nodes()])))
 
         self.show_step(5)
-        virt_nodes = {'vslave-01': ['controller']}
+        for nodegroup in net_template:
+            if nodegroup != 'default':
+                target_nodegroup = nodegroup
+                break
+
+        virt_nodes = {'vslave-01': [['controller'], target_nodegroup]}
         self.update_virtual_nodes(cluster_id, virt_nodes)
 
         self.show_step(6)
@@ -481,7 +452,6 @@ class TestVirtRoleBaremetal(TestBasic):
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["baremetal_deploy_virt_nodes_on_different_computes"])
     @log_snapshot_after_test
-    @setup_teardown(setup=check_net_template_presence)
     def baremetal_deploy_virt_nodes_on_different_computes(self):
         """Baremetal deployment of a cluster with virtual nodes in HA mode;
         each virtual node on a separate compute
@@ -590,26 +560,24 @@ class TestVirtRoleBaremetal(TestBasic):
 
         self.show_step(10)
         cmd = "mysql --connect_timeout=5 -sse \"SHOW STATUS LIKE 'wsrep%';\""
-        with self.ssh_manager.get_remote(self.ssh_manager.admin_ip) as admin:
-            err_msg = ("Galera isn't ready on {0} node".format(
-                ctrl['hostname']))
-            wait(
-                lambda: admin.execute_through_host(
-                    ctrl['ip'], cmd, auth=self.ssh_auth)['exit_code'] == 0,
-                timeout=10 * 60, timeout_msg=err_msg)
+        err_msg = ("Galera isn't ready on {0} node".format(
+            ctrl['hostname']))
+        wait(
+            lambda: self.ssh_manager.check_call(
+                ctrl['ip'], cmd)['exit_code'] == 0,
+            timeout=10 * 60, timeout_msg=err_msg)
 
-            cmd = ("mysql --connect_timeout=5 -sse \"SHOW STATUS LIKE "
-                   "'wsrep_local_state_comment';\"")
-            err_msg = ("The reinstalled node {0} is not synced with the "
-                       "Galera cluster".format(ctrl['hostname']))
-            wait(
-                # pylint: disable=no-member
-                lambda: admin.execute_through_host(
-                    ctrl['ip'], cmd,
-                    auth=self.ssh_auth)['stdout'][0].split()[1] == "Synced",
-                # pylint: enable=no-member
-                timeout=10 * 60,
-                timeout_msg=err_msg)
+        cmd = ("mysql --connect_timeout=5 -sse \"SHOW STATUS LIKE "
+               "'wsrep_local_state_comment';\"")
+        err_msg = ("The reinstalled node {0} is not synced with the "
+                   "Galera cluster".format(ctrl['hostname']))
+        wait(
+            # pylint: disable=no-member
+            lambda: self.ssh_manager.check_call(
+                ctrl['ip'], cmd)['stdout'][0].split()[1] == "Synced",
+            # pylint: enable=no-member
+            timeout=10 * 60,
+            timeout_msg=err_msg)
 
         self.show_step(11)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
@@ -620,14 +588,11 @@ class TestVirtRoleBaremetal(TestBasic):
         self.show_step(15)
         cmds = {"reboot": "gracefully", "reboot -f >/dev/null &": "forcefully"}
         for cmd in cmds:
-            with self.ssh_manager.get_remote(self.ssh_manager.admin_ip) as \
-                    admin:
-                asserts.assert_true(
-                    admin.execute_through_host(
-                        virt_nodes[1]['ip'], cmd, auth=self.ssh_auth,
-                        timeout=60)['exit_code'] == 0,
-                    "Failed to {0} reboot {1} controller"
-                    "node".format(cmds[cmd], virt_nodes[1]['name']))
+            asserts.assert_true(
+                self.ssh_manager.check_call(
+                    virt_nodes[1]['ip'], cmd)['exit_code'] == 0,
+                "Failed to {0} reboot {1} controller"
+                "node".format(cmds[cmd], virt_nodes[1]['name']))
             self.wait_for_slave(virt_nodes[1])
 
             self.fuel_web.run_ostf(cluster_id=cluster_id)
@@ -639,14 +604,11 @@ class TestVirtRoleBaremetal(TestBasic):
         compute = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['compute'])[0]
         for cmd in cmds:
-            with self.ssh_manager.get_remote(self.ssh_manager.admin_ip) as \
-                    admin:
-                asserts.assert_true(
-                    admin.execute_through_host(
-                        compute['ip'], cmd, auth=self.ssh_auth,
-                        timeout=60)['exit_code'] == 0,
-                    "Failed to {0} reboot {1} compute"
-                    "node".format(cmds[cmd], compute['name']))
+            asserts.assert_true(
+                self.ssh_manager.check_call(
+                    compute['ip'], cmd)['exit_code'] == 0,
+                "Failed to {0} reboot {1} compute"
+                "node".format(cmds[cmd], compute['name']))
             self.wait_for_slave(compute)
             for vm in virt_nodes:
                 self.wait_for_slave(vm)
@@ -656,7 +618,6 @@ class TestVirtRoleBaremetal(TestBasic):
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["baremetal_deploy_virt_nodes_on_one_compute"])
     @log_snapshot_after_test
-    @setup_teardown(setup=check_net_template_presence)
     def baremetal_deploy_virt_nodes_on_one_compute(self):
         """Baremetal deployment of a cluster with virtual nodes in HA mode;
         all virtual nodes on the same compute
