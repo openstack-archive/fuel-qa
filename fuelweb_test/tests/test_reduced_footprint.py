@@ -12,16 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-import os
-import yaml
 
 from devops.helpers.helpers import wait
 from devops.helpers.ssh_client import SSHAuth
 from paramiko.ssh_exception import ChannelException
 from proboscis import asserts
 from proboscis import test
-
-from core.helpers.setup_teardown import setup_teardown
 
 from fuelweb_test.helpers import checkers
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
@@ -239,15 +235,6 @@ class TestVirtRole(TestBasic):
 class TestVirtRoleBaremetal(TestBasic):
     """Tests for virt role on baremetal servers"""
 
-    # pylint: disable=no-self-use
-    def check_net_template_presence(self):
-        """Check for network template availability before starting any test"""
-        if not (settings.RF_NET_TEMPLATE and
-                os.path.exists(settings.RF_NET_TEMPLATE)):
-            raise AssertionError("Template for reduced footprint environment "
-                                 "is not provided")
-    # pylint: enable=no-self-use
-
     @property
     def ssh_auth(self):
         """Returns SSHAuth instance for connecting to slaves through
@@ -302,15 +289,9 @@ class TestVirtRoleBaremetal(TestBasic):
         :param slave_ip: str, IP address of a slave node
         :return: int, total amount of RAM in GB on the given node
         """
-        with self.ssh_manager.get_remote(self.ssh_manager.admin_ip) as admin:
-            result = admin.execute_through_host(
-                slave_ip,
-                "grep -i memtotal /proc/meminfo | awk '{print $2}'",
-                auth=self.ssh_auth,
-                timeout=60)
-        asserts.assert_equal(
-            result['exit_code'], 0,
-            "Failed to get amount of RAM on {0} slave node".format(slave_ip))
+        cmd = "grep -i memtotal /proc/meminfo | awk '{print $2}'"
+        result = self.ssh_manager.check_call(slave_ip, cmd)
+
         # pylint: disable=no-member
         mem_in_gb = int(result['stdout'][0].strip()) // pow(1024, 2)
         # pylint: enable=no-member
@@ -379,22 +360,9 @@ class TestVirtRoleBaremetal(TestBasic):
              timeout_msg="{0} didn't appear online within {1} "
                          "seconds". format(slave['name'], timeout))
 
-    @staticmethod
-    def get_network_template(template, template_dir=settings.RF_NET_TEMPLATE):
-        """Download a network template from the provided local directory
-
-        :param template: str, template name
-        :param template_dir: str, template path
-        :return: dict
-        """
-        template_path = os.path.join(template_dir, '{0}.yaml'.format(template))
-        with open(template_path) as template_file:
-            return yaml.load(template_file)
-
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["baremetal_deploy_cluster_with_virt_node"])
     @log_snapshot_after_test
-    @setup_teardown(setup=check_net_template_presence)
     def baremetal_deploy_cluster_with_virt_node(self):
         """Baremetal deployment of cluster with one virtual node
 
@@ -481,7 +449,6 @@ class TestVirtRoleBaremetal(TestBasic):
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["baremetal_deploy_virt_nodes_on_different_computes"])
     @log_snapshot_after_test
-    @setup_teardown(setup=check_net_template_presence)
     def baremetal_deploy_virt_nodes_on_different_computes(self):
         """Baremetal deployment of a cluster with virtual nodes in HA mode;
         each virtual node on a separate compute
@@ -656,7 +623,6 @@ class TestVirtRoleBaremetal(TestBasic):
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["baremetal_deploy_virt_nodes_on_one_compute"])
     @log_snapshot_after_test
-    @setup_teardown(setup=check_net_template_presence)
     def baremetal_deploy_virt_nodes_on_one_compute(self):
         """Baremetal deployment of a cluster with virtual nodes in HA mode;
         all virtual nodes on the same compute
