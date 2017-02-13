@@ -69,6 +69,7 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
         self.update_cli_network_configuration(cluster_id)
 
         self.update_ssl_configuration(cluster_id)
+        self.set_public_networks_for_all_nodes(cluster_id)
         self.show_step(3)
         self.use_ceph_for_volumes(cluster_id)
         self.use_ceph_for_images(cluster_id)
@@ -149,6 +150,7 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
             jsonify=True
         )['stdout_json']
 
+        self.set_public_networks_for_all_nodes(cluster['id'])
         self.show_step(3)
         self.use_ceph_for_volumes(cluster['id'])
         self.use_ceph_for_images(cluster['id'])

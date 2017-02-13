@@ -68,6 +68,7 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
         self.update_cli_network_configuration(cluster_id)
 
         self.update_ssl_configuration(cluster_id)
+        self.set_public_networks_for_all_nodes(cluster_id)
         self.show_step(3)
         self.show_step(4)
         self.show_step(5)
