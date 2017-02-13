@@ -1,0 +1,233 @@
+adv_net_template:
+  default:
+    network_assignments:
+      fuelweb_admin:
+        ep: br-fw-admin
+      management:
+        ep: br-mgmt
+      private:
+        ep: br-prv
+      public:
+        ep: br-ex
+      storage:
+        ep: br-storage
+    network_scheme:
+      admin:
+        endpoints:
+        - br-fw-admin
+        roles:
+          admin/pxe: br-fw-admin
+          fw-admin: br-fw-admin
+        transformations:
+        - action: add-br
+          name: br-fw-admin
+        - action: add-port
+          bridge: br-fw-admin
+          name: <% if1 %>
+      mgmt-cpu:
+        endpoints:
+        - br-mgmt
+        roles:
+          ceilometer/api: br-mgmt
+          ceph/public: br-mgmt
+          glance/api: br-mgmt
+          heat/api: br-mgmt
+          horizon: br-mgmt
+          keystone/api: br-mgmt
+          management: br-mgmt
+          mgmt/api: br-mgmt
+          mgmt/corosync: br-mgmt
+          mgmt/database: br-mgmt
+          mgmt/memcache: br-mgmt
+          mgmt/messaging: br-mgmt
+          mgmt/vip: br-mgmt
+          mongo/db: br-mgmt
+          murano/api: br-mgmt
+          neutron/api: br-mgmt
+          nova/api: br-mgmt
+          nova/migration: br-mgmt
+          sahara/api: br-mgmt
+          swift/api: br-mgmt
+        transformations:
+        - action: add-br
+          name: br-mgmt
+        - action: add-port
+          bridge: br-mgmt
+          name: <% if1 %>.361
+      mgmt-ctrl:
+        endpoints:
+        - br-mgmt
+        roles:
+          ceilometer/api: br-mgmt
+          ceph/public: br-mgmt
+          glance/api: br-mgmt
+          heat/api: br-mgmt
+          horizon: br-mgmt
+          keystone/api: br-mgmt
+          management: br-mgmt
+          mgmt/api: br-mgmt
+          mgmt/corosync: br-mgmt
+          mgmt/database: br-mgmt
+          mgmt/memcache: br-mgmt
+          mgmt/messaging: br-mgmt
+          mgmt/vip: br-mgmt
+          mongo/db: br-mgmt
+          murano/api: br-mgmt
+          neutron/api: br-mgmt
+          nova/api: br-mgmt
+          nova/migration: br-mgmt
+          sahara/api: br-mgmt
+          swift/api: br-mgmt
+        transformations:
+        - action: add-br
+          name: br-mgmt
+        - action: add-port
+          bridge: br-mgmt
+          name: <% if4 %>
+      private-cpu:
+        endpoints:
+        - br-prv
+        roles:
+          neutron/mesh: br-prv
+          neutron/private: br-prv
+        transformations:
+        - action: add-br
+          name: br-aux
+        - action: add-br
+          name: br-prv
+          provider: ovs
+        - action: add-patch
+          bridges:
+          - br-prv
+          - br-aux
+          mtu: 65000
+          provider: ovs
+        - action: add-port
+          bridge: br-aux
+          name: <% if1 %>
+      public-cpu:
+        endpoints:
+        - br-ex
+        roles:
+          ceph/radosgw: br-ex
+          cinder/api: br-ex
+          ex: br-ex
+          neutron/floating: br-floating
+        transformations:
+        - action: add-br
+          name: br-ex
+        - action: add-br
+          name: br-floating
+          provider: ovs
+        - action: add-patch
+          bridges:
+          - br-floating
+          - br-ex
+          mtu: 65000
+          provider: ovs
+        - action: add-port
+          bridge: br-ex
+          name: <% if1 %>.271
+      public-ctrl:
+        endpoints:
+        - br-prv
+        - br-ex
+        roles:
+          ceph/radosgw: br-ex
+          cinder/api: br-ex
+          ex: br-ex
+          neutron/floating: br-floating
+          neutron/mesh: br-prv
+          neutron/private: br-prv
+          public/vip: br-ex
+        transformations:
+        - action: add-br
+          name: br-ex
+        - action: add-br
+          name: br-floating
+          provider: ovs
+        - action: add-patch
+          bridges:
+          - br-floating
+          - br-ex
+          mtu: 65000
+          provider: ovs
+        - action: add-port
+          bridge: br-ex
+          name: <% if2 %>
+      private-ctrl:
+        endpoints:
+        - br-prv
+        roles:
+          neutron/mesh: br-prv
+          neutron/private: br-prv
+        transformations:
+        - action: add-br
+          name: br-prv
+          provider: ovs
+        - action: add-port
+          bridge: br-prv
+          name: <% if5 %>
+          provider: ovs
+      storage-cpu:
+        endpoints:
+        - br-storage
+        roles:
+          ceph/replication: br-storage
+          cinder/iscsi: br-storage
+          storage: br-storage
+          swift/replication: br-storage
+        transformations:
+        - action: add-br
+          name: br-storage
+        - action: add-port
+          bridge: br-storage
+          name: <% if1 %>.360
+      storage-ctrl:
+        endpoints:
+        - br-storage
+        roles:
+          ceph/replication: br-storage
+          cinder/iscsi: br-storage
+          storage: br-storage
+          swift/replication: br-storage
+        transformations:
+        - action: add-br
+          name: br-storage
+        - action: add-port
+          bridge: br-storage
+          name: <% if3 %>
+    nic_mapping:
+      default:
+        if1: eth0
+        if2: eth1
+        if3: eth2
+        if4: eth3
+        if5: eth4
+      node-1:
+        if1: enp0s3
+    templates_for_node_role:
+      compute:
+      - admin
+      - mgmt-cpu
+      - public-cpu
+      - private-cpu
+      - storage-cpu
+      controller:
+      - admin
+      - mgmt-ctrl
+      - private-ctrl
+      - public-ctrl
+      - storage-ctrl
+      virt:
+      - admin
+      - mgmt-cpu
+      - private-cpu
+      - public-cpu
+      - storage-cpu
+      cinder:
+      - admin
+      - mgmt-cpu
+      - private-cpu
+      - public-cpu
+      - storage-cpu
