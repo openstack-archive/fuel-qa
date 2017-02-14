@@ -377,8 +377,7 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
             )
             self.ssh_manager.update_connection(
                 ip=self.ssh_manager.admin_ip,
-                login=new_login,
-                password=new_password
+                port=22
             )
             logger.debug("Admin node password has changed.")
         logger.info("Admin node login name: '{0}' , password: '{1}'".
