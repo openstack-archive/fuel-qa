@@ -20,12 +20,12 @@ import traceback
 
 from devops.helpers.ssh_client import SSHAuth
 from devops.helpers import helpers
-from keystoneauth1.exceptions import HttpError
 from keystoneauth1.exceptions import NotFound
 import netaddr
 from proboscis import asserts
 from proboscis import test
 
+from fuelweb_test.helpers.checkers import check_response_code
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers import utils
@@ -83,19 +83,6 @@ class ServicesReconfiguration(TestBasic):
                 devops_node)['status'] == status, timeout=timeout,
             timeout_msg="Timeout exceeded while waiting for "
                         "node status: {0}".format(status))
-
-    @staticmethod
-    def check_response_code(expected_code, err_msg,
-                            func, *args, **kwargs):
-        try:
-            func(*args, **kwargs)
-        except HttpError as e:
-            if e.http_status != expected_code:
-                raise
-            logger.warning('Ignoring exception: {!r}'.format(e))
-            logger.debug(traceback.format_exc())
-        else:
-            raise Exception(err_msg)
 
     @staticmethod
     def change_default_range(networks, number_excluded_ips,
@@ -1190,7 +1177,7 @@ class ServicesReconfiguration(TestBasic):
         self.show_step(5)
         expected_code = 403
         err_msg = 'A configuration was applied for env in deploying state'
-        self.check_response_code(
+        check_response_code(
             expected_code, err_msg,
             self.fuel_web.client.upload_configuration,
             config, cluster_id)
@@ -1201,7 +1188,7 @@ class ServicesReconfiguration(TestBasic):
         self.show_step(7)
         self.show_step(8)
         err_msg = 'A configuration was applied for node in provisioning state'
-        self.check_response_code(
+        check_response_code(
             expected_code, err_msg,
             self.fuel_web.client.upload_configuration,
             config, cluster_id, node_id=target_node_id)
@@ -1212,7 +1199,7 @@ class ServicesReconfiguration(TestBasic):
         self.show_step(10)
         self.show_step(11)
         err_msg = 'A configuration was applied for node in deploying state'
-        self.check_response_code(
+        check_response_code(
             expected_code, err_msg,
             self.fuel_web.client.upload_configuration,
             config, cluster_id, node_id=target_node_id)
