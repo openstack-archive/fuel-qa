@@ -1462,10 +1462,11 @@ def check_package_version(ip, package_name, expected_version, condition='ge'):
     :param package_name: package name to check
     :param expected_version: expected version of package
     :param condition: predicate can be on of eq, ne, lt, le, ge, gt
+    :param bootstrap: bool, connect to bootstrap node or not
     :return None: or raise UnexpectedExitCode
     """
-    cmd = "dpkg -s {0} " \
-          "| awk -F': ' '/Version/ {{print \$2}}'".format(package_name)
+    cmd = ("dpkg -s {0} "
+           "| awk -F': ' '/Version/ {{print $2}}'".format(package_name))
     logger.debug(cmd)
     result = ssh_manager.execute_on_remote(
         ip,
