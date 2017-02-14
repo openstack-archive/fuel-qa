@@ -25,7 +25,6 @@ from fuelweb_test.settings import MULTIPATH
 from fuelweb_test.settings import MULTIPATH_TEMPLATE
 from fuelweb_test.settings import NEUTRON_SEGMENT
 from fuelweb_test.settings import SLAVE_MULTIPATH_DISKS_COUNT
-from fuelweb_test.settings import SSH_FUEL_CREDENTIALS
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS
 from fuelweb_test.settings import REPLACE_DEFAULT_REPOS_ONLY_ONCE
 from fuelweb_test.tests import base_test_case
@@ -53,9 +52,7 @@ class TestMultipath(base_test_case.TestBasic):
         """
         cmd = "multipath -l -v2"
 
-        ssh_manager.update_connection(ip, SSH_FUEL_CREDENTIALS['login'],
-                                      SSH_FUEL_CREDENTIALS['password'],
-                                      keys=ssh_manager._get_keys())
+        ssh_manager.update_connection(ip)
         ssh_manager.get_remote(ip)
         result = ssh_manager.execute_on_remote(
             ip=ip,
@@ -106,9 +103,7 @@ class TestMultipath(base_test_case.TestBasic):
         """
         cmd = "lsblk -lo NAME,TYPE,MOUNTPOINT | grep '/$' | grep -c lvm"
 
-        ssh_manager.update_connection(ip, SSH_FUEL_CREDENTIALS['login'],
-                                      SSH_FUEL_CREDENTIALS['password'],
-                                      keys=ssh_manager._get_keys())
+        ssh_manager.update_connection(ip)
         ssh_manager.get_remote(ip)
         result = ssh_manager.execute_on_remote(
             ip=ip,
