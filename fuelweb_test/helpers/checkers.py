@@ -830,7 +830,8 @@ def verify_bootstrap_on_node(ip, os_type, uuid=None):
     logger.info("Verify bootstrap on slave {0}".format(ip))
 
     cmd = 'cat /etc/*release'
-    output = ssh_manager.execute_on_remote(ip, cmd)['stdout_str'].lower()
+    output = ssh_manager.execute_on_remote(ip, cmd,
+                                           sudo=False)['stdout_str'].lower()
     assert_true(os_type in output,
                 "Slave {0} doesn't use {1} image for bootstrap "
                 "after {1} images were enabled, /etc/release "
@@ -839,7 +840,8 @@ def verify_bootstrap_on_node(ip, os_type, uuid=None):
         return
 
     cmd = "cat /etc/nailgun-agent/config.yaml"
-    output = yaml.load(ssh_manager.execute_on_remote(ip, cmd)['stdout_str'])
+    output = yaml.load(ssh_manager.execute_on_remote(ip, cmd,
+                                                     sudo=False)['stdout_str'])
     actual_uuid = output.get("runtime_uuid")
     assert_equal(actual_uuid, uuid,
                  "Actual uuid {0} is not the same as expected {1}"
@@ -1455,22 +1457,25 @@ def check_free_space_slave(env, min_disk_slave=150):
 
 
 @logwrap
-def check_package_version(ip, package_name, expected_version, condition='ge'):
+def check_package_version(ip, package_name, expected_version, condition='ge',
+                          bootstrap=False):
     """Check that package version equal/not equal/greater/less than expected
 
     :param ip: ip
     :param package_name: package name to check
     :param expected_version: expected version of package
     :param condition: predicate can be on of eq, ne, lt, le, ge, gt
+    :param bootstrap: bool, connect to bootstrap node or not
     :return None: or raise UnexpectedExitCode
     """
-    cmd = "dpkg -s {0} " \
-          "| awk -F': ' '/Version/ {{print \$2}}'".format(package_name)
+    cmd = ("dpkg -s {0} "
+           "| awk -F': ' '/Version/ {{print $2}}'".format(package_name))
     logger.debug(cmd)
     result = ssh_manager.execute_on_remote(
         ip,
         cmd=cmd,
-        assert_ec_equal=[0]
+        assert_ec_equal=[0],
+        sudo=not bootstrap
     )
     version = result['stdout_str']
     logger.info('{} ver is {}'.format(package_name, version))
@@ -1481,7 +1486,7 @@ def check_package_version(ip, package_name, expected_version, condition='ge'):
     cmd = 'dpkg --compare-versions {0} {1} {2}'.format(version, condition,
                                                        expected_version)
     ssh_manager.execute_on_remote(ip, cmd, assert_ec_equal=[0],
-                                  err_msg=err_msg)
+                                  err_msg=err_msg, sudo=not bootstrap)
 
 
 def check_firewall_driver(ip, node_role, firewall_driver):

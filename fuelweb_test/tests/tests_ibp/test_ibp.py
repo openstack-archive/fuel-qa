@@ -60,7 +60,8 @@ class IBPTest(TestBasic):
 
         node = self.env.d_env.get_node(name__in=["slave-01"])
         _ip = self.fuel_web.get_nailgun_node_by_devops_node(node)['ip']
-        check_package_version(_ip, 'mcollective', '2.3.3', 'ge')
+        check_package_version(_ip, 'mcollective', '2.3.3', 'ge',
+                              bootstrap=True)
 
         self.show_step(2)
         cluster_id = self.fuel_web.create_cluster(
