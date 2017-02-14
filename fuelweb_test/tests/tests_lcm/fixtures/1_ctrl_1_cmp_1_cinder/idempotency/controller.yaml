@@ -49,8 +49,6 @@ tasks:
   - openstack-haproxy-aodh: null
   - murano-cfapi:
       no_puppet_run: true
-  - vmware-vcenter:
-      no_puppet_run: true
   - ironic-compute:
       no_puppet_run: true
   - primary-openstack-network-agents-metadata: null
@@ -171,8 +169,6 @@ tasks:
   - primary-database:
       skip:
       - File[/root/.my.cnf]
-  - vcenter_compute_zones_create:
-      type: shell
   - openstack-haproxy-cinder: null
   - ntp-server: null
   - murano-keystone:

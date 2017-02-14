@@ -26,9 +26,6 @@ from fuelweb_test.tests.tests_lcm.base_lcm_test import TASKS_BLACKLIST
 
 
 EXCLUDED_TASKS_FROM_COVERAGE = [
-    "top-role-cinder-vmware",
-    "top-role-compute-vmware",
-    "vmware-vcenter",
     "generate_vms",
     "plugins_rsync",
     "plugins_setup_repositories",
