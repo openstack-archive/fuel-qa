@@ -322,11 +322,6 @@ Test Ubuntu Cloud Archive
 .. automodule:: fuelweb_test.tests.tests_uca.test_uca
    :members:
 
-Test Vcenter
-------------
-.. automodule:: fuelweb_test.tests.test_vcenter
-   :members:
-
 Test Ironic
 -----------
 .. automodule:: fuelweb_test.tests.test_ironic_base

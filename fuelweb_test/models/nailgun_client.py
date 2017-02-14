@@ -88,22 +88,10 @@ class NailgunClient(object):
         return self._get(
             url="/clusters/{}/attributes/".format(cluster_id)).json()
 
-    def get_cluster_vmware_attributes(self, cluster_id):
-        return self._get(
-            url="/clusters/{}/vmware_attributes/".format(cluster_id),
-        ).json()
-
     @logwrap
     def update_cluster_attributes(self, cluster_id, attrs):
         return self._put(
             "/clusters/{}/attributes/".format(cluster_id),
-            json=attrs
-        ).json()
-
-    @logwrap
-    def update_cluster_vmware_attributes(self, cluster_id, attrs):
-        return self._put(
-            "/clusters/{}/vmware_attributes/".format(cluster_id),
             json=attrs
         ).json()
 
