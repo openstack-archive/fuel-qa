@@ -71,8 +71,6 @@ tasks:
       resources: []
   - murano-cfapi:
       no_puppet_run: true
-  - vmware-vcenter:
-      no_puppet_run: true
   - ironic-compute:
       resources: []
   - primary-openstack-network-agents-metadata:
@@ -278,8 +276,6 @@ tasks:
       resources:
       - File[mysql-config-file]
       - File[/root/.my.cnf]
-  - vcenter_compute_zones_create:
-      type: shell
   - openstack-haproxy-cinder:
       resources:
       - File[/etc/haproxy/conf.d/070-cinder-api.cfg]

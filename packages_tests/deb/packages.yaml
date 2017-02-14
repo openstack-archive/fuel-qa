@@ -860,7 +860,6 @@ deployment:
       - neutron-plugin-plumgrid
       - neutron-plugin-ryu
       - neutron-plugin-ryu-agent
-      - neutron-plugin-vmware
       - neutron-plugin-vpn-agent
       - neutron-server
       - neutron-vpn-agent
@@ -1602,7 +1601,6 @@ deployment:
       - ceph
       - cgroup-lite
       - cirros-testvm
-      - cirros-testvmware
       - cloud-init
       - cluster-glue
       - conntrack
@@ -1831,7 +1829,6 @@ deployment:
       - python-oslo.i18n
       - python-oslo.serialization
       - python-oslo.utils
-      - python-oslo.vmware
       - python-osprofiler
       - python-pam
       - python-pecan

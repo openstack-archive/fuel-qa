@@ -14,7 +14,6 @@
 
 from .base import BaseActions
 from .fuelmaster_actions import FuelMasterActions
-from .vcenter_actions import VMwareActions
 from .strength_actions import StrengthActions
 from .strength_actions import FillRootActions
 
@@ -22,7 +21,6 @@ from .strength_actions import FillRootActions
 __all__ = [
     'BaseActions',
     'FuelMasterActions',
-    'VMwareActions',
     'StrengthActions',
     'FillRootActions'
 ]
