@@ -37,7 +37,6 @@ from system_test import deferred_decorator
 
 from system_test.actions.ostf_actions import HealthCheckActions
 from system_test.actions.plugins_actions import PluginsActions
-from system_test.actions.vcenter_actions import VMwareActions
 
 from system_test.core.discover import load_yaml
 from system_test.helpers.decorators import make_snapshot_if_step_fail
@@ -192,8 +191,7 @@ class PrepareActions(object):
 
 
 # noinspection PyUnresolvedReferences
-class BaseActions(PrepareActions, HealthCheckActions, PluginsActions,
-                  VMwareActions):
+class BaseActions(PrepareActions, HealthCheckActions, PluginsActions):
     """Basic actions for acceptance cases
 
     For choosing action order use actions_order variable, set list of actions
@@ -456,15 +454,6 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions,
                 self._add_node([node])
             elif node['action'] == 'delete':
                 self._del_node([node])
-                if 'compute-vmware' in node['roles']:
-                    self.del_vmware_nova_compute()
-            elif node['action'] == 'reconfigure':
-                if node.get('vmware_vcenter'):
-                    nova_computes = node['vmware_vcenter']['nova-compute']
-                    self.add_vmware_nova_compute(nova_computes)
-                if node.get('vmware_dvs'):
-                    dvs_settings = node['vmware_dvs']
-                    self.update_dvs_plugin_settings(dvs_settings)
             else:
                 logger.error("Unknown scale action: {}".format(node['action']))
         self.scale_step += 1
@@ -538,66 +527,6 @@ class BaseActions(PrepareActions, HealthCheckActions, PluginsActions,
                 logger.error("Unknown power switch action: "
                              "{}".format(node['action']))
         self.power_step += 1
-
-    def add_vmware_nova_compute(self, nova_computes):
-        vmware_attr = \
-            self.fuel_web.client.get_cluster_vmware_attributes(self.cluster_id)
-        vcenter_data = vmware_attr['editable']['value']['availability_zones'][
-            0]["nova_computes"]
-
-        comp_vmware_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            self.cluster_id, ['compute-vmware'], role_status='pending_roles')
-
-        comp_vmware_nodes = [n for n in comp_vmware_nodes if
-                             n['pending_addition']]
-
-        for instance in nova_computes:
-            cluster_name = instance['cluster']
-            srv_name = instance['srv_name']
-            datastore = instance['datastore']
-            if instance['target_node'] == 'compute-vmware':
-                node = comp_vmware_nodes.pop()
-                target_node = node['hostname']
-            else:
-                target_node = instance['target_node']
-
-            vcenter_data[:] = [n for n in vcenter_data if
-                               cluster_name != n['vsphere_cluster']]
-
-            vcenter_data.append(
-                {"vsphere_cluster": cluster_name,
-                 "service_name": srv_name,
-                 "datastore_regex": datastore,
-                 "target_node": {
-                     "current": {"id": target_node,
-                                 "label": target_node},
-                     "options": [{"id": target_node,
-                                  "label": target_node}, ]},
-                 }
-            )
-
-        logger.debug("Try to update cluster with next "
-                     "vmware_attributes {0}".format(vmware_attr))
-        self.fuel_web.client.update_cluster_vmware_attributes(
-            self.cluster_id, vmware_attr)
-
-    def del_vmware_nova_compute(self):
-        vmware_attr = \
-            self.fuel_web.client.get_cluster_vmware_attributes(self.cluster_id)
-        vcenter_data = vmware_attr['editable']['value']['availability_zones'][
-            0]["nova_computes"]
-
-        comp_vmware_nodes = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
-            self.cluster_id, ['compute-vmware'])
-        comp_vmware_nodes = [node for node in comp_vmware_nodes if
-                             node['pending_deletion'] is True]
-
-        for node, nova_comp in itertools.product(comp_vmware_nodes,
-                                                 vcenter_data):
-            if node['hostname'] == nova_comp['target_node']['current']['id']:
-                vcenter_data.remove(nova_comp)
-        self.fuel_web.client.update_cluster_vmware_attributes(self.cluster_id,
-                                                              vmware_attr)
 
     @deferred_decorator([make_snapshot_if_step_fail])
     @action

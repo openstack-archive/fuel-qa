@@ -59,11 +59,6 @@ Strength actions
 .. automodule:: system_test.actions.strength_actions
    :members:
 
-VCenter actions
----------------
-.. automodule:: system_test.actions.vcenter_actions
-   :members:
-
 General tests
 =============
 
@@ -131,24 +126,6 @@ Example plugin
 Example plugin v3
 -----------------
 .. automodule:: system_test.tests.plugins.plugin_example.test_plugin_example_v3
-    :members:
-
-vCenter tests
-=============
-
-vCenter/DVS
------------
-.. automodule:: system_test.tests.vcenter.test_vcenter_dvs
-    :members:
-
-vCenter/DVS failover
---------------------
-.. automodule:: system_test.tests.vcenter.test_vcenter_failover
-    :members:
-
-vCenter/DVS cluster actions
----------------------------
-.. automodule:: system_test.tests.vcenter.test_vcenter_cluster_actions
     :members:
 
 Helpers
