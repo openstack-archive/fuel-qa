@@ -25,9 +25,10 @@ from warnings import warn
 
 import devops
 from devops.helpers.metaclasses import SingletonMeta
+from devops.helpers.ssh_client import SSHAuth
 from devops.helpers.ssh_client import SSHClient
 from paramiko import RSAKey
-from paramiko.ssh_exception import AuthenticationException
+from paramiko import SSHException
 import six
 
 from fuelweb_test import logger
@@ -133,8 +134,15 @@ class SSHManager(six.with_metaclass(SingletonMeta, object)):
         self.slave_login = slave_login
         self.__slave_password = slave_password
 
-    @staticmethod
-    def _connect(remote):
+    def _get_keys(self):
+        keys = []
+        admin_remote = self.get_remote(self.admin_ip)
+        key_string = '/root/.ssh/id_rsa'
+        with admin_remote.open(key_string) as f:
+            keys.append(RSAKey.from_private_key(f))
+        return keys
+
+    def connect(self, remote):
         """ Check if connection is stable and return this one
 
         :param remote:
@@ -146,20 +154,73 @@ class SSHManager(six.with_metaclass(SingletonMeta, object)):
                     seconds=5,
                     error_message="Socket timeout! Forcing reconnection"):
                 remote.check_call("cd ~")
-        except:
+        except Exception:
             logger.debug(traceback.format_exc())
-            logger.info('SSHManager: Check for current connection fails. '
-                        'Trying to reconnect')
-            remote.reconnect()
+            logger.debug('SSHManager: Check for current connection fails. '
+                         'Trying to reconnect')
+            remote = self.reconnect(remote)
         return remote
 
-    def _get_keys(self):
-        keys = []
-        admin_remote = self.get_remote(self.admin_ip)
-        key_string = '/root/.ssh/id_rsa'
-        with admin_remote.open(key_string) as f:
-            keys.append(RSAKey.from_private_key(f))
-        return keys
+    def reconnect(self, remote):
+        """ Reconnect to remote or update connection
+
+        :param remote:
+        :return:
+        """
+        ip = remote.hostname
+        port = remote.port
+        try:
+            remote.reconnect()
+        except SSHException:
+            self.update_connection(ip=ip, port=port)
+        return self.connections[(ip, port)]
+
+    def init_remote(self, ip, port=22):
+        """ Initialise connection to remote
+
+        :param ip: IP of host
+        :type ip: str
+        :param port: port for SSH
+        :type port: int
+        """
+        logger.debug('SSH_MANAGER: Create new connection for '
+                     '{ip}:{port}'.format(ip=ip, port=port))
+
+        keys = self._get_keys() if ip != self.admin_ip else []
+        if ip == self.admin_ip:
+            ssh_client = SSHClient(
+                host=ip,
+                port=port,
+                auth=SSHAuth(
+                    username=self.admin_login,
+                    password=self.__admin_password,
+                    keys=keys)
+            )
+            ssh_client.sudo_mode = SSH_FUEL_CREDENTIALS['sudo']
+        else:
+            try:
+                ssh_client = SSHClient(
+                    host=ip,
+                    port=port,
+                    auth=SSHAuth(
+                        username=self.slave_login,
+                        password=self.__slave_password,
+                        keys=keys)
+                )
+            except SSHException:
+                ssh_client = SSHClient(
+                    host=ip,
+                    port=port,
+                    auth=SSHAuth(
+                        username=self.slave_fallback_login,
+                        password=self.__slave_password,
+                        keys=keys)
+                )
+            ssh_client.sudo_mode = SSH_SLAVE_CREDENTIALS['sudo']
+
+        self.connections[(ip, port)] = ssh_client
+        logger.debug('SSH_MANAGER: New connection for '
+                     '{ip}:{port} is created'.format(ip=ip, port=port))
 
     def get_remote(self, ip, port=22):
         """ Function returns remote SSH connection to node by ip address
@@ -170,75 +231,33 @@ class SSHManager(six.with_metaclass(SingletonMeta, object)):
         :type port: int
         :rtype: SSHClient
         """
-        if (ip, port) not in self.connections:
-            logger.debug('SSH_MANAGER: Create new connection for '
+        if (ip, port) in self.connections:
+            logger.debug('SSH_MANAGER: Return existed connection for '
                          '{ip}:{port}'.format(ip=ip, port=port))
-
-            keys = self._get_keys() if ip != self.admin_ip else []
-            if ip == self.admin_ip:
-                ssh_client = SSHClient(
-                    host=ip,
-                    port=port,
-                    username=self.admin_login,
-                    password=self.__admin_password,
-                    private_keys=keys
-                )
-                ssh_client.sudo_mode = SSH_FUEL_CREDENTIALS['sudo']
-            else:
-                try:
-                    ssh_client = SSHClient(
-                        host=ip,
-                        port=port,
-                        username=self.slave_login,
-                        password=self.__slave_password,
-                        private_keys=keys
-                    )
-                except AuthenticationException:
-                    ssh_client = SSHClient(
-                        host=ip,
-                        port=port,
-                        username=self.slave_fallback_login,
-                        password=self.__slave_password,
-                        private_keys=keys
-                    )
-                ssh_client.sudo_mode = SSH_SLAVE_CREDENTIALS['sudo']
-            self.connections[(ip, port)] = ssh_client
-        logger.debug('SSH_MANAGER: Return existed connection for '
-                     '{ip}:{port}'.format(ip=ip, port=port))
+        else:
+            self.init_remote(ip=ip, port=port)
         logger.debug('SSH_MANAGER: Connections {0}'.format(self.connections))
-        return self._connect(self.connections[(ip, port)])
+        return self.connect(self.connections[(ip, port)])
 
-    def update_connection(self, ip, login=None, password=None,
-                          keys=None, port=22):
+    def update_connection(self, ip, port=22):
         """Update existed connection
 
         :param ip: host ip string
-        :param login: login string
-        :param password: password string
-        :param keys: list of keys
         :param port: ssh port int
         :return: None
         """
         if (ip, port) in self.connections:
-            logger.info('SSH_MANAGER: Close connection for {ip}:{port}'.format(
-                ip=ip, port=port))
-            self.connections[(ip, port)].clear()
-            logger.info('SSH_MANAGER: Create new connection for '
-                        '{ip}:{port}'.format(ip=ip, port=port))
-
-        self.connections[(ip, port)] = SSHClient(
-            host=ip,
-            port=port,
-            username=login,
-            password=password,
-            private_keys=keys if keys is not None else []
-        )
+            logger.debug('SSH_MANAGER: Close connection for {ip}:{port}'
+                         .format(ip=ip, port=port))
+            ssh_client = self.connections.pop((ip, port))
+            ssh_client.close()
+        self.init_remote(ip=ip, port=port)
 
     def clean_all_connections(self):
         for (ip, port), connection in self.connections.items():
             connection.clear()
-            logger.info('SSH_MANAGER: Close connection for {ip}:{port}'.format(
-                ip=ip, port=port))
+            logger.debug('SSH_MANAGER: Close connection for {ip}:{port}'
+                         .format(ip=ip, port=port))
 
     def execute(self, ip, cmd, port=22, sudo=None):
         remote = self.get_remote(ip=ip, port=port)
