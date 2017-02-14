@@ -90,7 +90,6 @@ bvt_2:
    - vcsrepo
    - virtual_ips
    - xinetd
-   - vmware
    - wait_for_backend
    - wait_for_keystone_backends
    - wait_for_glance_backends

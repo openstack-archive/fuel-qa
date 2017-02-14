@@ -368,27 +368,7 @@ PATCH_PATH = os.environ.get(
     'PATCH_PATH', '/tmp/fuel-ostf')
 
 KVM_USE = get_var_as_bool('KVM_USE', False)
-VCENTER_USE = get_var_as_bool('VCENTER_USE', False)
 DEBUG_MODE = get_var_as_bool('DEBUG_MODE', True)
-
-# vCenter tests
-VCENTER_IP = os.environ.get('VCENTER_IP')
-VCENTER_USERNAME = os.environ.get('VCENTER_USERNAME')
-VCENTER_PASSWORD = os.environ.get('VCENTER_PASSWORD')
-VCENTER_CERT_BYPASS = get_var_as_bool('VCENTER_CERT_BYPASS', True)
-VCENTER_CERT_URL = os.environ.get('VCENTER_CERT_URL')
-VCENTER_DATACENTER = os.environ.get('VC_DATACENTER')
-VCENTER_DATASTORE = os.environ.get('VC_DATASTORE')
-VCENTER_GLANCE_IP = os.environ.get('VCENTER_GLANCE_IP')
-VCENTER_GLANCE_USERNAME = os.environ.get('VCENTER_GLANCE_USERNAME')
-VCENTER_GLANCE_PASSWORD = os.environ.get('VCENTER_GLANCE_PASSWORD')
-VCENTER_GLANCE_CERT_BYPASS = get_var_as_bool('VCENTER_GLANCE_CERT_BYPASS',
-                                             True)
-VCENTER_GLANCE_CERT_URL = os.environ.get('VCENTER_GLANCE_CERT_URL')
-VMWARE_IMG_URL = os.environ.get('VMWARE_IMG_URL')
-VMWARE_IMG_NAME = os.environ.get('VMWARE_IMG_NAME')
-VMWARE_IMG_LOGIN = os.environ.get('VMWARE_IMG_LOGIN')
-VMWARE_IMG_PASSWORD = os.environ.get('VMWARE_IMG_PASSWORD')
 
 # Services tests
 SERVTEST_LOCAL_PATH = os.environ.get('SERVTEST_LOCAL_PATH', '/tmp')
@@ -510,8 +490,6 @@ PLUGIN_PACKAGE_VERSION = os.environ.get('PLUGIN_PACKAGE_VERSION', '')
 CONTRAIL_PLUGIN_PATH = os.environ.get('CONTRAIL_PLUGIN_PATH')
 CONTRAIL_PLUGIN_PACK_UB_PATH = os.environ.get('CONTRAIL_PLUGIN_PACK_UB_PATH')
 CONTRAIL_PLUGIN_PACK_CEN_PATH = os.environ.get('CONTRAIL_PLUGIN_PACK_CEN_PATH')
-DVS_PLUGIN_PATH = os.environ.get('DVS_PLUGIN_PATH')
-DVS_PLUGIN_VERSION = os.environ.get('DVS_PLUGIN_VERSION')
 GLUSTER_PLUGIN_PATH = os.environ.get('GLUSTER_PLUGIN_PATH')
 GLUSTER_CLUSTER_ENDPOINT = os.environ.get('GLUSTER_CLUSTER_ENDPOINT')
 EXAMPLE_PLUGIN_PATH = os.environ.get('EXAMPLE_PLUGIN_PATH')
