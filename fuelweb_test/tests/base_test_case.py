@@ -378,7 +378,8 @@ class SetupEnvironment(TestBasic):
         """
         self.check_run("ready")
         self.show_step(1, initialize=True)
-        self.env.revert_snapshot("empty", skip_timesync=True)
+        self.env.revert_snapshot("empty", skip_timesync=True,
+                                 skip_slaves_check=True)
 
         self.fuel_web.get_nailgun_version()
         self.fuel_web.change_default_network_settings()
