@@ -1182,7 +1182,7 @@ class TestHaFailoverBase(TestBasic):
                 wait_pass(
                     lambda: assert_equal(
                         remote_controller.execute(
-                            'service corosync start && service pacemaker '
+                            'service corosync restart && service pacemaker '
                             'restart')['exit_code'], 0,
                         'Corosync was not started, see debug log,'
                         ' count-{0}'.format(count)), timeout=20)
