@@ -40,7 +40,7 @@ def fuel_master_migration(request):
 
 @pytest.mark.get_logs
 @pytest.mark.fail_snapshot
-@pytest.mark.thread_1
+@pytest.mark.fuel_master_migrate
 class TestFuelMasterMigrate(object):
 
     compute = None
