@@ -68,7 +68,7 @@ class CommandLine(TestBasic):
 
     @logwrap
     def get_network_filename(self, cluster_id):
-        cmd = ('fuel --env {0} network --download --dir /tmp --json'
+        cmd = ('fuel2 env network download {0} -d /tmp -f json'
                .format(cluster_id))
         out = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
@@ -98,7 +98,7 @@ class CommandLine(TestBasic):
             ip=self.ssh_manager.admin_ip,
             cmd=cmd
         )
-        cmd = ('cd /tmp; fuel --env {0} network --upload --json'
+        cmd = ('cd /tmp; fuel2 env network upload {0} -f json'
                .format(cluster_id))
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
@@ -264,7 +264,7 @@ class CommandLine(TestBasic):
         return networks['public_vip']
 
     def download_settings(self, cluster_id):
-        cmd = ('fuel --env {0} settings --download --dir /tmp --json'.format(
+        cmd = ('fuel2 env settings download {0} -d /tmp -f json'.format(
             cluster_id))
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
@@ -272,21 +272,22 @@ class CommandLine(TestBasic):
         )
         out = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd='cd /tmp && cat settings_{0}.json'.format(cluster_id),
+            cmd='cd /tmp && cat environment_{0}/settings.json'.format(
+                cluster_id),
             jsonify=True
         )['stdout_json']
         return out
 
     def upload_settings(self, cluster_id, settings):
         data = json.dumps(settings)
-        cmd = 'cd /tmp && echo {data} > settings_{id}.json'.format(
+        cmd = 'cd /tmp && echo {data} > environment_{id}/settings.json'.format(
             data=json.dumps(data),
             id=cluster_id)
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd=cmd
         )
-        cmd = ('fuel --env {0} settings --upload --dir /tmp --json'.format(
+        cmd = ('fuel2 env settings upload {0} -d /tmp -f json'.format(
             cluster_id))
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
@@ -303,8 +304,8 @@ class CommandLine(TestBasic):
         if isinstance(node_ids, int):
             node_ids_str = str(node_ids)
         else:
-            node_ids_str = ','.join(str(n) for n in node_ids)
-        cmd = ('fuel --env-id={0} node set --node {1} --role={2}'.format(
+            node_ids_str = ' '.join(str(n) for n in node_ids)
+        cmd = ('fuel2 env add nodes -e {0} -n {1} -r {2}'.format(
             cluster_id, node_ids_str, ','.join(roles)))
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
@@ -396,8 +397,8 @@ class CommandLine(TestBasic):
 
     @logwrap
     def download_node_interfaces(self, node_id):
-        cmd = ' fuel node --node-id {} --network --download --dir' \
-              ' /tmp --json'.format(node_id)
+        cmd = ' fuel2 node interfaces download {} -d /tmp -f json' \
+              ''.format(node_id)
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd=cmd
@@ -418,8 +419,8 @@ class CommandLine(TestBasic):
             ip=self.ssh_manager.admin_ip,
             cmd=cmd
         )
-        cmd = ('fuel node --node-id {} --network --upload --dir /tmp'
-               ' --json'.format(node_id))
+        cmd = ('fuel2 node interfaces upload {} -d /tmp -f json'
+               ''.format(node_id))
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd=cmd

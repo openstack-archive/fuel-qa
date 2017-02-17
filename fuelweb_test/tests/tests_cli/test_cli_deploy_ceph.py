@@ -11,6 +11,7 @@
 #    WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
 #    License for the specific language governing permissions and limitations
 #    under the License.
+import re
 
 from proboscis import test
 
@@ -55,8 +56,8 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
 
         self.show_step(1, initialize=True)
         self.show_step(2)
-        cmd = ('fuel env create --name={0} --release={1} '
-               '--nst=tun --json'.format(self.__class__.__name__,
+        cmd = ('fuel2 env create {0} -r {1} '
+               '-nst tun -f json'.format(self.__class__.__name__,
                                          release_id))
         env_result = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
@@ -90,13 +91,14 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
         self.show_step(9)
         self.fuel_web.verify_network(cluster_id)
         self.show_step(10)
-        cmd = 'fuel --env-id={0} deploy-changes --json'.format(cluster_id)
+        cmd = 'fuel2 env deploy {0}'.format(cluster_id)
 
         task = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd=cmd,
-            jsonify=True
-        )['stdout_json']
+            cmd=cmd
+        )
+        task_id = re.findall('id (\d+)', task['stdout_str'])
+        task = {'id': task_id[0], 'name': 'deploy'}
         self.assert_cli_task_success(task, timeout=130 * 60)
 
         self.show_step(11)
@@ -140,11 +142,11 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
 
         self.show_step(1)
         self.show_step(2)
+        cmd = ('fuel2 env create {0} -r {1} -nst vlan -f json'
+               ''.format(self.__class__.__name__, release_id))
         cluster = self.ssh_manager.execute_on_remote(
             ip=admin_ip,
-            cmd='fuel env create --name={0} --release={1} '
-                '--nst=vlan --json'.format(self.__class__.__name__,
-                                           release_id),
+            cmd=cmd,
             jsonify=True
         )['stdout_json']
 
@@ -165,10 +167,9 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
         for role in nodes:
             self.ssh_manager.execute_on_remote(
                 ip=admin_ip,
-                cmd='fuel --env-id={0} node set '
-                    '--node {1} --role={2}'.format(
-                        cluster['id'],
-                        ','.join(map(str, nodes[role])), role)
+                cmd='fuel2 env add nodes -e {0} -n {1} -r {2}'
+                    ''.format(cluster['id'],
+                              ' '.join(map(str, nodes[role])), role)
             )
         self.show_step(7)
         for node_id in node_ids:
@@ -177,12 +178,13 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
         self.fuel_web.verify_network(cluster['id'])
 
         self.show_step(9)
+        cmd = 'fuel2 env deploy {0}'.format(cluster['id'])
         task = self.ssh_manager.execute_on_remote(
-            ip=admin_ip,
-            cmd='fuel --env-id={0} '
-                'deploy-changes --json'.format(cluster['id']),
-            jsonify=True
-        )['stdout_json']
+            ip=self.ssh_manager.admin_ip,
+            cmd=cmd
+        )
+        task_id = re.findall('id (\d+)', task['stdout_str'])
+        task = {'id': task_id[0], 'name': 'deploy'}
         self.assert_cli_task_success(task, timeout=130 * 60)
 
         self.show_step(10)
