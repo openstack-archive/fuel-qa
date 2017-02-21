@@ -195,6 +195,15 @@ class TestOVSFirewall(CheckOVSFirewall):
         self.show_step(8)
         compute = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['compute'])[0]
+        cntrl = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['controller'])[0]
+        self.check_ovs_firewall_functionality(cluster_id, compute['ip'])
+        self.fuel_web.warm_restart_nodes(
+            [self.fuel_web.get_devops_node_by_nailgun_node(cntrl)])
+        self.fuel_web.warm_restart_nodes(
+            [self.fuel_web.get_devops_node_by_nailgun_node(compute)])
+        import time
+        time.sleep(300)
         self.check_ovs_firewall_functionality(cluster_id, compute['ip'])
         self.env.make_snapshot(
             "deploy_non_ha_cluster_with_ovs_firewall_vlan", is_make=True)
@@ -259,6 +268,15 @@ class TestOVSFirewall(CheckOVSFirewall):
         self.show_step(8)
         compute = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['compute'])[0]
+        cntrl = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['controller'])[0]
+        self.check_ovs_firewall_functionality(cluster_id, compute['ip'])
+        self.fuel_web.warm_restart_nodes(
+            [self.fuel_web.get_devops_node_by_nailgun_node(cntrl)])
+        self.fuel_web.warm_restart_nodes(
+            [self.fuel_web.get_devops_node_by_nailgun_node(compute)])
+        import time
+        time.sleep(300)
         self.check_ovs_firewall_functionality(cluster_id, compute['ip'])
         self.env.make_snapshot(
             "deploy_non_ha_cluster_with_ovs_firewall_vxlan", is_make=True)
