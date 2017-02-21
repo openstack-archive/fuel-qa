@@ -65,7 +65,7 @@ class CommandLineRoleTests(test_cli_base.CommandLine):
         self.show_step(4)
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd="sed -i '/conflicts/,+1 d' /tmp/release_{}/controller.yaml"
+            cmd="sed -i '/conflicts/,+1 d' /tmp/releases_{}/controller.yaml"
                 "".format(release_id))
 
         self.show_step(5)
