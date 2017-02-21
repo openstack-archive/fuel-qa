@@ -110,11 +110,11 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
             3. Add 3 controllers
             4. Update nodes interfaces
             5. Provision 3 controllers
-               (fuel node --node-id x,x,x --provision --env x)
-            6. Start netconfig on second controller
-               (fuel node --node 2 --end netconfig --env x)
+               (fuel2 env nodes provision -n x,x,x -e <cluster_id>)
+            6. Start rsync_core_puppet task on second controller
+               (fuel2 graph execute -e 1 -t default -T rsync_core_puppet -n 2)
             7. Deploy controller nodes
-               (fuel node --node x,x,x --deploy --env-id x)
+               (fuel2 env deploy <cluster_id>)
             8. Verify networks
             9. Run OSTF tests
 
@@ -145,17 +145,20 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
         for node_id in node_ids:
             self.update_node_interfaces(node_id)
         self.show_step(5)
-        cmd = ('fuel2 env nodes provision {0} -e {1} -f json'.
-               format(','.join(str(n) for n in node_ids), cluster_id))
+        cmd = ('fuel2 env nodes provision -n {0} -e {1}'.
+               format(' '.join(str(n) for n in node_ids), cluster_id))
         task = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd=cmd,
-            jsonify=True
-        )['stdout_json']
+            cmd=cmd
+        )
+        task_id = re.findall('id (\d+)', task['stdout_str'])
+        task = {'id': task_id[0], 'name': 'provision'}
+
         self.assert_cli_task_success(task, timeout=20 * 60)
         self.show_step(6)
-        cmd = ('fuel node --node {0} --end netconfig --env {1} --json'.
-               format(node_ids[1], release_id))
+        tasks = 'rsync_core_puppet'
+        cmd = ('fuel2 graph execute -e {0} -t default -T {1} '
+               '-n {2} --format json'.format(cluster_id, tasks, node_ids[1]))
         task = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd=cmd,
@@ -163,12 +166,14 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
         )['stdout_json']
         self.assert_cli_task_success(task, timeout=30 * 60)
         self.show_step(7)
-        cmd = 'fuel --env-id={0} deploy-changes --json'.format(cluster_id)
+        cmd = 'fuel2 env deploy {0}'.format(cluster_id)
+
         task = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
-            cmd=cmd,
-            jsonify=True
-        )['stdout_json']
+            cmd=cmd
+        )
+        task_id = re.findall('id (\d+)', task['stdout_str'])
+        task = {'id': task_id[0], 'name': 'deploy'}
         self.assert_cli_task_success(task, timeout=130 * 60)
         self.show_step(8)
         self.fuel_web.verify_network(cluster_id)
