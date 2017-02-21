@@ -68,6 +68,7 @@ class CheckOVSFirewall(TestBasic):
             ifaces = self.get_ovs_bridge_ifaces(compute_ip)
         else:
             ifaces = self.get_ifaces(compute_ip)
+        logger.info('{0}\n\n{1}'.format(iface, iface.stdout))
         net_name = self.fuel_web.get_cluster_predefined_networks_name(
             cluster_id)['private_net']
         os_conn = os_actions.OpenStackActions(
@@ -78,6 +79,8 @@ class CheckOVSFirewall(TestBasic):
         else:
             server = os_conn.create_server_for_migration(label=net_name)
             current_ifaces = self.get_ifaces(compute_ip)
+        logger.info('{0}\n\n{1}'
+                    .format(current_ifaces, current_ifaces.stdout))
         current_flows = self.get_flows(compute_ip)
         assert_equal(len(set(current_ifaces.stdout) - set(ifaces.stdout)), 1,
                      "Check is failed. Passed data is not equal:"
@@ -195,6 +198,15 @@ class TestOVSFirewall(CheckOVSFirewall):
         self.show_step(8)
         compute = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['compute'])[0]
+        cntrl = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['controller'])[0]
+        self.check_ovs_firewall_functionality(cluster_id, compute['ip'])
+        self.fuel_web.warm_restart_nodes(
+            [self.fuel_web.get_devops_node_by_nailgun_node(cntrl)])
+        self.fuel_web.warm_restart_nodes(
+            [self.fuel_web.get_devops_node_by_nailgun_node(compute)])
+        import time
+        time.sleep(300)
         self.check_ovs_firewall_functionality(cluster_id, compute['ip'])
         self.env.make_snapshot(
             "deploy_non_ha_cluster_with_ovs_firewall_vlan", is_make=True)
@@ -259,6 +271,15 @@ class TestOVSFirewall(CheckOVSFirewall):
         self.show_step(8)
         compute = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['compute'])[0]
+        cntrl = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            cluster_id, ['controller'])[0]
+        self.check_ovs_firewall_functionality(cluster_id, compute['ip'])
+        self.fuel_web.warm_restart_nodes(
+            [self.fuel_web.get_devops_node_by_nailgun_node(cntrl)])
+        self.fuel_web.warm_restart_nodes(
+            [self.fuel_web.get_devops_node_by_nailgun_node(compute)])
+        import time
+        time.sleep(300)
         self.check_ovs_firewall_functionality(cluster_id, compute['ip'])
         self.env.make_snapshot(
             "deploy_non_ha_cluster_with_ovs_firewall_vxlan", is_make=True)
