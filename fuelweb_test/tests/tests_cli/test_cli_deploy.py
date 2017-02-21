@@ -154,8 +154,14 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
         )['stdout_json']
         self.assert_cli_task_success(task, timeout=20 * 60)
         self.show_step(6)
-        cmd = ('fuel node --node {0} --end netconfig --env {1} --json'.
-               format(node_ids[1], release_id))
+        tasks = 'rsync_core_puppet pre_hiera_config override_configuration ' \
+                ' upload_configuration'
+        # tasks = 'rsync_core_puppet upload_configuration ' \
+        #         'override_configuration pre_hiera_config ' \
+        #         'configuration_symlink reserved_ports sync_time ' \
+        #         'setup_repositories fuel_pkgs globals netconfig'
+        cmd = ('fuel2 graph execute -e {0} -t default -T {1} '
+               '-n {2} --format json'.format(cluster_id, tasks, node_ids[1]))
         task = self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
             cmd=cmd,
