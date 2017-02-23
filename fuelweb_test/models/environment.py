@@ -698,7 +698,9 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
         logger.info('{0} package(s) were updated'.format(updates_count))
 
         logger.info('Applying updates via update-master-node.sh')
-        cmd = '/usr/share/fuel-utils/update-master-node.sh'
+        # LP #1664635 - we need to redirect stdout to /dev/null to avoid
+        # ssh connection hanging on massive output from puppet run.
+        cmd = '/usr/share/fuel-utils/update-master-node.sh > /dev/null 2>&1'
 
         self.ssh_manager.execute_on_remote(
             ip=self.ssh_manager.admin_ip,
