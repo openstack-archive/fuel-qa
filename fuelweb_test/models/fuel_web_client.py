@@ -98,11 +98,6 @@ from fuelweb_test.settings import SSL_CN
 from fuelweb_test.settings import TIMEOUT
 from fuelweb_test.settings import UCA_ENABLED
 from fuelweb_test.settings import USER_OWNED_CERT
-from fuelweb_test.settings import VCENTER_DATACENTER
-from fuelweb_test.settings import VCENTER_DATASTORE
-from fuelweb_test.settings import VCENTER_IP
-from fuelweb_test.settings import VCENTER_PASSWORD
-from fuelweb_test.settings import VCENTER_USERNAME
 from fuelweb_test.settings import UBUNTU_SERVICE_PROVIDER
 
 
@@ -604,7 +599,7 @@ class FuelWebClient29(object):
                 elif option in {'volumes_ceph', 'images_ceph',
                                 'ephemeral_ceph', 'objects_ceph',
                                 'osd_pool_size', 'volumes_lvm',
-                                'volumes_block_device', 'images_vcenter'}:
+                                'volumes_block_device'}:
                     section = 'storage'
                 elif option in {'tenant', 'password', 'user'}:
                     section = 'access'
@@ -681,11 +676,6 @@ class FuelWebClient29(object):
                 logger.info('Set Hypervisor type to KVM')
                 hpv_data = attributes['editable']['common']['libvirt_type']
                 hpv_data['value'] = "kvm"
-
-            if help_data.VCENTER_USE:
-                logger.info('Enable Dual Hypervisors Mode')
-                hpv_data = attributes['editable']['common']['use_vcenter']
-                hpv_data['value'] = True
 
             if NOVA_QUOTAS_ENABLED:
                 logger.info('Enable Nova quotas')
@@ -772,76 +762,6 @@ class FuelWebClient29(object):
         logger.debug("Try to update cluster "
                      "with next attributes {0}".format(attributes))
         self.client.update_cluster_attributes(cluster_id, attributes)
-
-    @logwrap
-    def vcenter_configure(self, cluster_id, vcenter_value=None,
-                          multiclusters=None, vc_glance=None,
-                          target_node_1='controllers',
-                          target_node_2='controllers'):
-
-        if not vcenter_value:
-            vcenter_value = {
-                "glance": {
-                    "vcenter_username": "",
-                    "datacenter": "",
-                    "vcenter_host": "",
-                    "vcenter_password": "",
-                    "datastore": "",
-                    "vcenter_insecure": True},
-                "availability_zones": [
-                    {"vcenter_username": VCENTER_USERNAME,
-                     "nova_computes": [
-                         {"datastore_regex": ".*",
-                          "vsphere_cluster": "Cluster1",
-                          "service_name": "vmcluster1",
-                          "target_node": {
-                              "current": {"id": target_node_1,
-                                          "label": target_node_1},
-                              "options": [{"id": "controllers",
-                                           "label": "controllers"}, ]},
-                          },
-
-                     ],
-                     "vcenter_host": VCENTER_IP,
-                     "az_name": "vcenter",
-                     "vcenter_password": VCENTER_PASSWORD,
-                     "vcenter_insecure": True
-
-                     }],
-                "network": {"esxi_vlan_interface": "vmnic0"}
-            }
-            if multiclusters:
-                multiclusters =\
-                    vcenter_value["availability_zones"][0]["nova_computes"]
-                multiclusters.append(
-                    {"datastore_regex": ".*",
-                     "vsphere_cluster": "Cluster2",
-                     "service_name": "vmcluster2",
-                     "target_node": {
-                         "current": {"id": target_node_2,
-                                     "label": target_node_2},
-                         "options": [{"id": "controllers",
-                                      "label": "controllers"}, ]},
-                     })
-            if vc_glance:
-                vcenter_value["glance"]["vcenter_username"] = VCENTER_USERNAME
-                vcenter_value["glance"]["datacenter"] = VCENTER_DATACENTER
-                vcenter_value["glance"]["vcenter_host"] = VCENTER_IP
-                vcenter_value["glance"]["vcenter_password"] = VCENTER_PASSWORD
-                vcenter_value["glance"]["datastore"] = VCENTER_DATASTORE
-
-        if help_data.VCENTER_USE:
-            logger.info('Configuring vCenter...')
-            vmware_attributes = \
-                self.client.get_cluster_vmware_attributes(cluster_id)
-            vcenter_data = vmware_attributes['editable']
-            vcenter_data['value'] = vcenter_value
-            logger.debug("Try to update cluster with next "
-                         "vmware_attributes {0}".format(vmware_attributes))
-            self.client.update_cluster_vmware_attributes(cluster_id,
-                                                         vmware_attributes)
-
-        logger.debug("Attributes of cluster were updated")
 
     def add_local_ubuntu_mirror(self, cluster_id, name='Auxiliary',
                                 path=help_data.LOCAL_MIRROR_UBUNTU,
