@@ -41,7 +41,8 @@ class NodeReinstallationEnv(TestBasic):
         fuel_web_client.assert_task_success(task)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["node_reinstallation_env"])
+          groups=["node_reinstallation_env"],
+          enabled=False)
     @log_snapshot_after_test
     def node_reinstallation_env(self):
         """Deploy a cluster for nodes reinstallation.
@@ -548,7 +549,8 @@ class PartitionPreservation(TestBasic):
                     "ip".format(vm.name, vm_floating_ip))
 
     @test(depends_on=[NodeReinstallationEnv.node_reinstallation_env],
-          groups=["mongo_mysql_partition_preservation"])
+          groups=["mongo_mysql_partition_preservation"],
+          enabled=False)
     @log_snapshot_after_test
     def mongo_mysql_partition_preservation(self):
         """Verify partition preservation of Ceilometer and mysql data.

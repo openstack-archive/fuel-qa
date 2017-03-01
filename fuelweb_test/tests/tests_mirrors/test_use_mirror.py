@@ -59,7 +59,8 @@ class TestUseMirror(TestBasic):
                                                cmd=replace_cmd)
 
     @test(groups=['fuel-mirror', 'deploy_with_custom_mirror'],
-          depends_on=[SetupEnvironment.prepare_slaves_5])
+          depends_on=[SetupEnvironment.prepare_slaves_5],
+          enabled=False)
     def deploy_with_custom_mirror(self):
         """Create local mirrors for Ubuntu repos using fuel-mirror tool
 

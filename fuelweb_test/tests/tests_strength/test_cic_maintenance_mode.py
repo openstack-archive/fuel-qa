@@ -36,7 +36,8 @@ class CICMaintenanceMode(TestBasic):
     """CICMaintenanceMode."""
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["cic_maintenance_mode_env"])
+          groups=["cic_maintenance_mode_env"],
+          enabled=False)
     @log_snapshot_after_test
     def cic_maintenance_mode_env(self):
         """Deploy cluster in HA mode with 3 controller for maintenance mode
