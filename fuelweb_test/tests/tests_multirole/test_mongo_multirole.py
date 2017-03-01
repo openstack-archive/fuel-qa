@@ -26,7 +26,8 @@ class MongoMultirole(TestBasic):
     """MongoMultirole"""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
-          groups=['ha_ceilometer_untag_network'])
+          groups=['ha_ceilometer_untag_network'],
+          enabled=False)
     @log_snapshot_after_test
     def ha_ceilometer_untag_network(self):
         """Deployment with 3 controllers, NeutronVLAN and untag network,
@@ -118,7 +119,8 @@ class MongoMultirole(TestBasic):
         self.env.make_snapshot('ha_ceilometer_untag_network')
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
-          groups=['mongo_ceph_with_ceilometer'])
+          groups=['mongo_ceph_with_ceilometer'],
+          enabled=False)
     @log_snapshot_after_test
     def mongo_ceph_with_ceilometer(self):
         """Deployment with 3 controlelrs, NeutronVLAN, with Ceph,
