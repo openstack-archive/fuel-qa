@@ -51,21 +51,17 @@ class CICMaintenanceMode(TestBasic):
         """
         self.check_run('cic_maintenance_mode')
         self.env.revert_snapshot("ready_with_5_slaves")
-        data = {
-            'ceilometer': True,
-        }
 
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
-            mode=settings.DEPLOYMENT_MODE_HA,
-            settings=data)
+            mode=settings.DEPLOYMENT_MODE_HA)
 
         self.fuel_web.update_nodes(
             cluster_id,
             {
-                'slave-01': ['controller', 'mongo'],
-                'slave-02': ['controller', 'mongo'],
-                'slave-03': ['controller', 'mongo'],
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
                 'slave-04': ['compute', 'cinder'],
                 'slave-05': ['compute', 'cinder']
             }

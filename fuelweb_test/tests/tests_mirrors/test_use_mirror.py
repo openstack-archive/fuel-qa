@@ -94,7 +94,6 @@ class TestUseMirror(TestBasic):
                 "net_provider": 'neutron',
                 "net_segment_type": NEUTRON_SEGMENT['tun'],
                 'sahara': True,
-                'ceilometer': True,
                 'volumes_lvm': True,
                 'volumes_ceph': False,
                 'images_ceph': True
@@ -110,7 +109,7 @@ class TestUseMirror(TestBasic):
                 'slave-01': ['controller', 'ceph-osd'],
                 'slave-02': ['controller', 'ceph-osd'],
                 'slave-03': ['controller', 'ceph-osd'],
-                'slave-04': ['cinder', 'mongo'],
+                'slave-04': ['cinder'],
                 'slave-05': ['compute']
             }
         )

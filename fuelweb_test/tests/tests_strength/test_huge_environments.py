@@ -27,7 +27,8 @@ class HugeEnvironments(base_test_case.TestBasic):
     """HugeEnvironments."""  # TODO documentation
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_9],
-          groups=["nine_nodes_mixed"])
+          groups=["nine_nodes_mixed"],
+          enabled=False)
     @log_snapshot_after_test
     def nine_nodes_mixed(self):
         """Deploy cluster with mixed roles on 9 nodes in HA mode
@@ -86,7 +87,8 @@ class HugeEnvironments(base_test_case.TestBasic):
             cluster_id=cluster_id)
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_9],
-          groups=["nine_nodes_separate_roles"])
+          groups=["nine_nodes_separate_roles"],
+          enabled=False)
     @log_snapshot_after_test
     def nine_nodes_separate_roles(self):
         """Deploy cluster with separate roles on 9 nodes in HA mode
@@ -153,7 +155,8 @@ class HugeEnvironments(base_test_case.TestBasic):
 class HugeHaNeutron(base_test_case.TestBasic):
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_9],
-          groups=["huge_ha_neutron_tun_ceph_ceilometer_rados"])
+          groups=["huge_ha_neutron_tun_ceph_ceilometer_rados"],
+          enabled=False)
     @log_snapshot_after_test
     def huge_ha_neutron_tun_ceph_ceilometer_rados(self):
         """Deploy cluster in HA mode with Neutron VXLAN, RadosGW
@@ -239,7 +242,8 @@ class HugeHaNeutron(base_test_case.TestBasic):
                 test_name=test_name, timeout=60 * 20)
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_9],
-          groups=["huge_ha_neutron_vlan_ceph_ceilometer_rados"])
+          groups=["huge_ha_neutron_vlan_ceph_ceilometer_rados"],
+          enabled=False)
     @log_snapshot_after_test
     def huge_ha_neutron_vlan_ceph_ceilometer_rados(self):
         """Deploy cluster with separate roles in HA mode
