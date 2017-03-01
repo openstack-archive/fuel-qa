@@ -243,7 +243,8 @@ class TestsDeployPlatformComponents(BaseDeployPlatformComponents):
         self._deploy_and_check(cluster_id=cluster_id)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
-          groups=["acceptance_deploy_platform_components_ceilometer"])
+          groups=["acceptance_deploy_platform_components_ceilometer"],
+          enabled=False)
     @log_snapshot_after_test
     def acceptance_deploy_platform_components_ceilometer(self):
         """Deploy cluster with detached keystone, rabbitmq,

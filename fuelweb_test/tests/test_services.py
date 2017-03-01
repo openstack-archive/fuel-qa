@@ -477,7 +477,8 @@ class OSTFCeilometerHelper(TestBasic):
 class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["deploy_ceilometer_ha_one_controller_with_mongo"])
+          groups=["deploy_ceilometer_ha_one_controller_with_mongo"],
+          enabled=False)
     @log_snapshot_after_test
     def deploy_ceilometer_ha_one_controller_with_mongo(self):
         """Deploy cluster in HA mode with Ceilometer
@@ -562,7 +563,8 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
             "deploy_ceilometer_ha_one_controller_with_mongo")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["deploy_ceilometer_ha_one_controller_multirole"])
+          groups=["deploy_ceilometer_ha_one_controller_multirole"],
+          enabled=False)
     @log_snapshot_after_test
     def deploy_ceilometer_ha_one_controller_multirole(self):
         """Deploy cluster in ha multirole mode with Ceilometer
@@ -613,7 +615,8 @@ class CeilometerHAOneControllerMongo(OSTFCeilometerHelper):
 @test(groups=["services", "services.ceilometer", "services_ha.ceilometer"])
 class CeilometerHAMongo(OSTFCeilometerHelper):
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_ceilometer_ha_with_mongo"])
+          groups=["deploy_ceilometer_ha_with_mongo"],
+          enabled=False)
     @log_snapshot_after_test
     def deploy_ceilometer_ha_with_mongo(self):
         """Deploy cluster in ha mode with Ceilometer
@@ -669,7 +672,8 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
         self.env.make_snapshot("deploy_ceilometer_ha_with_mongo")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_ceilometer_ha_multirole"])
+          groups=["deploy_ceilometer_ha_multirole"],
+          enabled=False)
     @log_snapshot_after_test
     def deploy_ceilometer_ha_multirole(self):
         """Deploy cluster in ha multirole mode with Ceilometer
@@ -720,7 +724,8 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
         self.env.make_snapshot("deploy_ceilometer_ha_multirole", is_make=True)
 
     @test(depends_on=[deploy_ceilometer_ha_multirole],
-          groups=["ceilometer_ha_multirole_add_mongo"])
+          groups=["ceilometer_ha_multirole_add_mongo"],
+          enabled=False)
     @log_snapshot_after_test
     def ceilometer_ha_multirole_add_mongo(self):
         """Add mongo node to cluster with HA mode and Ceilometer
@@ -750,7 +755,8 @@ class CeilometerHAMongo(OSTFCeilometerHelper):
         self.env.make_snapshot("ceilometer_ha_multirole_add_mongo")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_ceilometer_ha_with_external_mongo"])
+          groups=["deploy_ceilometer_ha_with_external_mongo"],
+          enabled=False)
     @log_snapshot_after_test
     def deploy_ceilometer_ha_with_external_mongo(self):
         """Deploy cluster in ha mode with Ceilometer and external Mongo
@@ -821,7 +827,8 @@ class HeatHAOneController(TestBasic):
     Don't recommend to start tests without kvm
     """
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["deploy_heat_ha_one_controller_neutron"])
+          groups=["deploy_heat_ha_one_controller_neutron"],
+          enabled=False)
     @log_snapshot_after_test
     def deploy_heat_ha_one_controller_neutron(self):
         """Deploy Heat cluster in HA mode with Neutron VXLAN
@@ -910,7 +917,8 @@ class HeatHA(TestBasic):
     Don't recommend to start tests without kvm
     """
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_heat_ha"])
+          groups=["deploy_heat_ha"],
+          enabled=False)
     @log_snapshot_after_test
     def deploy_heat_ha(self):
         """Deploy Heat cluster in HA mode
