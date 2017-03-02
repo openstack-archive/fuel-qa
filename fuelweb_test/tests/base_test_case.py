@@ -63,11 +63,6 @@ class TestBasic(object):
         if settings.FORCE_DISABLE_UPDATES and settings.UPDATE_MASTER:
             raise EnvironmentError(
                 "Cannot use FORCE_DISABLE_UPDATES and UPDATE_MASTER together")
-        if settings.UPDATE_MASTER and settings.UPDATE_MASTER_VIA_MOS_MU:
-            assert_is_not_none(
-                settings.MOS_UBUNTU_MIRROR_ID,
-                "Updating via ansible playbooks requires MOS_UBUNTU_MIRROR_ID "
-                "till 9.2 is not released")
 
     @property
     def fuel_constants(self):
