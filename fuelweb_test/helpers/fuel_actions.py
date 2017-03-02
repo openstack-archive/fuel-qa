@@ -377,35 +377,33 @@ class AdminActions(BaseActions):
 
     def prepare_admin_node_for_mos_mu(self):
         """Prepare master node for update via mos-playbooks tool"""
-        logger.info('Requesting packages to be updated')
-        self.new_packages = self.get_packages_list()
-        logger.debug('Got the list of packages to be updated: {}'.format(
-            self.new_packages))
-        mos_mu_path = 'cd {} &&'.format(MOS_MU_PATH)
-
         logger.info('Searching for mos-playbooks and mos-release packages')
         search_command = 'yum search mos-playbooks && yum search mos-release'
         search_result = self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
             command=search_command)
 
-        assert_true(
-            "Warning: No matches found for: " not in search_result.stderr_str,
-            "mos-release or mos-playbooks wasn't found")
+        if "Warning: No matches found for: " in search_result.stderr_str:
+            logger.warning("mos-release or mos-playbooks wasn't found. "
+                           "Install mos-release from 9.2 repository")
+            cmd = 'yum install -y http://mirror.fuel-infra.org/mos-repos/' \
+                  'centos/mos9.0-centos7/9.2-updates/x86_64/Packages/' \
+                  'mos-release-9.2-1.el7.x86_64.rpm'
+            self.ssh_manager.check_call(
+                ip=self.ssh_manager.admin_ip,
+                command=cmd)
+        else:
+            logger.info('Installing mos-release package')
+            install_command = 'yum install -y mos-release'
+            self.ssh_manager.check_call(
+                ip=self.ssh_manager.admin_ip,
+                command=install_command)
 
-        logger.info('Installing mos-release package')
-        install_command = 'yum install -y mos-release'
-        self.ssh_manager.check_call(
-            ip=self.ssh_manager.admin_ip,
-            command=install_command)
-
-        # Delete this after release 9.2
-        logger.warning('Remove mos92-updates.repo with proposed-latest repo')
-        cmd = "rm /etc/yum.repos.d/mos92-updates.repo"
-        self.ssh_manager.check_call(
-            ip=self.ssh_manager.admin_ip,
-            command=cmd)
-        # Delete this after release 9.2
+        logger.info('Requesting packages to be updated')
+        self.new_packages = self.get_packages_list()
+        logger.debug('Got the list of packages to be updated: {}'.format(
+            self.new_packages))
+        mos_mu_path = 'cd {} &&'.format(MOS_MU_PATH)
 
         logger.info('Installing mos-playbooks package')
         install_command = 'yum install -y mos-playbooks'
