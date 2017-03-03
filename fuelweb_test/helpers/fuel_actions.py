@@ -17,9 +17,6 @@ import os
 import re
 
 from devops.helpers.helpers import wait
-from devops.models import DiskDevice
-from devops.models import Node
-from devops.models import Volume
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 
@@ -38,7 +35,6 @@ from fuelweb_test.settings import MOS_MU_PATH
 from fuelweb_test.settings import MOS_UBUNTU_MIRROR_ID
 from fuelweb_test.settings import PLUGIN_PACKAGE_VERSION
 from fuelweb_test.settings import FUEL_SETTINGS_YAML
-from fuelweb_test.settings import NESSUS_IMAGE_PATH
 from fuelweb_test.helpers.utils import YamlEditor
 
 
@@ -683,24 +679,6 @@ class CobblerActions(BaseActions):
         self.ssh_manager.execute_on_remote(
             ip=self.admin_ip,
             cmd='service dnsmasq restart')
-
-
-class NessusActions(object):
-    """ NessusActions."""   # TODO documentation
-
-    def __init__(self, d_env):
-        self.devops_env = d_env
-
-    def add_nessus_node(self):
-        node = Node.node_create(
-            name='slave-nessus',
-            environment=self.devops_env,
-            boot=['hd'])
-        node.attach_to_networks()
-        volume = Volume.volume_get_predefined(NESSUS_IMAGE_PATH)
-        DiskDevice.node_attach_volume(node=node, volume=volume)
-        node.define()
-        node.start()
 
 
 class FuelBootstrapCliActions(AdminActions):
