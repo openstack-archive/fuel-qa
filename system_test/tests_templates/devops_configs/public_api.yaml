@@ -97,7 +97,7 @@ address_pools:
       tag: 103
 
 groups:
- - name: rack-01
+ - name: default
    driver:
      name: devops.driver.libvirt.libvirt_driver
      params:
