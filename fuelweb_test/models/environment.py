@@ -40,7 +40,6 @@ from fuelweb_test.helpers.fuel_actions import BaseActions
 from fuelweb_test.helpers.fuel_actions import CobblerActions
 from fuelweb_test.helpers.fuel_actions import NailgunActions
 from fuelweb_test.helpers.fuel_actions import PostgresActions
-from fuelweb_test.helpers.fuel_actions import NessusActions
 from fuelweb_test.helpers.fuel_actions import FuelBootstrapCliActions
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.utils import TimeStat
@@ -445,9 +444,6 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
         self.wait_for_external_config()
         if custom:
             self.setup_customisation()
-        if security:
-            nessus_node = NessusActions(self.d_env)
-            nessus_node.add_nessus_node()
         # wait while installation complete
 
         self.admin_actions.modify_configs(self.d_env.router())
