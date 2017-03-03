@@ -12,18 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-# pylint: disable=import-error
-# pylint: disable=no-name-in-module
-from distutils.version import StrictVersion
-# pylint: enable=no-name-in-module
-# pylint: enable=import-error
 import os
 import posixpath
 import re
 import traceback
 from warnings import warn
 
-import devops
 from devops.helpers.metaclasses import SingletonMeta
 from devops.helpers.ssh_client import SSHClient
 from paramiko import RSAKey
@@ -33,66 +27,6 @@ import six
 from fuelweb_test import logger
 from fuelweb_test.settings import SSH_FUEL_CREDENTIALS
 from fuelweb_test.settings import SSH_SLAVE_CREDENTIALS
-
-
-if StrictVersion(devops.__version__) < StrictVersion('3.0.2'):
-    # Old devops, patch to use new API
-
-    # New API backend
-    class _get_sudo(object):
-        def __init__(self, ssh, enforce=None):
-            self.__ssh = ssh
-            self.__sudo_status = ssh.sudo_mode
-            self.__enforce = enforce
-
-        def __enter__(self):
-            self.__sudo_status = self.__ssh.sudo_mode
-            if self.__enforce is not None:
-                self.__ssh.sudo_mode = self.__enforce
-
-        def __exit__(self, exc_type, exc_val, exc_tb):
-            self.__ssh.sudo_mode = self.__sudo_status
-
-    # Old API
-    # noinspection PyPep8Naming
-    class get_sudo(_get_sudo):
-        def __init__(self, ssh, enforce=True):
-            super(self.__class__, self).__init__(ssh=ssh, enforce=enforce)
-
-    # New API frontend
-    def sudo(self, enforce=None):
-        return self._get_sudo(ssh=self, enforce=enforce)
-
-    # Apply patch
-    # noinspection PyUnresolvedReferences
-    SSHClient._get_sudo = _get_sudo
-    # noinspection PyUnresolvedReferences
-    SSHClient.get_sudo = get_sudo
-    # noinspection PyUnresolvedReferences
-    SSHClient.sudo = sudo
-
-    # Enforce closing all connections for objects recreate and API arrival
-    SSHClient.close_connections()
-
-else:
-    with open(
-            os.path.abspath(
-                os.path.join(
-                    os.path.dirname(os.path.abspath(__file__)),
-                    '../requirements-devops-source.txt'
-                ))
-    ) as req:
-        d_req = req.read()
-
-    req_ver = d_req.split('@')[-1]
-
-    if StrictVersion(req_ver) >= StrictVersion('3.0.2'):
-        logger.warning(
-            'Please revert changes with change-id:\n'
-            '\tId90f06b4c83f9e0a21adf5c90aa04111d2a4153e (gerrit 359684)\n'
-            'This solution is not required for now due to using actual version'
-            'of fuel-devops.'
-        )
 
 
 class SSHManager(six.with_metaclass(SingletonMeta, object)):
