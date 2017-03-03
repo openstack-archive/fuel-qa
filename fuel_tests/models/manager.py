@@ -56,6 +56,7 @@ class Manager(Basic):
             logger.info("Got deployed cluster from snapshot")
             return True
         elif self.get_ready_slaves(slaves):
+            self.env.sync_time()
             logger.info("Create env {}".format(
                 self.env_config['name']))
             cluster_settings = {
@@ -142,6 +143,7 @@ class Manager(Basic):
             logger.info("Getted deployed cluster from snapshot")
             return True
         elif self.get_ready_slaves(slaves):
+            self.env.sync_time()
             logger.info("Create env {}".format(cluster_name))
             cluster_id = self.fuel_web.create_cluster(
                 name=cluster_name,
@@ -225,6 +227,7 @@ class Manager(Basic):
             logger.info("Getted ready release from snapshot")
             return True
         elif self.get_ready_setup():
+            self.env.sync_time()
             self.fuel_web.get_nailgun_version()
             self.fuel_web.change_default_network_settings()
 
@@ -259,6 +262,7 @@ class Manager(Basic):
             logger.info("Getted ready slaves from snapshot")
             return True
         elif self.get_ready_release():
+            self.env.sync_time()
             logger.info("Bootstrap {} nodes".format(slaves))
             self.env.bootstrap_nodes(self.env.d_env.nodes().slaves[:slaves],
                                      skip_timesync=True)
