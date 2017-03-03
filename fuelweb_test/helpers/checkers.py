@@ -126,9 +126,9 @@ def check_image(image, md5, path):
 @logwrap
 def verify_service(ip, service_name, count=1,
                    ignore_count_of_proccesses=False):
-    ps_output = ssh_manager.execute_on_remote(
+    ps_output = ssh_manager.check_call(
         ip=ip,
-        cmd='ps ax'
+        command='ps ax'
     )['stdout']
     api = [ps for ps in ps_output if service_name in ps]
     logger.debug("{} \\n: {}".format(service_name, str(api)))
