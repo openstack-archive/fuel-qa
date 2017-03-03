@@ -99,6 +99,8 @@ class TestNessus(NeutronTunHaBase):
         Duration 80m
         Snapshot deploy_neutron_tun_ha_nessus
         """
+        nessus_node = self.env.d_env.get_node(name='slave-nessus')
+        nessus_node.start()
         super(self.__class__, self).deploy_neutron_tun_ha_base(
             snapshot_name="deploy_neutron_tun_ha_nessus")
 
