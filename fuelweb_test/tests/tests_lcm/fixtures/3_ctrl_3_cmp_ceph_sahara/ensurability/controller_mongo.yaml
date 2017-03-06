@@ -51,8 +51,6 @@ tasks:
       resources: []
   - murano-cfapi:
       no_puppet_run: true
-  - vmware-vcenter:
-      no_puppet_run: true
   - rabbitmq:
       resources: []
   - ironic-compute:

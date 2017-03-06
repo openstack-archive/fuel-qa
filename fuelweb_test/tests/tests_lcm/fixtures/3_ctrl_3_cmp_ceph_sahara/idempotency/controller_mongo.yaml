@@ -33,8 +33,6 @@ tasks:
   - openstack-haproxy-aodh: null
   - murano-cfapi:
       no_puppet_run: true
-  - vmware-vcenter:
-      no_puppet_run: true
   - ceilometer-radosgw-user: null
   - ironic-compute:
       no_puppet_run: true

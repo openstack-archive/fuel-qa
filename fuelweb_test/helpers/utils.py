@@ -1182,9 +1182,9 @@ class SettingsChanger(object):
         'repo_setup.uca_openstack_release', 'repo_setup.uca_repo_url',
         'public_ssl.cert_source', 'public_ssl.hostname',
         'operator_user.homedir', 'access.email', 'common.libvirt_type',
-        'storage.images_vcenter', 'additional_components.ironic',
-        'additional_components.ceilometer', 'workloads_collector.tenant',
-        'access.user', 'workloads_collector.user', 'operator_user.name']
+        'additional_components.ironic', 'additional_components.ceilometer',
+        'workloads_collector.tenant', 'access.user',
+        'workloads_collector.user', 'operator_user.name']
 
     def __init__(self, attrs=None):
         self._attrs = attrs['editable'] if attrs else None

@@ -1,9 +1,0 @@
----
-- cluster: Cluster1
-  srv_name: srv_cluster1
-  datastore: .*
-  target_node: controllers
-- cluster: Cluster2
-  srv_name: srv_cluster2
-  datastore: .*
-  target_node: controllers

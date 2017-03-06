@@ -1,3 +1,0 @@
----
-dvswitch_name: !os_env DVS_NAME, "Cluster1:Cluster1:dvUplink1;dvUplink2:dvUplink3"
-dvs_fw_driver: false
