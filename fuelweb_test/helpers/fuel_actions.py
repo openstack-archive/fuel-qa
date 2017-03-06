@@ -18,9 +18,6 @@ import yaml
 
 from devops.helpers.helpers import wait
 from devops.error import TimeoutError
-from devops.models import DiskDevice
-from devops.models import Node
-from devops.models import Volume
 from proboscis.asserts import assert_equal
 
 from fuelweb_test import logger
@@ -37,7 +34,6 @@ from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
 from fuelweb_test.settings import MIRROR_UBUNTU
 from fuelweb_test.settings import PLUGIN_PACKAGE_VERSION
 from fuelweb_test import settings as hlp_data
-from fuelweb_test.settings import NESSUS_IMAGE_PATH
 
 
 class BaseActions(object):
@@ -717,24 +713,6 @@ class DockerActions(object):
                 ip=self.ssh_manager.admin_ip,
                 cmd="dockerctl shell {0} bash -c '{1}'".format(container, cmd)
             )
-
-
-class NessusActions(object):
-    """ NessusActions."""   # TODO documentation
-
-    def __init__(self, d_env):
-        self.devops_env = d_env
-
-    def add_nessus_node(self):
-        node = Node.node_create(
-            name='slave-nessus',
-            environment=self.devops_env,
-            boot=['hd'])
-        node.attach_to_networks()
-        volume = Volume.volume_get_predefined(NESSUS_IMAGE_PATH)
-        DiskDevice.node_attach_volume(node=node, volume=volume)
-        node.define()
-        node.start()
 
 
 class FuelBootstrapCliActions(AdminActions):
