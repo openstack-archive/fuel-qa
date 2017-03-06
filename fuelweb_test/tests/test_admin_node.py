@@ -275,7 +275,9 @@ class TestLogrotateBase(TestBasic):
             2. Check free disk space under /var/log, check free inodes
             3. Generate 2GB /var/log/ostf-test.log size file
             4. Run /usr/bin/fuel-logrotate
-            5. Check free disk space, check free inodes
+            5. Generate 101MB /var/log/ostf-test.log size file
+            6. Run /usr/bin/fuel-logrotate
+            7. Check free disk space, check free inodes
 
         Duration 30m
 
@@ -291,6 +293,7 @@ class TestLogrotateBase(TestBasic):
         free_inodes, i_suff = self.check_free_inodes(admin_ip)
         logger.debug('Free inodes before file '
                      'creation: {0}{1}'.format(free_inodes, i_suff))
+
         self.show_step(3)
         self.generate_file(
             admin_ip, size='2G',
@@ -304,10 +307,22 @@ class TestLogrotateBase(TestBasic):
             'before creation {0}{1}, '
             'free space after '
             'creation {2}{3}'.format(free, suff, free2, suff2))
+
         self.show_step(4)
         self.execute_logrotate_cmd(admin_ip, cmd='/usr/bin/fuel-logrotate')
+
         self.show_step(5)
+        self.generate_file(
+            admin_ip, size='101M',
+            path='/var/log/',
+            name='ostf-test.log')
+
+        self.show_step(6)
+        self.execute_logrotate_cmd(admin_ip, cmd='/usr/bin/fuel-logrotate')
+
+        self.show_step(7)
         free3, suff3 = self.check_free_space(admin_ip)
+
         free_inodes3, i_suff3 = self.check_free_inodes(admin_ip)
         logger.info('Free inodes  after logrotation:'
                     ' {0}{1}'.format(free_inodes3, i_suff3))
