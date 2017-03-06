@@ -227,6 +227,8 @@ class TestBasic(object):
             )
         if force_ssl:
             self.env.enable_force_https(self.ssh_manager.admin_ip)
+        # enable nailgun debug log for more informative app.log file
+        self.env.nailgun_actions.update_nailgun_settings({"DEVELOPMENT": True})
 
     def reinstall_master_node(self):
         """Erase boot sector and run setup_environment"""
