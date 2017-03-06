@@ -269,6 +269,13 @@ class NailgunActions(BaseActions):
                 self.admin_ip, cfg_file, "w") as f:
             yaml.dump(ng_settings, f)
         self.restart_service("nailgun")
+        # let uWSGI start nailgun properly - service readiness does not
+        # mean that it was started completely inside uwsgi
+        # fuel-client itself can handle this scenario so we can just run any
+        # "fuel %action%" command and wait until it completed
+        # also this small check will indicate that
+        # nailgun was started correctly
+        self.ssh_manager.check_call(ip=self.admin_ip, command="fuel release")
 
     def set_collector_address(self, host, port, ssl=False):
         base_cfg_file = ('/usr/lib/python2.7/site-packages/'
