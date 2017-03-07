@@ -247,7 +247,8 @@ class SaharaHA(TestBasic):
         self.env.make_snapshot("deploy_sahara_ha_tun")
 
 
-@test(groups=["services", "services.murano", "services_ha_one_controller"])
+@test(groups=["services", "services.murano", "services_ha_one_controller"],
+      enabled=False)
 class MuranoHAOneController(TestBasic):
     """Murano HA with 1 controller tests.
     Don't recommend to start tests without kvm.
@@ -301,7 +302,8 @@ class MuranoHAOneController(TestBasic):
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-        checkers.verify_service(_ip, service_name='murano-api')
+        checkers.verify_service(_ip, service_name='murano-api',
+                                ignore_count_of_proccesses=True)
 
         logger.debug('Run sanity and functional Murano OSTF tests')
         self.fuel_web.run_ostf(cluster_id=cluster_id, test_sets=['sanity'])
