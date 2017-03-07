@@ -422,27 +422,24 @@ class CommandLineTest(test_cli_base.CommandLine):
             6. Provision a controller node using Fuel CLI
             7. Provision one compute node using Fuel CLI
             8. Provision one cinder node using Fuel CLI
-            9. Provision one mongo node using Fuel CLI
-            10. Provision two ceph-osd nodes using Fuel CLI
-            11. Provision one base-os node using Fuel CLI
-            12. Leave 2 nodes in discover state
-            13. Deploy the ceph-osd and controller nodes using Fuel CLI
-            14. Deploy the compute node using Fuel CLI
-            15. Deploy the cinder node using Fuel CLI
-            16. Deploy the mongo node using Fuel CLI
-            17. Deploy the base-os node using Fuel CLI
-            18. Check that nodes in discover state stay in it
-            19. Get deployment-info
-            20. Get cluster settings after deployment task
-            21. Compare cluster settings after deploy and before deploy
-            22. Run OSTF
+            9. Provision two ceph-osd nodes using Fuel CLI
+            10. Provision one base-os node using Fuel CLI
+            11. Leave 2 nodes in discover state
+            12. Deploy the ceph-osd and controller nodes using Fuel CLI
+            13. Deploy the compute node using Fuel CLI
+            14. Deploy the cinder node using Fuel CLI
+            15. Deploy the base-os node using Fuel CLI
+            16. Check that nodes in discover state stay in it
+            17. Get deployment-info
+            18. Get cluster settings after deployment task
+            19. Compare cluster settings after deploy and before deploy
+            20. Run OSTF
 
         Duration 60m
         """
         self.show_step(1)
         self.env.revert_snapshot("ready_with_9_slaves")
         data = {
-            'ceilometer': True,
             'volumes_ceph': False,
             'images_ceph': True,
             'volumes_lvm': True,
@@ -542,32 +539,8 @@ class CommandLineTest(test_cli_base.CommandLine):
             'nodes {}'.format(
                 self.fuel_web.get_nailgun_node_by_status('provisioned')))
 
-        # Add and provision 1 mongo node_ids[3]
-        self.show_step(9, details='using node id {0}'.format(node_ids[3]))
-        cmd = (
-            'fuel --env-id={0} node set --node {1} --role=mongo'
-            ''.format(cluster_id, node_ids[3]))
-        self.ssh_manager.check_call(admin_ip, cmd)
-        self.update_node_interfaces(node_ids[3])
-
-        cmd = (
-            'fuel --env-id={0} node --provision  --node={1} --json'
-            ''.format(cluster_id, node_ids[3]))
-        task = self.ssh_manager.check_call(admin_ip, cmd).stdout_json
-        self.assert_cli_task_success(task, timeout=10 * 60)
-
-        self.assert_all_tasks_completed(cluster_id=cluster_id)
-
-        assert_equal(
-            4,
-            len(self.fuel_web.get_nailgun_node_by_status('provisioned')),
-            'Some unexpected nodes were provisioned,'
-            ' current list of provisioned '
-            'nodes {}'.format(
-                self.fuel_web.get_nailgun_node_by_status('provisioned')))
-
         # Add and provision 2 ceph-osd node_ids[4], node_ids[5]
-        self.show_step(10, details='using node ids {0}, {1}'.format(
+        self.show_step(9, details='using node ids {0}, {1}'.format(
             node_ids[4], node_ids[5]))
         cmd = (
             'fuel --env-id={0} node set --node {1},{2} '
@@ -593,7 +566,7 @@ class CommandLineTest(test_cli_base.CommandLine):
             'nodes {}'.format(
                 self.fuel_web.get_nailgun_node_by_status('provisioned')))
         # Add and provision 1 base-os node node_ids[6]
-        self.show_step(11, details='using node ids {0}'.format(node_ids[6]))
+        self.show_step(10, details='using node ids {0}'.format(node_ids[6]))
         cmd = ('fuel --env-id={0} node set --node {1} '
                '--role=base-os'.format(cluster_id, node_ids[6]))
         self.ssh_manager.check_call(admin_ip, cmd)
@@ -614,7 +587,7 @@ class CommandLineTest(test_cli_base.CommandLine):
             'nodes {}'.format(
                 self.fuel_web.get_nailgun_node_by_status('provisioned')))
 
-        self.show_step(12)
+        self.show_step(11)
         # Add 2 compute but do not deploy node_ids[7] node_ids[8]
         cmd = ('fuel --env-id={0} node set --node {1},{2} '
                '--role=compute'.format(cluster_id, node_ids[7], node_ids[8]))
@@ -634,7 +607,7 @@ class CommandLineTest(test_cli_base.CommandLine):
 
         # Deploy ceph-osd and controller nodes
         # node_ids[0], node_ids[4] node_ids[5]
-        self.show_step(13, details='for node ids {0}, {1}, {2}'.format(
+        self.show_step(12, details='for node ids {0}, {1}, {2}'.format(
             node_ids[0], node_ids[4], node_ids[5]))
         cmd = (
             'fuel --env-id={0} node --deploy --node {1},{2},{3} --json'.format(
@@ -643,7 +616,7 @@ class CommandLineTest(test_cli_base.CommandLine):
         self.assert_cli_task_success(task, timeout=80 * 60)
 
         self.assert_all_tasks_completed(cluster_id=cluster_id)
-        self.show_step(14, details='for node id {}'.format(node_ids[1]))
+        self.show_step(13, details='for node id {}'.format(node_ids[1]))
         # Deploy the compute node node_ids[1]
         cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
             cluster_id, node_ids[1]))
@@ -652,30 +625,22 @@ class CommandLineTest(test_cli_base.CommandLine):
         self.assert_all_tasks_completed(cluster_id=cluster_id)
 
         # Deploy the cinder node node_ids[2]
-        self.show_step(15, details='for node id {}'.format(node_ids[2]))
+        self.show_step(14, details='for node id {}'.format(node_ids[2]))
         cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
             cluster_id, node_ids[2]))
         task = self.ssh_manager.check_call(admin_ip, cmd).stdout_json
         self.assert_cli_task_success(task, timeout=60 * 60)
         self.assert_all_tasks_completed(cluster_id=cluster_id)
 
-        # Deploy the mongo node node_ids[3]
-        self.show_step(16, details='for node id {}'.format(node_ids[3]))
-        cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
-            cluster_id, node_ids[3]))
-        task = self.ssh_manager.check_call(admin_ip, cmd).stdout_json
-        self.assert_cli_task_success(task, timeout=60 * 60)
-        self.assert_all_tasks_completed(cluster_id=cluster_id)
-
         # Deploy the base-os node node_ids[6]
-        self.show_step(17, details='for node id {}'.format(node_ids[6]))
+        self.show_step(15, details='for node id {}'.format(node_ids[6]))
         cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
             cluster_id, node_ids[6]))
         task = self.ssh_manager.check_call(admin_ip, cmd).stdout_json
         self.assert_cli_task_success(task, timeout=60 * 60)
         self.assert_all_tasks_completed(cluster_id=cluster_id)
 
-        self.show_step(18)
+        self.show_step(16)
         self.fuel_web.verify_network(cluster_id)
         node_discover_after_deploy = self.fuel_web.get_nailgun_node_by_status(
             'discover')
@@ -688,18 +653,18 @@ class CommandLineTest(test_cli_base.CommandLine):
 
         for node in node_discover_after_deploy:
             assert_true(node['pending_addition'])
-        self.show_step(19)
+        self.show_step(17)
         task_id = self.get_first_task_id_by_name(cluster_id, 'deployment')
         self.get_deployment_info_cli(task_id)
-        self.show_step(20)
+        self.show_step(18)
         cluster_config = self.get_cluster_config_cli(task_id)
-        self.show_step(21)
+        self.show_step(19)
         assert_equal(cluster_settings,
                      cluster_config,
                      message='Cluster settings are not equal before'
                              ' and after deploy')
         # Run OSTF
-        self.show_step(22)
+        self.show_step(20)
         self.fuel_web.run_ostf(cluster_id=cluster_id,
                                test_sets=['ha', 'smoke', 'sanity'])
         self.env.make_snapshot("cli_selected_nodes_deploy_huge")
