@@ -22,6 +22,7 @@ from keystoneauth1 import exceptions
 
 from fuelweb_test.helpers.checkers import check_firewall_driver
 from fuelweb_test.helpers.checkers import check_settings_requirements
+from fuelweb_test.helpers.checkers import enable_feature_group
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.tests.base_test_case import SetupEnvironment
@@ -116,6 +117,7 @@ class SupportDPDK(TestDPDK):
         self.env.revert_snapshot("ready_with_3_slaves")
 
         self.show_step(1)
+        enable_feature_group(self.env, 'experimental')
         self.show_step(2)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -209,6 +211,7 @@ class SupportDPDK(TestDPDK):
         self.env.revert_snapshot("ready_with_3_slaves")
 
         self.show_step(1)
+        enable_feature_group(self.env, 'experimental')
         self.show_step(2)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -290,6 +293,7 @@ class SupportDPDK(TestDPDK):
         self.env.revert_snapshot("ready_with_3_slaves")
 
         self.show_step(1)
+        enable_feature_group(self.env, 'experimental')
         self.show_step(2)
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
@@ -364,6 +368,7 @@ class SupportDPDKBond(BondingTestDPDK, TestDPDK):
         self.env.revert_snapshot("ready_with_3_slaves")
 
         self.show_step(1)
+        enable_feature_group(self.env, 'experimental')
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             settings={
