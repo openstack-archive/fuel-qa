@@ -1,0 +1,206 @@
+---
+aliases:
+
+  dynamic_address_pool:
+   - &pool_default !os_env POOL_DEFAULT, 10.109.0.0/16:24
+
+  default_interface_model:
+   - &interface_model !os_env INTERFACE_MODEL, e1000
+
+  rack-01-slave-interfaces: &rack-01-slave-interfaces
+   - label: eth0
+     l2_network_device: admin      # Libvirt bridge name. It is *NOT* Nailgun networks
+     interface_model: *interface_model
+   - label: eth1
+     l2_network_device: public
+     interface_model: *interface_model
+   - label: eth2
+     l2_network_device: storage
+     interface_model: *interface_model
+   - label: eth3
+     l2_network_device: management
+     interface_model: *interface_model
+   - label: eth4
+     l2_network_device: private
+     interface_model: *interface_model
+   - label: eth5
+     l2_network_device: ironic
+     interface_model: *interface_model
+
+  rack-01-slave-network_config: &rack-01-slave-network_config
+    eth0:
+      networks:
+       - fuelweb_admin
+    eth1:
+      networks:
+       - public
+    eth2:
+      networks:
+       - storage
+    eth3:
+      networks:
+       - management
+    eth4:
+      networks:
+       - private
+    eth5:
+      networks:
+       - baremetal
+
+  rack-01-slave-node-params: &rack-01-slave-node-params
+    vcpu: !os_env SLAVE_NODE_CPU, 2
+    memory: !os_env SLAVE_NODE_MEMORY, 3072
+    boot:
+      - network
+      - hd
+    volumes:
+     - name: system
+       capacity: !os_env NODE_VOLUME_SIZE, 55
+       format: qcow2
+     - name: cinder
+       capacity: !os_env NODE_VOLUME_SIZE, 55
+       format: qcow2
+     - name: swift
+       capacity: !os_env NODE_VOLUME_SIZE, 55
+       format: qcow2
+    interfaces: *rack-01-slave-interfaces
+    network_config: *rack-01-slave-network_config
+
+template:
+  devops_settings:
+    env_name: !os_env ENV_NAME
+    address_pools:
+    # Network pools used by the environment
+      fuelweb_admin:
+        net: *pool_default
+        params:
+          tag: 0
+      public:
+        net: *pool_default
+        params:
+          vlan_start: 0
+      storage:
+        net: *pool_default
+        params:
+          vlan_start: 101
+      management:
+        net: *pool_default
+        params:
+          vlan_start: 102
+      private:
+        net: *pool_default
+        params:
+          vlan_start: 103
+          vlan_end: 120
+
+      ironic:
+        net: *pool_default
+        params:
+          vlan_start: 121
+          vlan_end: 140
+
+    groups:
+     - name: default
+       driver:
+         name: devops.driver.libvirt.libvirt_driver
+         params:
+           connection_string: !os_env CONNECTION_STRING, qemu:///system
+           storage_pool_name: !os_env STORAGE_POOL_NAME, default
+           stp: True
+           hpet: False
+           use_host_cpu: !os_env DRIVER_USE_HOST_CPU, true
+
+       network_pools:  # Address pools for OpenStack networks.
+         # Actual names should be used for keys
+         # (the same as in Nailgun, for example)
+
+         fuelweb_admin: fuelweb_admin
+         public: public
+         storage: storage
+         management: management
+         private: private
+         ironic: ironic
+
+       l2_network_devices:  # Libvirt bridges. It is *NOT* Nailgun networks
+         admin:
+           address_pool: fuelweb_admin
+           dhcp: false
+           forward:
+             mode: nat
+
+         public:
+           address_pool: public
+           dhcp: false
+           forward:
+             mode: nat
+
+         storage:
+           address_pool: storage
+           dhcp: false
+
+         management:
+           address_pool: management
+           dhcp: false
+
+         private:
+           address_pool: private
+           dhcp: false
+
+         ironic:
+           address_pool: ironic
+           dhcp: false
+
+       nodes:
+        - name: admin        # Custom name of VM for Fuel admin node
+          role: fuel_master  # Fixed role for Fuel master node properties
+          params:
+            vcpu: !os_env ADMIN_NODE_CPU, 2
+            memory: !os_env ADMIN_NODE_MEMORY, 3072
+            boot:
+              - hd
+              - cdrom  # for boot from usb - without 'cdrom'
+            volumes:
+             - name: system
+               capacity: !os_env ADMIN_NODE_VOLUME_SIZE, 80
+               format: qcow2
+             - name: iso
+               source_image: !os_env ISO_PATH    # if 'source_image' set, then volume capacity is calculated from it's size
+               format: raw
+               device: cdrom   # for boot from usb - 'disk'
+               bus: ide        # for boot from usb - 'usb'
+            interfaces:
+             - label: eth0
+               l2_network_device: admin    # Libvirt bridge name. It is *NOT* a Nailgun network
+               interface_model: *interface_model
+            network_config:
+              eth0:
+                networks:
+                 - fuelweb_admin
+
+        - name: slave-01
+          role: fuel_slave
+          params: *rack-01-slave-node-params
+        - name: slave-02
+          role: fuel_slave
+          params: *rack-01-slave-node-params
+        - name: slave-03
+          role: fuel_slave
+          params: *rack-01-slave-node-params
+        - name: slave-04
+          role: fuel_slave
+          params: *rack-01-slave-node-params
+        - name: slave-05
+          role: fuel_slave
+          params: *rack-01-slave-node-params
+        - name: slave-06
+          role: fuel_slave
+          params: *rack-01-slave-node-params
+        - name: slave-07
+          role: fuel_slave
+          params: *rack-01-slave-node-params
+        - name: slave-08
+          role: fuel_slave
+          params: *rack-01-slave-node-params
+        - name: slave-09
+          role: fuel_slave
+          params: *rack-01-slave-node-params
