@@ -1,3 +1,3 @@
 # TODO(ddmitriev): move this requirement to requirements.txt
 # when fuel-devops will be available as a PyPi package
-fuel-devops>=2.9.23
+fuel-devops>=3.0.3
