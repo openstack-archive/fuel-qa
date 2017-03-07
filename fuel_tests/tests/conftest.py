@@ -97,7 +97,7 @@ def snapshot(request):
 
 
 @pytest.fixture(scope='function', autouse=True)
-def prepare(request):
+def prepare(request, snapshot):
     """Fixture for prepearing environment for test.
 
     Provided two marker behaviour:
