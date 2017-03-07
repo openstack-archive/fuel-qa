@@ -85,7 +85,7 @@ OPENSTACK_RELEASE_UBUNTU_UCA = os.environ.get('OPENSTACK_RELEASE_UBUNTU_UCA',
 OPENSTACK_RELEASE = os.environ.get(
     'OPENSTACK_RELEASE', 'Ubuntu').lower()
 
-RELEASE_VERSION = os.environ.get('RELEASE_VERSION', "newton")
+RELEASE_VERSION = os.environ.get('RELEASE_VERSION', "ocata")
 
 # FIXME(mattmymo): Update CI jobs to use 'Ubuntu 14.04' for OPENSTACK_RELEASE
 # FIXME(dteselkin): Because of strange logic to detect Ubuntu release we need
