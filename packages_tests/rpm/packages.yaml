@@ -788,7 +788,6 @@ deployment:
       - openstack-neutron-openvswitch
       - openstack-neutron-plumgrid
       - openstack-neutron-ryu
-      - openstack-neutron-vmware
       - openstack-neutron-vpn-agent
       - python-neutron
       - dkms
@@ -875,7 +874,6 @@ deployment:
       - cifs-utils
       - cirros-testvm
       - cirros-testvm-mellanox
-      - cirros-testvmware
       - cloud-init
       - cloud-utils
       - cloud-utils-growpart
@@ -1291,7 +1289,6 @@ deployment:
       - python-openstackclient
       - python-oslo-config-doc
       - python-oslo-rootwrap
-      - python-oslo-vmware
       - python-osnagios
       - python-osprofiler
       - python-paste-deploy1.5

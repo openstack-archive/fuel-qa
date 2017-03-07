@@ -67,9 +67,6 @@ common:
   use_cow_images:
     type: checkbox
     value: true
-  use_vcenter:
-    type: hidden
-    value: false
 corosync:
   group:
     type: text
@@ -376,9 +373,6 @@ storage:
     type: hidden
     value: 1c80fd26-fe2f-44a9-b9f4-74e6235eaa46
   images_ceph:
-    type: checkbox
-    value: false
-  images_vcenter:
     type: checkbox
     value: false
   mon_key:
