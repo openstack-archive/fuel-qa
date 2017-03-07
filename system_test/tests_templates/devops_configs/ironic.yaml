@@ -24,7 +24,7 @@ aliases:
      l2_network_device: private
      interface_model: *interface_model
    - label: eth5
-     l2_network_device: baremetal
+     l2_network_device: ironic
      interface_model: *interface_model
 
   rack-01-slave-network_config: &rack-01-slave-network_config
@@ -71,30 +71,31 @@ template:
     env_name: !os_env ENV_NAME
     address_pools:
     # Network pools used by the environment
-      fuelweb_admin-pool01:
+      fuelweb_admin:
         net: *pool_default
         params:
           tag: 0
-      public-pool01:
+      public:
         net: *pool_default
         params:
-          tag: 0
-      storage-pool01:
+          vlan_start: 0
+      storage:
         net: *pool_default
         params:
-          tag: 101
-      management-pool01:
+          vlan_start: 101
+      management:
         net: *pool_default
         params:
-          tag: 102
-      private-pool01:
+          vlan_start: 102
+      ironic:
         net: *pool_default
         params:
-          tag: 103
-      baremetal-pool01:
+          vlan_start: 103
+      private:
         net: *pool_default
         params:
-          tag: 0
+          vlan_start: 104
+          vlan_end: 120
 
     groups:
      - name: default
@@ -111,40 +112,40 @@ template:
          # Actual names should be used for keys
          # (the same as in Nailgun, for example)
 
-         fuelweb_admin: fuelweb_admin-pool01
-         public: public-pool01
-         storage: storage-pool01
-         management: management-pool01
-         private: private-pool01
-         baremetal: baremetal-pool01
+         fuelweb_admin: fuelweb_admin
+         public: public
+         storage: storage
+         management: management
+         private: private
+         ironic: ironic
 
        l2_network_devices:  # Libvirt bridges. It is *NOT* Nailgun networks
          admin:
-           address_pool: fuelweb_admin-pool01
+           address_pool: fuelweb_admin
            dhcp: false
            forward:
              mode: nat
 
          public:
-           address_pool: public-pool01
+           address_pool: public
            dhcp: false
            forward:
              mode: nat
 
          storage:
-           address_pool: storage-pool01
+           address_pool: storage
            dhcp: false
 
          management:
-           address_pool: management-pool01
+           address_pool: management
            dhcp: false
 
          private:
-           address_pool: private-pool01
+           address_pool: private
            dhcp: false
 
-         baremetal:
-           address_pool: baremetal-pool01
+         ironic:
+           address_pool: ironic
            dhcp: false
 
        nodes:
