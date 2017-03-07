@@ -26,6 +26,7 @@ from proboscis.asserts import assert_true
 from fuelweb_test import logger
 from fuelweb_test import settings
 from fuelweb_test.helpers import os_actions
+from fuelweb_test.helpers.checkers import enable_feature_group
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
@@ -166,6 +167,7 @@ class TestMultiqueue(TestBasic):
         self.env.bootstrap_nodes([self.env.d_env.get_node(name='slave-06')])
 
         self.show_step(1)
+        enable_feature_group(self.env.d_env, 'experimental')
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             settings={
