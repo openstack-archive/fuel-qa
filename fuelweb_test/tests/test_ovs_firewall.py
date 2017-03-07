@@ -26,6 +26,7 @@ from fuelweb_test import settings
 from fuelweb_test.helpers import os_actions
 from fuelweb_test.helpers.checkers import check_firewall_driver
 from fuelweb_test.helpers.checkers import check_settings_requirements
+from fuelweb_test.helpers.checkers import enable_feature_group
 from fuelweb_test.helpers.checkers import ping6_from_instance
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.ssh_manager import SSHManager
@@ -465,6 +466,7 @@ class TestOVSFirewallDPDK(CheckOVSFirewall):
         self.env.revert_snapshot("ready_with_3_slaves")
 
         self.show_step(1)
+        enable_feature_group(self.env.d_env, 'experimental')
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE,
@@ -542,6 +544,7 @@ class TestOVSFirewallDPDK(CheckOVSFirewall):
         self.env.revert_snapshot("ready_with_3_slaves")
 
         self.show_step(1)
+        enable_feature_group(self.env.d_env, 'experimental')
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=settings.DEPLOYMENT_MODE,
