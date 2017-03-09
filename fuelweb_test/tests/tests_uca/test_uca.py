@@ -227,7 +227,8 @@ class UCATest(TestBasic):
         self.fuel_web.run_ostf(cluster_id=cluster_id)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
-          groups=["uca_vlan_mongo"])
+          groups=["uca_vlan_mongo"],
+          enabled=False)
     @log_snapshot_after_test
     def uca_vlan_mongo(self):
         """Deploy cluster with NeutronVlan, Ceilometer and UCA repo
