@@ -20,7 +20,8 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
-@test(groups=['murano_os_component', 'additional_components'])
+@test(groups=['murano_os_component', 'additional_components'],
+      enabled=False)
 class MuranoOSComponent(TestBasic):
     """MuranoOSComponent"""  # TODO documentation
 
