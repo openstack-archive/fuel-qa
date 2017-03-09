@@ -22,12 +22,14 @@ from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
-@test(groups=['failover_group_mongo'])
+@test(groups=['failover_group_mongo'],
+      enabled=False)
 class FailoverGroupMongo(TestBasic):
     """ FailoverGroupMongo """  # TODO documentation
 
     @test(depends_on_groups=["prepare_slaves_9"],
-          groups=['deploy_mongo_cluster'])
+          groups=['deploy_mongo_cluster'],
+          enabled=False)
     @log_snapshot_after_test
     def deploy_mongo_cluster(self):
         """Deploy cluster with MongoDB nodes
@@ -92,7 +94,8 @@ class FailoverGroupMongo(TestBasic):
         self.env.make_snapshot('deploy_mongo_cluster', is_make=True)
 
     @test(depends_on_groups=["deploy_mongo_cluster"],
-          groups=['kill_mongo_processes'])
+          groups=['kill_mongo_processes'],
+          enabled=False)
     @log_snapshot_after_test
     def kill_mongo_processes(self):
         """Kill mongo processes
@@ -152,7 +155,8 @@ class FailoverGroupMongo(TestBasic):
         self.env.make_snapshot('kill_mongo_processes')
 
     @test(depends_on_groups=['deploy_mongo_cluster'],
-          groups=['close_connections_for_mongo'])
+          groups=['close_connections_for_mongo'],
+          enabled=False)
     @log_snapshot_after_test
     def close_connections_for_mongo(self):
         """Close connection for Mongo node
@@ -191,7 +195,8 @@ class FailoverGroupMongo(TestBasic):
         self.env.make_snapshot('close_connections_for_mongo')
 
     @test(depends_on_groups=['deploy_mongo_cluster'],
-          groups=['shut_down_mongo_node'])
+          groups=['shut_down_mongo_node'],
+          enabled=False)
     @log_snapshot_after_test
     def shut_down_mongo_node(self):
         """Shut down Mongo node for Neutron

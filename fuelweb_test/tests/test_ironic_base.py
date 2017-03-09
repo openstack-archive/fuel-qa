@@ -343,7 +343,8 @@ class TestIronicDeploy(TestBasic):
         self.env.make_snapshot("ironic_deploy_sahara")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["ironic_deploy_ceilometer"])
+          groups=["ironic_deploy_ceilometer"],
+          enabled=False)
     @log_snapshot_after_test
     def ironic_deploy_ceilometer(self):
         """Deploy Ironic with Ceilometer

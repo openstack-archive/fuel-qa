@@ -48,7 +48,7 @@ class NodeReinstallationEnv(TestBasic):
 
         Scenario:
             1. Create a cluster
-            2. Add 3 nodes with controller and mongo roles
+            2. Add 3 nodes with controller role
             3. Add a node with compute and cinder roles
             4. Deploy the cluster
             5. Verify that the deployment is completed successfully
@@ -61,16 +61,13 @@ class NodeReinstallationEnv(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
-            settings={
-                'ceilometer': True,
-            }
         )
 
         self.fuel_web.update_nodes(
             cluster_id, {
-                'slave-01': ['controller', 'mongo'],
-                'slave-02': ['controller', 'mongo'],
-                'slave-03': ['controller', 'mongo'],
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
                 'slave-04': ['compute', 'cinder'],
             }
         )
@@ -90,7 +87,7 @@ class NodeReinstallationEnv(TestBasic):
         Scenario:
             1. Revert the snapshot
             2. Create a cluster
-            3. Add 3 nodes with controller and mongo roles
+            3. Add 3 nodes with controller role
             4. Add a node with compute and cinder roles
             5. Provision nodes
 
@@ -102,16 +99,13 @@ class NodeReinstallationEnv(TestBasic):
         cluster_id = self.fuel_web.create_cluster(
             name=self.__class__.__name__,
             mode=DEPLOYMENT_MODE,
-            settings={
-                'ceilometer': True,
-            }
         )
 
         self.fuel_web.update_nodes(
             cluster_id, {
-                'slave-01': ['controller', 'mongo'],
-                'slave-02': ['controller', 'mongo'],
-                'slave-03': ['controller', 'mongo'],
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
                 'slave-04': ['compute', 'cinder'],
             }
         )
@@ -549,7 +543,8 @@ class PartitionPreservation(TestBasic):
                     "ip".format(vm.name, vm_floating_ip))
 
     @test(depends_on=[NodeReinstallationEnv.node_reinstallation_env],
-          groups=["mongo_mysql_partition_preservation"])
+          groups=["mongo_mysql_partition_preservation"],
+          enabled=False)
     @log_snapshot_after_test
     def mongo_mysql_partition_preservation(self):
         """Verify partition preservation of Ceilometer and mysql data.
