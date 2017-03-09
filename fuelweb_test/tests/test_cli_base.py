@@ -493,3 +493,10 @@ class CommandLine(TestBasic):
             file_path=settings_file,
             ip=self.ssh_manager.admin_ip,
         ).get_content()
+
+    @logwrap
+    def set_public_networks_for_all_nodes(self, cluster_id):
+        settings = self.download_settings(cluster_id)
+        settings['editable']['public_network_assignment'][
+            'assign_to_all_nodes']['value'] = True
+        self.upload_settings(cluster_id, settings)
