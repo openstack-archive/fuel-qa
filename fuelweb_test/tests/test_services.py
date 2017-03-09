@@ -328,7 +328,8 @@ class MuranoHAOneController(TestBasic):
         self.env.make_snapshot("deploy_murano_ha_one_controller_tun")
 
 
-@test(groups=["services", "services.murano", "services_ha"])
+@test(groups=["services", "services.murano", "services_ha"],
+      enabled=False)
 class MuranoHA(TestBasic):
     """Murano HA tests.
     Don't recommend to start tests without kvm.
