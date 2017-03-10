@@ -468,8 +468,6 @@ class MultiroleMultipleServices(TestBasic):
                 'net_provider': 'neutron',
                 'net_segment_type': NEUTRON_SEGMENT['tun'],
                 'sahara': True,
-                'murano': True,
-                'ceilometer': True,
                 'volumes_lvm': True,
                 'volumes_ceph': False,
                 'images_ceph': True
@@ -510,7 +508,7 @@ class MultiroleMultipleServices(TestBasic):
         self.show_step(7)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
-            test_sets=['ha', 'smoke', 'sanity'])
+            test_sets=['smoke'])
 
 
 @test
