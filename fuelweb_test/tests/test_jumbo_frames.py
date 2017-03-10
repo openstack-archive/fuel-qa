@@ -16,6 +16,7 @@ import subprocess
 
 from devops.helpers import helpers as devops_helpers
 from devops.helpers.ssh_client import SSHAuth
+from devops.models.network import L2NetworkDevice
 from proboscis import asserts
 from proboscis import test
 
@@ -227,8 +228,9 @@ class TestJumboFrames(base_test_case.TestBasic):
         self.check_run("ready_with_5_slaves_jumbo_frames")
         self.env.revert_snapshot("ready_with_5_slaves")
 
-        devops_env = self.env.d_env
-        private_bridge = devops_env.get_network(name='private').bridge_name()
+        l2_device = L2NetworkDevice.objects.get(
+            group__environment=self.env.d_env, name='private')
+        private_bridge = l2_device.driver.bridge_name()
         logger.info(
             "Search for {0} interfaces for update".format(private_bridge))
 
