@@ -47,6 +47,10 @@ maintainers:
         email:  akurenyshev@mirantis.com
         IRC:    akurenyshev
 
+      - name:   Sergey Novikov
+        email:  snovikov@mirantis.com
+        IRC:    snovikov
+
   - fuelweb_test/tests/plugins/plugin_zabbix/:
 
       - name:   Swann Croiset
