@@ -3503,7 +3503,7 @@ class FuelWebClient30(FuelWebClient29):
         net_pool = group.get_network_pool(name=pool_name)
         _net_pool = {
             "gateway": net_pool.gateway,
-            "network": net_pool.ip_range
+            "network": net_pool.net
         }
         return _net_pool
 
