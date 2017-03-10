@@ -425,14 +425,14 @@ class MultiroleComputeCinder(TestBasic):
 class MultiroleMultipleServices(TestBasic):
     """MultiroleMultipleServices."""  # TODO documentation
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+    @test(depends_on=[SetupEnvironment.prepare_slaves_3],
           groups=["deploy_multiple_services_local_mirror"])
     @log_snapshot_after_test
     def deploy_multiple_services_local_mirror(self):
         """Deploy cluster with multiple services using local mirror
 
         Scenario:
-            1. Revert snapshot 'prepare_slaves_5' with default set of mirrors
+            1. Revert snapshot 'prepare_slaves_3' with default set of mirrors
             2. Run 'fuel-mirror' to create mirror repositories
             3. Create cluster with many components to check as many
                packages in local mirrors have correct dependencies
@@ -445,7 +445,7 @@ class MultiroleMultipleServices(TestBasic):
         Duration 140m
         """
         self.show_step(1)
-        self.env.revert_snapshot('ready_with_5_slaves')
+        self.env.revert_snapshot('ready_with_3_slaves')
 
         self.show_step(2)
         admin_ip = self.ssh_manager.admin_ip
@@ -468,8 +468,6 @@ class MultiroleMultipleServices(TestBasic):
                 'net_provider': 'neutron',
                 'net_segment_type': NEUTRON_SEGMENT['tun'],
                 'sahara': True,
-                'murano': True,
-                'ceilometer': True,
                 'volumes_lvm': True,
                 'volumes_ceph': False,
                 'images_ceph': True
@@ -486,9 +484,7 @@ class MultiroleMultipleServices(TestBasic):
             {
                 'slave-01': ['controller', 'ceph-osd'],
                 'slave-02': ['compute', 'ceph-osd'],
-                'slave-03': ['cinder', 'ceph-osd'],
-                'slave-04': ['mongo'],
-                'slave-05': ['mongo']
+                'slave-03': ['cinder', 'ceph-osd']
             }
         )
 
@@ -510,7 +506,7 @@ class MultiroleMultipleServices(TestBasic):
         self.show_step(7)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id,
-            test_sets=['ha', 'smoke', 'sanity'])
+            test_sets=['smoke'])
 
 
 @test
