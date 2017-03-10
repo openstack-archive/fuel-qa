@@ -193,6 +193,7 @@ template:
         - name: slave-06
           role: fuel_slave
           params: *rack-01-slave-node-params
+        # slaves 7-9 is not used by fuel-qa but can be used in manual tests
         - name: slave-07
           role: fuel_slave
           params: *rack-01-slave-node-params
@@ -202,3 +203,20 @@ template:
         - name: slave-09
           role: fuel_slave
           params: *rack-01-slave-node-params
+        - name: ironic-slave-01
+          params: &rack-01-ironic-slave-node-params
+            boot:
+            - network
+            - hd
+            interfaces:
+            - l2_network_device: ironic
+              label: eth0
+            memory: 4096
+            vcpu: 2
+            volumes:
+            - name: system
+              capacity: !os_env NODE_VOLUME_SIZE, 50
+              format: qcow2
+          role: ironic_slave
+        - name: ironic-slave-02
+          params: *rack-01-ironic-slave-node-params
