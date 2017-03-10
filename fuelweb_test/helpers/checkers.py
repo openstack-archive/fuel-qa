@@ -1366,15 +1366,17 @@ def fail_deploy(not_ready_transactions):
         assert_true(len(not_ready_transactions) == 0, failure_text)
 
 
-def check_free_space_admin(env, min_disk_admin=50, disk_id=0):
+def check_free_space_admin(env, min_disk_admin=50, disk_type='qcow2'):
     """Calculate available free space on /var and /var/log/ disk partitions
 
     :param env: environment model object
     :param min_disk_admin: minimal disk size of admin node
-    :param disk_id: id of disk in the admin node's list of disks
+    :param disk_type: type of disk in the admin node's list of disks
     """
-    disk_size_admin = env.d_env.nodes().admin.disk_devices[
-        disk_id].volume.get_capacity()
+    disk_size_admin = None
+    for dd in env.d_env.nodes().admin.disk_devices:
+        if dd.volume.get_format() == disk_type:
+            disk_size_admin = dd.volume.get_capacity()
     min_disk_admin *= 1024 ** 3
     if disk_size_admin < min_disk_admin:
         raise ValueError(
