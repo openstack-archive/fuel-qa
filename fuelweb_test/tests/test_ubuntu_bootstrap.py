@@ -113,7 +113,7 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
                                 "mos", "main")]
 
         bootstrap_params = {
-            "ubuntu-release": "trusty",
+            "ubuntu-release": "xenial",
             "repo": ["'deb {0} {1} {2}'".format(repo['uri'],
                                                 repo['suite'],
                                                 repo['section'])
@@ -194,7 +194,7 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
                                 "mos", "main")]
 
         bootstrap_params = {
-            "ubuntu-release": "trusty",
+            "ubuntu-release": "xenial",
             "repo": ["'deb {0} {1} {2}'".format(repo['uri'],
                                                 repo['suite'],
                                                 repo['section'])
