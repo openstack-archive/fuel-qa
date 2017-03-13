@@ -3316,15 +3316,22 @@ class FuelWebClient30(FuelWebClient29):
 
                 if 'baremetal' in networks and \
                         default_node_group.get_network_pools(name='ironic'):
-                    ironic_net_pool = default_node_group.get_network_pool(
-                        name='ironic')
-                    networks['baremetal']['cidr'] = ironic_net_pool.net
+                    ironic_net = self.environment.d_env.get_network(
+                        name='ironic').ip
+                    prefix = netaddr.IPNetwork(
+                        str(ironic_net.cidr)).prefixlen
+                    subnet1, subnet2 = tuple(ironic_net.subnet(prefix + 1))
+                    networks['baremetal']['cidr'] = str(ironic_net)
                     net_settings[net_provider]['config'][
-                        'baremetal_gateway'] = ironic_net_pool.gateway
-                    networks['baremetal']['ip_range'] = \
-                        list(ironic_net_pool.ip_range())
-                    net_settings[net_provider]['config']['baremetal_range'] = \
-                        list(ironic_net_pool.ip_range('baremetal'))
+                        'baremetal_gateway'] = str(ironic_net[-2])
+                    networks['baremetal']['ip_range'] = [
+                        str(subnet1[2]), str(subnet2[0])]
+                    net_settings[net_provider]['config']['baremetal_range'] =\
+                        [str(subnet2[1]), str(subnet2[-3])]
+                    pool = default_node_group.get_network_pool(
+                        name='ironic')
+                    networks['baremetal']['vlan_start'] = (
+                        pool.vlan_start if pool.vlan_start else None)
 
                 for pool in default_node_group.get_network_pools(
                         name__in=['storage', 'management']):
