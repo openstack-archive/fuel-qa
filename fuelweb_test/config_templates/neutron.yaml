@@ -1,7 +1,7 @@
 ---
 neutron_plugin_ml2:
   ml2_type_vlan/network_vlan_ranges:
-    value: "physnet2:1000:1001,physnet1"
+    value: "physnet2:900:901,physnet1"
     notify: "Service[neutron-server]"
 neutron_config:
   DEFAULT/verbose:
