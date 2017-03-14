@@ -79,7 +79,8 @@ class TestOffloading(BondingTestOffloading):
                 'slave-01': ['controller'],
                 'slave-02': ['compute'],
                 'slave-03': ['cinder']
-            }
+            },
+            update_interfaces=False
         )
 
         nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
@@ -189,7 +190,8 @@ class TestOffloading(BondingTestOffloading):
                 'slave-01': ['controller'],
                 'slave-02': ['compute'],
                 'slave-03': ['cinder']
-            }
+            },
+            update_interfaces=False
         )
 
         nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)

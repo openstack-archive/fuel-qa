@@ -72,7 +72,8 @@ class BondingHAOneController(BondingTest):
                 'slave-01': ['controller'],
                 'slave-02': ['compute'],
                 'slave-03': ['cinder']
-            }
+            },
+            update_interfaces=False
         )
 
         self.show_step(4)
@@ -139,7 +140,8 @@ class BondingHAOneController(BondingTest):
                 'slave-01': ['controller'],
                 'slave-02': ['compute'],
                 'slave-03': ['cinder']
-            }
+            },
+            update_interfaces=False
         )
 
         self.show_step(4)
@@ -200,7 +202,8 @@ class BondingHAOneController(BondingTest):
                 'slave-01': ['controller'],
                 'slave-02': ['compute'],
                 'slave-03': ['cinder']
-            }
+            },
+            update_interfaces=False
         )
 
         self.show_step(4)
@@ -296,7 +299,8 @@ class BondingHA(BondingTest):
                 'slave-03': ['controller'],
                 'slave-04': ['compute'],
                 'slave-05': ['cinder']
-            }
+            },
+            update_interfaces=False
         )
 
         net_params = self.fuel_web.client.get_networks(cluster_id)
@@ -389,7 +393,8 @@ class BondingHA(BondingTest):
                 'slave-03': ['controller'],
                 'slave-04': ['compute'],
                 'slave-05': ['cinder']
-            }
+            },
+            update_interfaces=False
         )
 
         net_params = self.fuel_web.client.get_networks(cluster_id)
@@ -479,7 +484,8 @@ class BondingHA(BondingTest):
                 'slave-02': ['controller'],
                 'slave-03': ['controller'],
                 'slave-04': ['compute'],
-            }
+            },
+            update_interfaces=False
         )
 
         self.show_step(4)
