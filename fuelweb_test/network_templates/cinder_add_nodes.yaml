@@ -42,8 +42,6 @@ adv_net_template:
           ep: br-fw-admin
         fake:
           ep: br-fake
-        mongo:
-          ep: br-mongo
         keystone:
           ep: br-keystone
         neutron-api:
@@ -54,8 +52,6 @@ adv_net_template:
           ep: br-swift
         sahara:
           ep: br-sahara
-        ceilometer:
-          ep: br-ceilometer
         cinder:
           ep: br-cinder
         glance:
@@ -66,8 +62,6 @@ adv_net_template:
           ep: br-nova
         nova-migration:
           ep: br-novamigr
-        murano:
-          ep: br-murano
         horizon:
           ep: br-horizon
         messaging:
@@ -174,11 +168,6 @@ adv_net_template:
       custom:
         transformations:
           - action: add-br
-            name: br-mongo
-          - action: add-port
-            bridge: br-mongo
-            name: <% if4 %>.201
-          - action: add-br
             name: br-keystone
           - action: add-port
             bridge: br-keystone
@@ -204,11 +193,6 @@ adv_net_template:
             bridge: br-sahara
             name: <% if4 %>.206
           - action: add-br
-            name: br-ceilometer
-          - action: add-port
-            bridge: br-ceilometer
-            name: <% if4 %>.207
-          - action: add-br
             name: br-cinder
           - action: add-port
             bridge: br-cinder
@@ -233,11 +217,6 @@ adv_net_template:
           - action: add-port
             bridge: br-novamigr
             name: <% if4 %>.212
-          - action: add-br
-            name: br-murano
-          - action: add-port
-            bridge: br-murano
-            name: <% if4 %>.213
           - action: add-br
             name: br-horizon
           - action: add-port
@@ -274,19 +253,16 @@ adv_net_template:
             bridge: br-swiftrepl
             name: <% if4 %>.220
         endpoints:
-          - br-mongo
           - br-keystone
           - br-neutronapi
           - br-neutronmesh
           - br-swift
           - br-sahara
-          - br-ceilometer
           - br-cinder
           - br-glance
           - br-heat
           - br-nova
           - br-novamigr
-          - br-murano
           - br-horizon
           - br-messaging
           - br-corosync
@@ -295,20 +271,16 @@ adv_net_template:
           - br-cinderiscsi
           - br-swiftrepl
         roles:
-          mongo/db: br-mongo
           keystone/api: br-keystone
           neutron/api: br-neutronapi
           neutron/mesh: br-neutronmesh
           swift/api: br-swift
           sahara/api: br-sahara
-          ceilometer/api: br-ceilometer
           cinder/api: br-cinder
           glance/api: br-glance
           heat/api: br-heat
           nova/api: br-nova
           nova/migration: br-novamigr
-          murano/api: br-murano
-          murano/cfapi: br-murano
           horizon: br-horizon
           mgmt/messaging: br-messaging
           mgmt/corosync: br-corosync
