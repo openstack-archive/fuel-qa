@@ -101,23 +101,8 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
         """
         self.env.revert_snapshot("ready")
 
-        bootstrap_default_params = \
-            self.env.fuel_bootstrap_actions.get_bootstrap_default_config()
-
-        additional_repos = [
-            self._get_main_repo(bootstrap_default_params["repos"],
-                                "ubuntu", "main"),
-            self._get_main_repo(bootstrap_default_params["repos"],
-                                "ubuntu", "updates"),
-            self._get_main_repo(bootstrap_default_params["repos"],
-                                "mos", "main")]
-
         bootstrap_params = {
-            "ubuntu-release": "trusty",
-            "repo": ["'deb {0} {1} {2}'".format(repo['uri'],
-                                                repo['suite'],
-                                                repo['section'])
-                     for repo in additional_repos],
+            "ubuntu-release": "xenial",
             "label": "UbuntuBootstrap",
             "output-dir": "/tmp",
             "package": ["ipython"]
@@ -182,23 +167,8 @@ class UbuntuBootstrapBuild(base_test_case.TestBasic):
             kernel_cmdline = ["biosdevname=0", "net.ifnames=1", "debug",
                               "ignore_loglevel", "log_buf_len=10M"]
 
-        bootstrap_default_params = \
-            self.env.fuel_bootstrap_actions.get_bootstrap_default_config()
-
-        additional_repos = [
-            self._get_main_repo(bootstrap_default_params["repos"],
-                                "ubuntu", "main"),
-            self._get_main_repo(bootstrap_default_params["repos"],
-                                "ubuntu", "updates"),
-            self._get_main_repo(bootstrap_default_params["repos"],
-                                "mos", "main")]
-
         bootstrap_params = {
-            "ubuntu-release": "trusty",
-            "repo": ["'deb {0} {1} {2}'".format(repo['uri'],
-                                                repo['suite'],
-                                                repo['section'])
-                     for repo in additional_repos],
+            "ubuntu-release": "xenial",
             "direct-repo-addr": [self.env.admin_node_ip],
             "script": "/root/bin/bootstrap_script.sh",
             "label": "UbuntuBootstrap",
