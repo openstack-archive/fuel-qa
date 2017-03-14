@@ -378,7 +378,8 @@ class SupportDPDKBond(BondingTestDPDK, TestDPDK):
                 'slave-01': ['controller'],
                 'slave-02': ['compute', 'cinder'],
                 'slave-03': ['compute', 'cinder']
-            }
+            },
+            update_interfaces=False
         )
 
         self.show_step(4)
