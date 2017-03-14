@@ -3129,6 +3129,8 @@ class FuelWebClient29(object):
             logger.debug("Using new interface serialization scheme")
             target_interface['attributes']['dpdk'][
                 'enabled']['value'] = switch_to
+            if target_interface['type'] == 'bond':
+                target_interface['attributes']['type__']['value'] = 'dpdkovs'
 
         self.client.put_node_interfaces([{'id': nailgun_node_id,
                                           'interfaces': compute_interfaces}])
