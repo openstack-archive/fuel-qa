@@ -3514,6 +3514,8 @@ class FuelWebClient30(FuelWebClient29):
 if (distutils.version.LooseVersion(devops.__version__) <
         distutils.version.LooseVersion('3')):
     logger.info("Use FuelWebClient compatible to fuel-devops 2.9")
+    logger.warning("\n\nfuel-devops 2.9 NOT SUPPORTED now. UPDATE"
+                   " fuel-devops up to 3.0 version ASAP.\n")
     FuelWebClient = FuelWebClient29
 else:
     logger.info("Use FuelWebClient compatible to fuel-devops 3.0")
