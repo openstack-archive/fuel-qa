@@ -110,21 +110,17 @@ adv_net_template:
         roles:
           admin/pxe: br-fw-admin
           fw-admin: br-fw-admin
-          mongo/db: br-mgmt
           management: br-mgmt
           keystone/api: br-mgmt
           neutron/api: br-mgmt
           neutron/mesh: br-mgmt
           swift/api: br-mgmt
           sahara/api: br-mgmt
-          ceilometer/api: br-mgmt
           cinder/api: br-mgmt
           glance/api: br-mgmt
           heat/api: br-mgmt
           nova/api: br-mgmt
           nova/migration: br-mgmt
-          murano/api: br-mgmt
-          murano/cfapi: br-mgmt
           horizon: br-mgmt
           mgmt/api: br-mgmt
           mgmt/memcache: br-mgmt
