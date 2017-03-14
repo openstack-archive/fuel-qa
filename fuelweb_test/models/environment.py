@@ -16,11 +16,11 @@ import logging
 import re
 import time
 
+from devops.client.client import DevopsClient
 from devops.helpers.helpers import tcp_ping_
 from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
 from devops.helpers.metaclasses import SingletonMeta
-from devops.helpers.ntp import sync_time
 from devops.models import Environment
 from keystoneauth1 import exceptions
 from proboscis.asserts import assert_equal
@@ -147,7 +147,8 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
         logger.info("Please wait while time on nodes: {0} "
                     "will be synchronized"
                     .format(', '.join(sorted(nodes_names))))
-        new_time = sync_time(self.d_env, nodes_names, skip_sync)
+        denv = DevopsClient().get_env(self.d_env.name)
+        new_time = denv.sync_time(node_names=nodes_names, skip_sync=skip_sync)
         for name in sorted(new_time):
             logger.info("New time on '{0}' = {1}".format(name, new_time[name]))
 
