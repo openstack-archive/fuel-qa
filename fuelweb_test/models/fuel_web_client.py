@@ -3321,6 +3321,11 @@ class FuelWebClient30(FuelWebClient29):
                     networks['baremetal']['vlan_start'] = (
                         pool.vlan_start if pool.vlan_start else None)
 
+                if BONDING:
+                    # leave defaults for mgmt, storage and private if
+                    # BONDING is enabled
+                    continue
+
                 for pool in default_node_group.get_network_pools(
                         name__in=['storage', 'management']):
                     networks[pool.name]['cidr'] = str(pool.net)
