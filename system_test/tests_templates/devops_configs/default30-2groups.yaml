@@ -15,7 +15,7 @@ address_pools:
   fuelweb_admin-pool01:
     net: *pool_default
     params:
-      tag: 0
+      vlan_start: 0
       ip_reserved:
         gateway: +1
         l2_network_device: +1  # l2_network_device will get this IP address
@@ -25,7 +25,7 @@ address_pools:
   public-pool01:
     net: *pool_default
     params:
-      tag: 100
+      vlan_start: 100
       ip_reserved:
         gateway: +1
         l2_network_device: +1  # l2_network_device will get this IP address
@@ -36,7 +36,7 @@ address_pools:
   storage-pool01:
     net: *pool_default
     params:
-      tag: 101
+      vlan_start: 101
       ip_reserved:
         gateway: +1
         l2_network_device: +1  # l2_network_device will get this IP address
@@ -46,7 +46,7 @@ address_pools:
   management-pool01:
     net: *pool_default
     params:
-      tag: 102
+      vlan_start: 102
       ip_reserved:
         gateway: +1
         l2_network_device: +1  # l2_network_device will get this IP address
@@ -56,7 +56,8 @@ address_pools:
   private-pool01:
     net: *pool_default
     params:
-      tag: 960
+      vlan_start: 960
+      vlan_end: 990
       ip_reserved:
         gateway: +1
         l2_network_device: +1  # l2_network_device will get this IP address
@@ -66,7 +67,7 @@ address_pools:
   public-pool02:
     net: *pool_default
     params:
-      tag: 100
+      vlan_start: 100
       ip_reserved:
         gateway: +1
         l2_network_device: +1  # l2_network_device will get this IP address
@@ -77,7 +78,7 @@ address_pools:
   storage-pool02:
     net: *pool_default
     params:
-      tag: 101
+      vlan_start: 101
       ip_reserved:
         gateway: +1
         l2_network_device: +1  # l2_network_device will get this IP address
@@ -87,7 +88,7 @@ address_pools:
   management-pool02:
     net: *pool_default
     params:
-      tag: 102
+      vlan_start: 102
       ip_reserved:
         gateway: +1
         l2_network_device: +1  # l2_network_device will get this IP address
@@ -97,7 +98,8 @@ address_pools:
   private-pool02:
     net: *pool_default
     params:
-      tag: 960
+      vlan_start: 960
+      vlan_end: 990
       ip_reserved:
         gateway: +1
         l2_network_device: +1  # l2_network_device will get this IP address
