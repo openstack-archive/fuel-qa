@@ -14,6 +14,7 @@
 
 from proboscis import asserts
 from proboscis import test
+
 from fuelweb_test.helpers.decorators import check_fuel_statistics
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test import settings
@@ -23,6 +24,62 @@ from fuelweb_test.tests import base_test_case
 @test(groups=["cluster_actions"])
 class EnvironmentAction(base_test_case.TestBasic):
     """EnvironmentAction."""  # TODO documentation
+
+    @test(depends_on=[base_test_case.SetupEnvironment.prepare_release],
+          groups=["check_deployment_actions_as_graph"])
+    @log_snapshot_after_test
+    def check_deployment_actions_as_graph(self):
+        """Check that all cluster actions are using graph engine
+
+        Scenario:
+
+        1. Revert snapshot "ready"
+        2. Get release ID
+        3. Get sequence list for this release
+        4. Get graphs from release sequence
+        5. Check that all graph actions are present in graph list
+        6. Ensure that there is no additional graphs
+
+        Duration: 1m
+        """
+
+        self.show_step(1)
+        self.env.revert_snapshot("ready")
+
+        self.show_step(self.next_step)
+        release_id = self.fuel_web.client.get_release_id(
+            release_name=settings.OPENSTACK_RELEASE_UBUNTU)
+
+        self.show_step(self.next_step)
+        admin_ip = self.env.get_admin_node_ip()
+        out = self.ssh_manager.check_call(
+            ip=admin_ip,
+            command="fuel2 sequence list -f json -r {}".format(release_id))
+        sequence_id = out.stdout_json[0]['id']
+
+        self.show_step(self.next_step)
+        out = self.ssh_manager.check_call(
+            ip=admin_ip,
+            command="fuel2 sequence show -f json {}".format(sequence_id))
+        sequence_graphs = set(out.stdout_json["graphs"].split(", "))
+
+        self.show_step(self.next_step)
+        # "default" graph is deployment graph itself - named that for backward
+        # compatibility
+        graphs_list = ["net-verification", "deletion", "provision", "default"]
+        for graph in graphs_list:
+            asserts.assert_true(
+                graph in sequence_graphs,
+                "Graph {!r} is not presented in sequence! {!r}".format(
+                    graph, out.stdout_json))
+            sequence_graphs.remove(graph)
+
+        self.show_step(self.next_step)
+        asserts.assert_false(
+            sequence_graphs,
+            "New unexpected graphs were found in release sequence: {!r}!"
+            "Please check the results and update the test "
+            "if needed!".format(sequence_graphs))
 
     @test(depends_on=[base_test_case.SetupEnvironment.prepare_slaves_3],
           groups=["smoke", "deploy_neutron_stop_reset_on_deploying",
