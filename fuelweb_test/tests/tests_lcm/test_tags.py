@@ -24,6 +24,7 @@ from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 from fuelweb_test.helpers.checkers import check_response_code
+from fuelweb_test.helpers.utils import pretty_log
 
 
 @test(groups=["test_tags"])
@@ -335,3 +336,103 @@ class TagsCRUD(TestBasic):
                                                   rabbitmq_ctl_nodes)
         assert_equal(rabbitmq_nodes, rabbitmq_ctl_nodes, err_msg)
         self.env.make_snapshot("separate_rabbit_via_role")
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_9],
+          groups=["separate_all_via_role"])
+    @log_snapshot_after_test
+    def separate_all_via_role(self):
+        """Deploy cluster with detached 4 services via tags
+
+        Scenario:
+            1. Remove rabbit, neutron, database and keystone tags from
+               controller role
+            2. Create new roles with all mentioned above tags
+            3. Create cluster
+            4. Add 1 nodes per each role: controller, compute, cinder,
+               all created at step 2 custom roles
+            7. Verify networks
+            8. Deploy the cluster
+            9. Verify networks
+            10. Run OSTF
+
+        Duration 120m
+        """
+
+        self.env.revert_snapshot("ready_with_9_slaves")
+        roles_list = ["controller", "standalone-rabbitmq",
+                      "standalone-database", "standalone-neutron",
+                      "standalone-keystone"]
+
+        role_template = {
+            "meta": {
+                "group": "base",
+                "description": "Separated {tag} from controller role",
+                "weight": 100,
+                "tags": [],
+                "update_required": roles_list,
+                "name": ""
+            },
+            "name": "",
+            "volumes_roles_mapping": [{
+                "id": "os",
+                "allocate_size": "min"
+            }]
+        }
+        detachable_tags = ["rabbitmq", "database", "neutron", "keystone"]
+
+        update_required_roles = ["controller"]
+        for tag in detachable_tags:
+            update_required_roles.append(tag)
+
+        custom_roles = []
+        for tag in detachable_tags:
+            logger.info("Generating role data for tag {tag}".format(tag=tag))
+            current_role = deepcopy(role_template)
+            current_role["meta"]["description"] = current_role["meta"][
+                "description"].format(tag=tag)
+            current_role["meta"]["tags"] = [tag]
+            current_role["meta"]["update_required"] = update_required_roles
+            current_role["meta"]["name"] = tag
+            current_role["name"] = tag
+            logger.debug(
+                "API data for tag {tag}:\n"
+                "{role_data}".format(tag=tag,
+                                     role_data=pretty_log(
+                                         current_role)))
+            custom_roles.append(current_role)
+
+        rel_id = self.nailgun.get_release_id()
+
+        self.show_step(1)
+        controller_role = self.nailgun.get_role_data(rel_id, 'controller')
+        for tag in detachable_tags:
+            controller_role['meta']['tags'].remove(tag)
+        self.nailgun.update_role_data(rel_id, 'controller', controller_role)
+
+        self.show_step(2)
+        for role in custom_roles:
+            self.nailgun.add_new_role(rel_id, role)
+
+        self.show_step(3)
+
+        self.create_cluster()
+        self.show_step(4)
+        self.show_step(5)
+        self.show_step(6)
+        nodes = {
+            'slave-01': ['controller'],
+            'slave-02': ['cinder'],
+            'slave-03': ['compute']
+        }
+        for i, role in enumerate(custom_roles, start=4):
+            nodes['slave-0{}'.format(i)] = [role['name']]
+        self.update_nodes(nodes)
+
+        self.show_step(7)
+        self.verify_networks()
+        self.show_step(8)
+        self.deploy_cluster(check_services=False)
+        self.show_step(9)
+        self.verify_networks()
+        self.show_step(10)
+        self.run_ostf(should_fail=1, failed_tests=['Check pacemaker status'])
