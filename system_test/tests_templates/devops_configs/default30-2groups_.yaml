@@ -14,7 +14,7 @@ address_pools:
   fuelweb_admin-pool01:
     net: *pool_default
     params:
-      tag: 0
+      vlan_start: 0
       ip_reserved:
         gateway: +1
         l2_network_device: +1  # l2_network_device will get this IP address
@@ -24,7 +24,7 @@ address_pools:
   public-pool01:
     net: *pool_default
     params:
-      tag: 100
+      vlan_start: 100
       ip_reserved:
         gateway: +1
         l2_network_device: +1  # l2_network_device will get this IP address
@@ -35,15 +35,16 @@ address_pools:
   storage-pool01:
     net: *pool_default
     params:
-      tag: 101
+      vlan_start: 101
   management-pool01:
     net: *pool_default
     params:
-      tag: 102
+      vlan_start: 102
   private-pool01:
     net: *pool_default
     params:
-      tag: 960
+      vlan_start: 960
+      vlan_start: 990
 
 groups:
 
