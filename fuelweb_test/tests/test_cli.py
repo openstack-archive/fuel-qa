@@ -559,7 +559,7 @@ class CommandLineTest(test_cli_base.CommandLine):
         self.assert_all_tasks_completed(cluster_id=cluster_id)
 
         assert_equal(
-            6,
+            5,
             len(self.fuel_web.get_nailgun_node_by_status('provisioned')),
             'Some unexpected nodes were provisioned,'
             ' current list of provisioned '
