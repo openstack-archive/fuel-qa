@@ -307,8 +307,9 @@ def update_fuel(func):
                                  .format(ubuntu_files_count))
             if settings.SYNC_DEPL_TASKS:
                 with environment.d_env.get_admin_remote() as remote:
-                    remote.execute("fuel release --sync-deployment-tasks"
-                                   " --dir /etc/puppet/")
+                    remote.execute(
+                        "puppet apply "
+                        "/etc/puppet/*/modules/fuel/examples/client.pp")
         return result
     return wrapper
 
