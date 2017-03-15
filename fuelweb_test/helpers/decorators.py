@@ -306,9 +306,12 @@ def update_fuel(func):
                                  " because of deploying wrong release!"
                                  .format(ubuntu_files_count))
             if settings.SYNC_DEPL_TASKS:
-                with environment.d_env.get_admin_remote() as remote:
-                    remote.execute("fuel release --sync-deployment-tasks"
-                                   " --dir /etc/puppet/")
+                ssh = environment.ssh_manager
+                admin_ip = environment.get_admin_node_ip()
+                ssh.check_call(
+                    ip=admin_ip,
+                    command="puppet apply "
+                            "/etc/puppet/*/modules/fuel/examples/client.pp")
         return result
     return wrapper
 
