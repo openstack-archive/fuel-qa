@@ -242,7 +242,7 @@ class TagsCRUD(TestBasic):
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
           groups=["separate_rabbit_via_role"])
-    @log_snapshot_after_test
+    # @log_snapshot_after_test
     def separate_rabbit_via_role(self):
         """Deploy cluster with 3 separate via tag rabbitmq roles
 
@@ -312,6 +312,157 @@ class TagsCRUD(TestBasic):
             'slave-06': ['standalone-rabbitmq'],
             'slave-07': ['compute'],
             'slave-08': ['cinder']
+        }
+        self.update_nodes(nodes)
+
+        self.show_step(7)
+        self.verify_networks()
+        self.show_step(8)
+        self.deploy_cluster(check_services=False)
+        self.show_step(9)
+        self.verify_networks()
+        self.show_step(10)
+        self.run_ostf(should_fail=1, failed_tests=['Check pacemaker status'])
+        self.show_step(11)
+        rabbitmq_nodes_raw = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
+            self.cluster_id, ['standalone-rabbitmq'])
+        rabbitmq_nodes = set([node['hostname'] for node in rabbitmq_nodes_raw])
+        rabbitmq_ctl_nodes = \
+            set(self.fuel_web.get_rabbit_running_nodes('slave-04'))
+        err_msg = \
+            'Nodes with tag rabbitmq: {} are not equal deployed nodes with ' \
+            'role standalone-rabbitmq: {}'.format(rabbitmq_nodes,
+                                                  rabbitmq_ctl_nodes)
+        assert_equal(rabbitmq_nodes, rabbitmq_ctl_nodes, err_msg)
+        self.env.make_snapshot("separate_rabbit_via_role")
+
+
+    @test(depends_on=[SetupEnvironment.prepare_slaves_9],
+          groups=["separate_all_via_role"])
+    # @log_snapshot_after_test
+    def separate_all_via_role(self):
+        """Deploy cluster via tags
+
+        Scenario:
+            1. Remove rabbit tag from controller role
+            2. Create new role rabbitmq
+            3. Create cluster
+            4. Add 3 nodes with controller role
+            5. Add 3 nodes with newly created rabbit role
+            6. Add 1 compute and cinder
+            7. Verify networks
+            8. Deploy the cluster
+            9. Verify networks
+            10. Run OSTF
+            11. Compare deployed nodes with tag rabbitmq
+
+        Duration 120m
+        Snapshot separate_rabbit_via_role
+        """
+
+        roles_list = ["controller", "standalone-rabbitmq",
+                      "standalone-database", "standalone-neutron",
+                      "standalone-keystone"]
+        rabbitmq_role = {
+            "meta": {
+                "group": "base",
+                "description": "Separated rabbitmq from controller role",
+                "weight": 100,
+                "tags": ["rabbitmq"],
+                "update_required": roles_list,
+                "name": "Standalone-Rabbitmq"
+            },
+            "name": "standalone-rabbitmq",
+            "volumes_roles_mapping": [{
+                "id": "os",
+                "allocate_size": "min"
+            }]
+        }
+        database_role = {
+            "meta": {
+                "group": "base",
+                "description": "Separated mysql from controller role",
+                "weight": 100,
+                "tags": ["database"],
+                "update_required": roles_list,
+                "name": "Standalone-Database"
+            },
+            "name": "standalone-database",
+            "volumes_roles_mapping": [{
+                "id": "os",
+                "allocate_size": "min"
+            }]
+        }
+
+        neutron_role = {
+            "meta": {
+                "group": "base",
+                "description": "Separated mysql from controller role",
+                "weight": 100,
+                "tags": ["neutron"],
+                "update_required": roles_list,
+                "name": "Standalone-Neutron"
+            },
+            "name": "standalone-neutron",
+            "volumes_roles_mapping": [{
+                "id": "os",
+                "allocate_size": "min"
+            }]
+        }
+
+        keystone_role = {
+            "meta": {
+                "group": "base",
+                "description": "Separated mysql from controller role",
+                "weight": 100,
+                "tags": ["keystone"],
+                "update_required": roles_list,
+                "name": "Standalone-Keystone"
+            },
+            "name": "standalone-keystone",
+            "volumes_roles_mapping": [{
+                "id": "os",
+                "allocate_size": "min"
+            }]
+        }
+        self.env.revert_snapshot("ready_with_9_slaves")
+        rel_id = self.nailgun.get_release_id()
+
+        self.show_step(1)
+        controller_role = self.nailgun.get_role_data(rel_id, 'controller')
+        controller_role['meta']['tags'].remove('rabbitmq')
+        controller_role['meta']['tags'].remove('database')
+        controller_role['meta']['tags'].remove('neutron')
+        controller_role['meta']['tags'].remove('keystone')
+        self.nailgun.update_role_data(rel_id, 'controller', controller_role)
+
+        self.show_step(2)
+        self.nailgun.add_new_role(rel_id, rabbitmq_role)
+        self.nailgun.add_new_role(rel_id, database_role)
+        self.nailgun.add_new_role(rel_id, neutron_role)
+        self.nailgun.add_new_role(rel_id, keystone_role)
+
+        self.show_step(3)
+        data = {
+            'tenant': 'separaterall',
+            'user': 'separaterall',
+            'password': 'separateall',
+            "net_provider": 'neutron',
+            "net_segment_type": settings.NEUTRON_SEGMENT['vlan'],
+        }
+
+        self.create_cluster(data)
+        self.show_step(4)
+        self.show_step(5)
+        self.show_step(6)
+        nodes = {
+            'slave-01': ['controller'],
+            'slave-02': ['standalone-rabbitmq'],
+            'slave-03': ['standalone-database'],
+            'slave-04': ['standalone-keystone'],
+            'slave-05': ['standalone-neutron'],
+            'slave-06': ['cinder'],
+            'slave-07': ['compute']
         }
         self.update_nodes(nodes)
 
