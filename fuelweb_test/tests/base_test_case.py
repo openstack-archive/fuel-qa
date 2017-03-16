@@ -280,7 +280,7 @@ class TestBasic(object):
         ssh.execute_on_remote(ssh.admin_ip, cmd=cmd)
 
         self.env.wait_for_external_config()
-        self.env.admin_actions.modify_configs(self.env.d_env.router())
+        self.env.admin_actions.modify_configs(self.env.d_env.get_default_gw())
         if CUSTOM_FUEL_SETTING_YAML:
             self.env.admin_actions.update_fuel_setting_yaml(
                 CUSTOM_FUEL_SETTING_YAML)
