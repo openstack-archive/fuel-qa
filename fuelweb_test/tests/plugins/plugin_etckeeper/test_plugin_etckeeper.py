@@ -27,7 +27,8 @@ from fuelweb_test.helpers.fuel_actions import FuelPluginBuilder
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 
 
-@test(groups=["fuel_plugins", "fuel_plugin_etckeeper"])
+@test(groups=["fuel_plugins", "fuel_plugin_etckeeper"],
+      enabled=False)
 class EtcKeeper(TestBasic):
     """Test class for testing allocation of vip for plugin."""
 
