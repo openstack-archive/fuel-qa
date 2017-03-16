@@ -44,13 +44,11 @@ class TestNetworkTemplatesBase(TestBasic):
         :param template: Yaml template with network assignments on interfaces.
         :param ip_nets: Dict with network descriptions.
         :param ip_prefixlen: Integer for slicing network prefix.
-        :return: Data to be used to assign networks to nodes.
+        :return: Data to be used to assign networks to nodes
         """
         networks_data = []
         nodegroups = self.fuel_web.client.get_nodegroups()
         for nodegroup, section in template['adv_net_template'].items():
-            networks = [(n, section['network_assignments'][n]['ep'])
-                        for n in section['network_assignments']]
             assert_true(any(n['name'] == nodegroup for n in nodegroups),
                         'Network templates contains settings for Node Group '
                         '"{0}", which does not exist!'.format(nodegroup))
@@ -58,14 +56,13 @@ class TestNetworkTemplatesBase(TestBasic):
                         n['name'] == nodegroup][0]
             ip_network = netaddr.IPNetwork(str(ip_nets[nodegroup]))
             ip_subnets = list(ip_network.subnet(int(ip_prefixlen)))
-            for network, interface in networks:
+            for network in section['network_assignments']:
                 ip_subnet = ip_subnets.pop()
                 networks_data.append(
                     {
                         'name': network,
                         'cidr': str(ip_subnet),
                         'group_id': group_id,
-                        'interface': interface,
                         'gateway': None,
                         'meta': {
                             "notation": "ip_ranges",
@@ -80,6 +77,26 @@ class TestNetworkTemplatesBase(TestBasic):
                     }
                 )
         return networks_data
+
+    @logwrap
+    def map_group_by_iface_and_network(self, template):
+        """ Map groip id, iface name and network name
+
+        :param template: Yaml template with network assignments on interfaces.
+        :return: Data to be used for check of ip assignment
+        """
+        mapped_data = {}
+        nodegroups = self.fuel_web.client.get_nodegroups()
+        for nodegroup, section in template['adv_net_template'].items():
+            networks = [(n, section['network_assignments'][n]['ep'])
+                        for n in section['network_assignments']]
+            assert_true(any(n['name'] == nodegroup for n in nodegroups),
+                        'Network templates contains settings for Node Group '
+                        '"{0}", which does not exist!'.format(nodegroup))
+            group_id = [n['id'] for n in nodegroups if
+                        n['name'] == nodegroup][0]
+            mapped_data[group_id] = dict(networks)
+        return mapped_data
 
     @staticmethod
     @logwrap
@@ -172,6 +189,7 @@ class TestNetworkTemplatesBase(TestBasic):
         # Network for Neutron is configured in namespaces (l3/dhcp agents)
         # and a bridge for it doesn't have IP, so skipping it for now
         skip_roles = {'neutron/private'}
+        mapped_data = self.map_group_by_iface_and_network(network_template)
         for node in self.fuel_web.client.list_cluster_nodes(cluster_id):
             node_networks = set()
             node_group_name = [ng['name'] for ng in
@@ -188,13 +206,16 @@ class TestNetworkTemplatesBase(TestBasic):
                     if network['name'] not in node_networks or \
                             network['group_id'] != node['group_id']:
                         continue
-                    logger.debug('Checking interface "{0}" for IP network '
-                                 '"{1}" on "{2}"'.format(network['interface'],
-                                                         network['cidr'],
-                                                         node['hostname']))
-                    self.check_interface_ip_exists(remote,
-                                                   network['interface'],
-                                                   network['cidr'])
+                    logger.debug(
+                        'Checking interface "{0}" for IP network '
+                        '"{1}" on "{2}"'.format(
+                            mapped_data[node['group_id']][network['name']],
+                            network['cidr'],
+                            node['hostname']))
+                    self.check_interface_ip_exists(
+                        remote,
+                        mapped_data[node['group_id']][network['name']],
+                        network['cidr'])
 
     @staticmethod
     @logwrap
