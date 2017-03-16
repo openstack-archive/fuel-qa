@@ -84,11 +84,3 @@ def define_custom_groups():
     add_group(group="system_test.strength",
               systest_group="system_test.failover.destroy_controllers.second",
               config_name="1ctrl_ceph_2ctrl_1comp_1comp_ceph_neutronVLAN")
-
-    add_group(group="fuel_master_migrate",
-              systest_group="system_test.fuel_migration",
-              config_name="1ctrl_1comp_neutronVLAN")
-
-    add_group(group="fuel_master_migrate",
-              systest_group="system_test.fuel_migration",
-              config_name="1ctrl_1comp_neutronTUN")
