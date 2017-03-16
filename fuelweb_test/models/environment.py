@@ -21,7 +21,6 @@ from devops.helpers.helpers import tcp_ping_
 from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
 from devops.helpers.metaclasses import SingletonMeta
-from devops.models import Environment
 from keystoneauth1 import exceptions
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
@@ -104,7 +103,7 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
     @logwrap
     def add_syslog_server(self, cluster_id, port=5514):
         self.fuel_web.add_syslog_server(
-            cluster_id, self.d_env.router(), port)
+            cluster_id, self.d_env.get_default_gw(), port)
 
     def bootstrap_nodes(self, devops_nodes, timeout=settings.BOOTSTRAP_TIMEOUT,
                         skip_timesync=False):
@@ -147,8 +146,8 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
         logger.info("Please wait while time on nodes: {0} "
                     "will be synchronized"
                     .format(', '.join(sorted(nodes_names))))
-        denv = DevopsClient().get_env(self.d_env.name)
-        new_time = denv.sync_time(node_names=nodes_names, skip_sync=skip_sync)
+        new_time = self.d_env.sync_time(node_names=nodes_names,
+                                        skip_sync=skip_sync)
         for name in sorted(new_time):
             logger.info("New time on '{0}' = {1}".format(name, new_time[name]))
 
@@ -169,7 +168,7 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
             'iface': iface_alias('eth0'),
             'ip': node.get_ip_address_by_network_name('admin'),
             'mask': self.d_env.get_network(name='admin').ip.netmask,
-            'gw': self.d_env.router(),
+            'gw': self.d_env.get_default_gw(),
             'hostname': ''.join((settings.FUEL_MASTER_HOSTNAME,
                                  settings.DNS_SUFFIX)),
             'nat_interface': '',
@@ -229,20 +228,21 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
             from devops.error import DevopsObjNotFound
             EnvDoesNotExist = DevopsObjNotFound
         except ImportError:
+            from devops.models import Environment
             # pylint: disable=no-member
             EnvDoesNotExist = Environment.DoesNotExist
             # pylint: enable=no-member
 
         try:
             logger.info("Try to find environment '{0}'".format(env_name))
-            self._virt_env = Environment.get(name=env_name)
+            self._virt_env = DevopsClient().get_env(env_name)
         except EnvDoesNotExist:
             logger.info("Try to create environment '{0}'".format(env_name))
             if self._config:
-                self._virt_env = Environment.create_environment(
-                    full_config=self._config)
+                self._virt_env = DevopsClient().create_env_from_config(
+                    config=self._config)
             else:
-                self._virt_env = Environment.describe_environment(
+                self._virt_env = DevopsClient().create_env(
                     boot_from=settings.ADMIN_BOOT_DEVICE)
             self._virt_env.define()
             logger.info("New environment '{0}' was defined".format(env_name))
@@ -448,7 +448,7 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
             nessus_node.start()
         # wait while installation complete
 
-        self.admin_actions.modify_configs(self.d_env.router())
+        self.admin_actions.modify_configs(self.d_env.get_default_gw())
         if CUSTOM_FUEL_SETTING_YAML:
             self.admin_actions.update_fuel_setting_yaml(
                 CUSTOM_FUEL_SETTING_YAML)

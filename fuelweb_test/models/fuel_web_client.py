@@ -63,7 +63,6 @@ from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers.decorators import update_fuel
 from fuelweb_test.helpers.decorators import upload_manifests
 from fuelweb_test.helpers.security import SecurityChecks
-from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.ssl_helpers import change_cluster_ssl_config
 from fuelweb_test.helpers.ssl_helpers import copy_cert_from_master
 from fuelweb_test.helpers.uca import change_cluster_uca_config
@@ -104,9 +103,9 @@ class FuelWebClient29(object):
     """FuelWebClient."""  # TODO documentation
 
     def __init__(self, environment):
-        self.ssh_manager = SSHManager()
-        self.admin_node_ip = self.ssh_manager.admin_ip
         self._environment = environment
+        self.ssh_manager = environment.ssh_manager
+        self.admin_node_ip = self.ssh_manager.admin_ip
 
         keystone_url = "http://{0}:5000/v2.0".format(self.admin_node_ip)
 
@@ -654,7 +653,7 @@ class FuelWebClient29(object):
             if help_data.FUEL_USE_LOCAL_NTPD\
                     and ('ntp_list' not in settings)\
                     and checkers.is_ntpd_active(
-                        self.ssh_manager.admin_ip, public_gw):
+                        self.admin_node_ip, public_gw):
                 attributes['editable']['external_ntp']['ntp_list']['value'] =\
                     [public_gw]
                 logger.info("Configuring cluster #{0}"
@@ -1250,8 +1249,7 @@ class FuelWebClient29(object):
 
     @logwrap
     def get_ssh_for_node(self, node_name):
-        return self.environment.d_env.get_ssh_to_remote(
-            self.get_node_ip_by_devops_name(node_name))
+        return self.environment.d_env.get_node_remote(node_name)
 
     @logwrap
     def get_ssh_for_role(self, nodes_dict, role):
@@ -1260,8 +1258,12 @@ class FuelWebClient29(object):
         return self.get_ssh_for_node(node_name)
 
     @logwrap
+    def get_ssh_for_ip(self, ip):
+        return self.ssh_manager.get_remote(ip)
+
+    @logwrap
     def get_ssh_for_nailgun_node(self, nailgun_node):
-        return self.environment.d_env.get_ssh_to_remote(nailgun_node['ip'])
+        return self.get_ssh_for_ip(nailgun_node['ip'])
 
     @logwrap
     def is_node_discovered(self, nailgun_node):
@@ -2276,7 +2278,7 @@ class FuelWebClient29(object):
                           self.client.list_cluster_nodes(cluster_id)])
         # 'mco find' returns '1' exit code if rabbitmq is not ready
         out = self.ssh_manager.execute_on_remote(
-            ip=self.ssh_manager.admin_ip,
+            ip=self.admin_node_ip,
             cmd='mco find', assert_ec_equal=[0, 1])['stdout_str']
         ready_nodes_uids = set(out.split('\n'))
         unavailable_nodes = nodes_uids - ready_nodes_uids
@@ -2355,8 +2357,7 @@ class FuelWebClient29(object):
         # Let's find nodes where are a time skew. It can be checked on
         # an arbitrary one.
         logger.debug("Looking up nodes with a time skew and try to fix them")
-        with self.environment.d_env.get_ssh_to_remote(
-                online_ceph_nodes[0]['ip']) as remote:
+        with self.get_ssh_for_nailgun_node(online_ceph_nodes[0]) as remote:
             if ceph.is_clock_skew(remote):
                 skewed = ceph.get_node_fqdns_w_clock_skew(remote)
                 logger.warning("Time on nodes {0} are to be "
@@ -2399,9 +2400,7 @@ class FuelWebClient29(object):
 
         logger.info('Waiting until Ceph service become up...')
         for node in online_ceph_nodes:
-            with self.environment.d_env\
-                    .get_ssh_to_remote(node['ip']) as remote:
-
+            with self.get_ssh_for_nailgun_node(node) as remote:
                 wait(lambda: ceph.check_service_ready(remote) is True,
                      interval=20, timeout=600,
                      timeout_msg='Ceph service is not properly started'
@@ -2411,7 +2410,7 @@ class FuelWebClient29(object):
         self.check_ceph_time_skew(cluster_id, offline_nodes)
 
         node = online_ceph_nodes[0]
-        with self.environment.d_env.get_ssh_to_remote(node['ip']) as remote:
+        with self.get_ssh_for_nailgun_node(node) as remote:
             if not ceph.is_health_ok(remote):
                 if ceph.is_pgs_recovering(remote) and len(offline_nodes) > 0:
                     logger.info('Ceph is being recovered after osd node(s)'
