@@ -1250,8 +1250,7 @@ class FuelWebClient29(object):
 
     @logwrap
     def get_ssh_for_node(self, node_name):
-        return self.environment.d_env.get_ssh_to_remote(
-            self.get_node_ip_by_devops_name(node_name))
+        return self.environment.d_env.get_node_remote(node_name)
 
     @logwrap
     def get_ssh_for_role(self, nodes_dict, role):
@@ -1260,8 +1259,16 @@ class FuelWebClient29(object):
         return self.get_ssh_for_node(node_name)
 
     @logwrap
+    def get_ssh_for_ip(self, ip):
+        return ssh_client.SSHClient(
+            ip,
+            auth=ssh_client.SSHAuth(
+                username=login, password=password,
+                keys=self.get_private_keys()))
+
+    @logwrap
     def get_ssh_for_nailgun_node(self, nailgun_node):
-        return self.environment.d_env.get_ssh_to_remote(nailgun_node['ip'])
+        return self.get_ssh_for_ip(nailgun_node['ip'])
 
     @logwrap
     def is_node_discovered(self, nailgun_node):
@@ -2355,8 +2362,7 @@ class FuelWebClient29(object):
         # Let's find nodes where are a time skew. It can be checked on
         # an arbitrary one.
         logger.debug("Looking up nodes with a time skew and try to fix them")
-        with self.environment.d_env.get_ssh_to_remote(
-                online_ceph_nodes[0]['ip']) as remote:
+        with self.get_ssh_for_nailgun_node(online_ceph_nodes[0]) as remote:
             if ceph.is_clock_skew(remote):
                 skewed = ceph.get_node_fqdns_w_clock_skew(remote)
                 logger.warning("Time on nodes {0} are to be "
@@ -2399,9 +2405,7 @@ class FuelWebClient29(object):
 
         logger.info('Waiting until Ceph service become up...')
         for node in online_ceph_nodes:
-            with self.environment.d_env\
-                    .get_ssh_to_remote(node['ip']) as remote:
-
+            with self.get_ssh_for_nailgun_node(node) as remote:
                 wait(lambda: ceph.check_service_ready(remote) is True,
                      interval=20, timeout=600,
                      timeout_msg='Ceph service is not properly started'
@@ -2411,7 +2415,7 @@ class FuelWebClient29(object):
         self.check_ceph_time_skew(cluster_id, offline_nodes)
 
         node = online_ceph_nodes[0]
-        with self.environment.d_env.get_ssh_to_remote(node['ip']) as remote:
+        with self.get_ssh_for_nailgun_node(node) as remote:
             if not ceph.is_health_ok(remote):
                 if ceph.is_pgs_recovering(remote) and len(offline_nodes) > 0:
                     logger.info('Ceph is being recovered after osd node(s)'
