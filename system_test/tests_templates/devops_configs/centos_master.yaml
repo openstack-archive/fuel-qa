@@ -68,23 +68,24 @@ address_pools:
   fuelweb_admin-pool01:
     net: *pool_default
     params:
-      tag: 0
+      vlan_start: 0
   public-pool01:
     net: *pool_default
     params:
-      tag: 0
+      vlan_start: 0
   storage-pool01:
     net: *pool_default
     params:
-      tag: 101
+      vlan_start: 101
   management-pool01:
     net: *pool_default
     params:
-      tag: 102
+      vlan_start: 102
   private-pool01:
     net: *pool_default
     params:
-      tag: 103
+      vlan_start: 103
+      vlan_end: 120
 
 groups:
  - name: default

@@ -197,57 +197,60 @@ address_pools:
   fuelweb_admin-pool01:
     net: *pool_default
     params:
-      tag: 0
+      vlan_start: 0
   public-pool01:
     net: *pool_default
     params:
-      tag: 0
+      vlan_start: 0
   storage-pool01:
     net: *pool_default
     params:
-      tag: 101
+      vlan_start: 101
   management-pool01:
     net: *pool_default
     params:
-      tag: 102
+      vlan_start: 102
   private-pool01:
     net: *pool_default
     params:
-      tag: 103
+      vlan_start: 103
+      vlan_end: 120
 
   fuelweb_admin-pool02:
     net: *pool_default
     params:
-      tag: 0
+      vlan_start: 0
   public-pool02:
     net: *pool_default
     params:
-      tag: 0
+      vlan_start: 0
   management-pool02:
     net: *pool_default
     params:
-      tag: 102
+      vlan_start: 102
   private-pool02:
     net: *pool_default
     params:
-      tag: 103
+      vlan_start: 103
+      vlan_end: 120
 
   fuelweb_admin-pool03:
     net: *pool_default
     params:
-      tag: 0
+      vlan_start: 0
   public-pool03:
     net: *pool_default
     params:
-      tag: 0
+      vlan_start: 0
   management-pool03:
     net: *pool_default
     params:
-      tag: 102
+      vlan_start: 102
   private-pool03:
     net: *pool_default
     params:
-      tag: 103
+      vlan_start: 103
+      vlan_end: 120
 
 groups:
  - name: default
