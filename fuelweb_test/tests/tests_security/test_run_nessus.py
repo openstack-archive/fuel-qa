@@ -45,6 +45,7 @@ class TestNessus(NeutronTunHaBase):
         - NESSUS_USERNAME - Username to login to Nessus.
         - NESSUS_PASSWORD - Password to login to Nessus.
         - NESSUS_SSL_VERIFY - True if you want verify Nessus SSL
+        - TEST_TIMEOUT - Time to waiting test
           Default: False
     """
 
@@ -127,6 +128,8 @@ class TestNessus(NeutronTunHaBase):
 
         scan_name = "Scan CPA {0}".format(scan_start_date)
 
+        TEST_TIMEOUT = os.environ.get("TEST_TIMEOUT", 60 * 50)
+
         policies_list = nessus_client.list_policy_templates()
         cpa_policy_template = filter(
             lambda template: template['title'] == 'Credentialed Patch Audit',
@@ -143,7 +146,7 @@ class TestNessus(NeutronTunHaBase):
 
         check_scan_complete = self.get_check_scan_complete(
             nessus_client, scan_id, history_id)
-        wait(check_scan_complete, interval=10, timeout=60 * 30)
+        wait(check_scan_complete, interval=10, timeout=TEST_TIMEOUT)
 
         file_id = nessus_client.export_scan(scan_id, history_id, 'html')
         nessus_client.download_scan_result(scan_id, file_id,
@@ -183,6 +186,8 @@ class TestNessus(NeutronTunHaBase):
 
         scan_name = "Scan WAT {0}".format(scan_start_date)
 
+        TEST_TIMEOUT = os.environ.get("TEST_TIMEOUT", 60 * 50)
+
         policies_list = nessus_client.list_policy_templates()
         wat_policy_template = filter(
             lambda template: template['title'] == 'Web Application Tests',
@@ -200,7 +205,7 @@ class TestNessus(NeutronTunHaBase):
 
         check_scan_complete = self.get_check_scan_complete(
             nessus_client, scan_id, history_id)
-        wait(check_scan_complete, interval=10, timeout=60 * 30)
+        wait(check_scan_complete, interval=10, timeout=TEST_TIMEOUT)
 
         file_id = nessus_client.export_scan(scan_id, history_id, 'html')
         nessus_client.download_scan_result(scan_id, file_id,
@@ -242,6 +247,8 @@ class TestNessus(NeutronTunHaBase):
 
         scan_name = "Scan CPA {0}".format(scan_start_date)
 
+        TEST_TIMEOUT = os.environ.get("TEST_TIMEOUT", 60 * 50)
+
         policies_list = nessus_client.list_policy_templates()
         cpa_policy_template = filter(
             lambda template: template['title'] == 'Credentialed Patch Audit',
@@ -261,7 +268,7 @@ class TestNessus(NeutronTunHaBase):
 
         check_scan_complete = self.get_check_scan_complete(
             nessus_client, scan_id, history_id)
-        wait(check_scan_complete, interval=10, timeout=60 * 30)
+        wait(check_scan_complete, interval=10, timeout=TEST_TIMEOUT)
 
         file_id = nessus_client.export_scan(scan_id, history_id, 'html')
         nessus_client.download_scan_result(scan_id, file_id,
