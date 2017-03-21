@@ -61,7 +61,7 @@ class IronicActions(os_actions.OpenStackActions):
                        'deploy_squashfs': deploy_squashfs.id}
 
         mac_address = ironic_slave.interface_by_network_name(
-            'ironic')[0].mac_address
+            'ironic').mac_address
 
         properties = {'memory_mb': ironic_slave.memory,
                       'cpu_arch': ironic_slave.architecture,
