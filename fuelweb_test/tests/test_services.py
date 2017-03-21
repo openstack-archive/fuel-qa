@@ -827,8 +827,7 @@ class HeatHAOneController(TestBasic):
     Don't recommend to start tests without kvm
     """
     @test(depends_on=[SetupEnvironment.prepare_slaves_3],
-          groups=["deploy_heat_ha_one_controller_neutron"],
-          enabled=False)
+          groups=["deploy_heat_ha_one_controller_neutron"])
     @log_snapshot_after_test
     def deploy_heat_ha_one_controller_neutron(self):
         """Deploy Heat cluster in HA mode with Neutron VXLAN
@@ -837,10 +836,9 @@ class HeatHAOneController(TestBasic):
             1. Create cluster
             2. Add 1 node with controller role and mongo
             3. Add 1 nodes with compute role
-            4. Set install Ceilometer option
-            5. Deploy the cluster
-            6. Verify Heat, Ceilometer services
-            7. Run OSTF platform tests
+            4. Deploy the cluster
+            5. Verify Heat, Ceilometer services
+            6. Run OSTF platform tests
 
         Duration 40m
         Snapshot: deploy_heat_ha_one_controller_neutron
@@ -849,7 +847,6 @@ class HeatHAOneController(TestBasic):
         self.env.revert_snapshot("ready_with_3_slaves")
 
         data = {
-            'ceilometer': True,
             'net_provider': 'neutron',
             'net_segment_type': settings.NEUTRON_SEGMENT['tun'],
             'tenant': 'heatSimple',
@@ -865,7 +862,7 @@ class HeatHAOneController(TestBasic):
         self.fuel_web.update_nodes(
             cluster_id,
             {
-                'slave-01': ['controller', 'mongo'],
+                'slave-01': ['controller'],
                 'slave-02': ['compute']
             }
         )
@@ -892,7 +889,6 @@ class HeatHAOneController(TestBasic):
                            'HeatSmokeTests')
         tests_names = ['test_actions',
                        'test_advanced_actions',
-                       'test_autoscaling',
                        'test_rollback',
                        'test_update',
                        'test_wait_condition']
@@ -917,8 +913,7 @@ class HeatHA(TestBasic):
     Don't recommend to start tests without kvm
     """
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
-          groups=["deploy_heat_ha"],
-          enabled=False)
+          groups=["deploy_heat_ha"])
     @log_snapshot_after_test
     def deploy_heat_ha(self):
         """Deploy Heat cluster in HA mode
@@ -927,10 +922,9 @@ class HeatHA(TestBasic):
             1. Create cluster
             2. Add 3 node with controller role and mongo
             3. Add 1 nodes with compute role
-            4. Set Ceilometer install option
-            5. Deploy the cluster
-            6. Verify Heat and Ceilometer services
-            7. Run OSTF platform tests
+            4. Deploy the cluster
+            5. Verify Heat and Ceilometer services
+            6. Run OSTF platform tests
 
         Duration 70m
         Snapshot: deploy_heat_ha
@@ -939,7 +933,6 @@ class HeatHA(TestBasic):
         self.env.revert_snapshot("ready_with_5_slaves")
 
         data = {
-            'ceilometer': True,
             'net_provider': 'neutron',
             'net_segment_type': settings.NEUTRON_SEGMENT['tun'],
             'tenant': 'heatHA',
@@ -955,9 +948,9 @@ class HeatHA(TestBasic):
         self.fuel_web.update_nodes(
             cluster_id,
             {
-                'slave-01': ['controller', 'mongo'],
-                'slave-02': ['controller', 'mongo'],
-                'slave-03': ['controller', 'mongo'],
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
                 'slave-04': ['compute']
             }
         )
@@ -983,7 +976,6 @@ class HeatHA(TestBasic):
                            'HeatSmokeTests')
         tests_names = ['test_actions',
                        'test_advanced_actions',
-                       'test_autoscaling',
                        'test_rollback',
                        'test_update']
 
