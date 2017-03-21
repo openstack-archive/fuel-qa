@@ -25,7 +25,7 @@ from fuelweb_test.tests.base_test_case import SetupEnvironment
 from fuelweb_test.tests.base_test_case import TestBasic
 
 
-@test(groups=["thread_separate_services_ceph"])
+@test(groups=["thread_separate_services_ceph"], enabled=False)
 class SeparateRabbitCeph(TestBasic):
     """SeparateRabbitCeph"""  # TODO documentation
 

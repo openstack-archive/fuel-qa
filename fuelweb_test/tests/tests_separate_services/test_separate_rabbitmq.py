@@ -27,7 +27,7 @@ from fuelweb_test.tests.base_test_case import TestBasic
 
 
 @test(groups=["thread_separate_services", "thread_2_separate_services",
-              "detach-rabbitmq-ci-group"])
+              "detach-rabbitmq-ci-group"], enabled=False)
 class SeparateRabbit(TestBasic):
     """SeparateRabbit"""  # TODO documentation
 
@@ -121,7 +121,7 @@ class SeparateRabbit(TestBasic):
 
 
 @test(groups=["thread_separate_services", "thread_2_separate_services",
-              "detach-rabbitmq-ci-group"])
+              "detach-rabbitmq-ci-group"], enabled=False)
 class SeparateRabbitFailover(TestBasic):
     """SeparateRabbitFailover"""  # TODO documentation
 
