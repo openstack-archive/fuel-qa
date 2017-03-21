@@ -514,9 +514,18 @@ def check_package_version_injected_in_bootstraps(
 def update_bootstrap_cli_yaml():
     actions = BaseActions()
     path = "/etc/fuel-bootstrap-cli/fuel_bootstrap_cli.yaml"
-    new_repo = {'name': 'auxiliary', 'priority': "1200",
-                'section': 'main restricted',
-                'suite': 'auxiliary', 'type': 'deb',
-                'uri': 'http://127.0.0.1:8080/ubuntu/auxiliary/'}
+    astute_yaml_path = "/etc/fuel/astute.yaml"
+
+    with YamlEditor(astute_yaml_path, ip=actions.admin_ip) as editor:
+        repos = editor.content["BOOTSTRAP"]["repos"]
+
+    repos.append({
+        'name': 'auxiliary',
+        'priority': "1200",
+        'section': 'main restricted',
+        'suite': 'auxiliary',
+        'type': 'deb',
+        'uri': 'http://127.0.0.1:8080/ubuntu/auxiliary/'})
+
     with YamlEditor(path, ip=actions.admin_ip) as editor:
-        editor.content['repos'].append(new_repo)
+        editor.content['repos'] = repos
