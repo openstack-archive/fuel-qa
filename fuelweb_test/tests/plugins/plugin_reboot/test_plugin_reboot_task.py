@@ -138,7 +138,7 @@ class RebootPlugin(TestBasic):
         # start deploying nodes
         # here nodes with controller and ceph roles should be rebooted
         self.show_step(9)
-        self.fuel_web.deploy_cluster_wait_progress(cluster_id, 30)
+        self.fuel_web.deploy_cluster_wait_progress(cluster_id, 35)
 
         # collect new timestamps and check them
         self.show_step(10)
