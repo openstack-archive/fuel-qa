@@ -834,10 +834,10 @@ class HeatHAOneController(TestBasic):
 
         Scenario:
             1. Create cluster
-            2. Add 1 node with controller role and mongo
+            2. Add 1 node with controller role
             3. Add 1 nodes with compute role
             4. Deploy the cluster
-            5. Verify Heat, Ceilometer services
+            5. Verify Heat services
             6. Run OSTF platform tests
 
         Duration 40m
@@ -875,12 +875,6 @@ class HeatHAOneController(TestBasic):
 
         _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
         checkers.verify_service(_ip, service_name='heat-api', count=5)
-
-        for service_name in SERVICES_TO_CHECK:
-            _ip = self.fuel_web.get_nailgun_node_by_name("slave-01")['ip']
-            checkers.verify_service(_ip,
-                                    service_name=service_name,
-                                    ignore_count_of_proccesses=True)
 
         logger.debug('Run Heat OSTF platform tests')
 
@@ -920,10 +914,10 @@ class HeatHA(TestBasic):
 
         Scenario:
             1. Create cluster
-            2. Add 3 node with controller role and mongo
+            2. Add 3 node with controller role
             3. Add 1 nodes with compute role
             4. Deploy the cluster
-            5. Verify Heat and Ceilometer services
+            5. Verify Heat services
             6. Run OSTF platform tests
 
         Duration 70m
@@ -960,14 +954,6 @@ class HeatHA(TestBasic):
         os_conn = os_actions.OpenStackActions(
             cluster_vip, data['user'], data['password'], data['tenant'])
         self.fuel_web.assert_cluster_ready(os_conn, smiles_count=13)
-
-        for slave in ["slave-01", "slave-02", "slave-03"]:
-            _ip = self.fuel_web.get_nailgun_node_by_name(slave)['ip']
-            for service_name in SERVICES_TO_CHECK:
-                checkers.verify_service(_ip, service_name='heat-api', count=5)
-                checkers.verify_service(_ip,
-                                        service_name=service_name,
-                                        ignore_count_of_proccesses=True)
 
         logger.debug('Run Heat OSTF platform tests')
 
