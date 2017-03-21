@@ -21,7 +21,6 @@ from devops.helpers.helpers import tcp_ping_
 from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
 from devops.helpers.metaclasses import SingletonMeta
-from devops.models import Environment
 from keystoneauth1 import exceptions
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
@@ -104,7 +103,7 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
     @logwrap
     def add_syslog_server(self, cluster_id, port=5514):
         self.fuel_web.add_syslog_server(
-            cluster_id, self.d_env.router(), port)
+            cluster_id, self.d_env.get_default_gw(), port)
 
     def bootstrap_nodes(self, devops_nodes, timeout=settings.BOOTSTRAP_TIMEOUT,
                         skip_timesync=False):
@@ -147,8 +146,8 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
         logger.info("Please wait while time on nodes: {0} "
                     "will be synchronized"
                     .format(', '.join(sorted(nodes_names))))
-        denv = DevopsClient().get_env(self.d_env.name)
-        new_time = denv.sync_time(node_names=nodes_names, skip_sync=skip_sync)
+        new_time = self.d_env.sync_time(node_names=nodes_names,
+                                        skip_sync=skip_sync)
         for name in sorted(new_time):
             logger.info("New time on '{0}' = {1}".format(name, new_time[name]))
 
@@ -169,7 +168,7 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
             'iface': iface_alias('eth0'),
             'ip': node.get_ip_address_by_network_name('admin'),
             'mask': self.d_env.get_network(name='admin').ip.netmask,
-            'gw': self.d_env.router(),
+            'gw': self.d_env.get_default_gw(),
             'hostname': ''.join((settings.FUEL_MASTER_HOSTNAME,
                                  settings.DNS_SUFFIX)),
             'nat_interface': '',
@@ -229,20 +228,21 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
             from devops.error import DevopsObjNotFound
             EnvDoesNotExist = DevopsObjNotFound
         except ImportError:
+            from devops.models import Environment
             # pylint: disable=no-member
             EnvDoesNotExist = Environment.DoesNotExist
             # pylint: enable=no-member
 
         try:
             logger.info("Try to find environment '{0}'".format(env_name))
-            self._virt_env = Environment.get(name=env_name)
+            self._virt_env = DevopsClient().get_env(env_name)
         except EnvDoesNotExist:
             logger.info("Try to create environment '{0}'".format(env_name))
             if self._config:
-                self._virt_env = Environment.create_environment(
-                    full_config=self._config)
+                self._virt_env = DevopsClient().create_env_from_config(
+                    config=self._config)
             else:
-                self._virt_env = Environment.describe_environment(
+                self._virt_env = DevopsClient().create_env(
                     boot_from=settings.ADMIN_BOOT_DEVICE)
             self._virt_env.define()
             logger.info("New environment '{0}' was defined".format(env_name))
@@ -348,9 +348,9 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
         new_login = settings.SSH_FUEL_CREDENTIALS['login']
         new_password = settings.SSH_FUEL_CREDENTIALS['password']
         try:
-            self.ssh_manager.execute_on_remote(
+            self.ssh_manager.check_call(
                 ip=self.ssh_manager.admin_ip,
-                cmd='date'
+                command='date'
             )
             logger.debug('Accessing admin node using SSH: SUCCESS')
         except Exception:
@@ -363,10 +363,10 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
                 slave_login=settings.SSH_SLAVE_CREDENTIALS['login'],
                 slave_password=settings.SSH_SLAVE_CREDENTIALS['password']
             )
-            self.ssh_manager.execute_on_remote(
+            self.ssh_manager.check_call(
                 ip=self.ssh_manager.admin_ip,
-                cmd='echo -e "{1}\\n{1}" | passwd {0}'.format(new_login,
-                                                              new_password)
+                command='echo -e "{1}\\n{1}" | passwd {0}'.format(new_login,
+                                                                  new_password)
             )
             self.ssh_manager.initialize(
                 admin_ip=self.ssh_manager.admin_ip,
@@ -390,14 +390,15 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
             self.fuel_web.client.get_releases()
         # TODO(akostrikov) CENTOS7 except exceptions.Unauthorized:
         except:
-            self.ssh_manager.execute_on_remote(
+            self.ssh_manager.check_call(
                 ip=self.ssh_manager.admin_ip,
-                cmd='fuel user --newpass {0} --change-password'.format(
-                    settings.KEYSTONE_CREDS['password'])
+                command='fuel user --newpass {0} --change-password'.format(
+                        settings.KEYSTONE_CREDS['password'])
             )
-            config_file = self.ssh_manager.execute_on_remote(
+            config_file_path = 'ls -1 $HOME/.config/fuel/fuel_client.yaml'
+            config_file = self.ssh_manager.check_call(
                 ip=self.ssh_manager.admin_ip,
-                cmd='ls -1 $HOME/.config/fuel/fuel_client.yaml')['stdout_str']
+                command=config_file_path)['stdout_str']
 
             with YamlEditor(config_file, ip=self.admin_node_ip) as editor:
                 editor.content["OS_USERNAME"] = \
@@ -448,7 +449,7 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
             nessus_node.start()
         # wait while installation complete
 
-        self.admin_actions.modify_configs(self.d_env.router())
+        self.admin_actions.modify_configs(self.d_env.get_default_gw())
         if CUSTOM_FUEL_SETTING_YAML:
             self.admin_actions.update_fuel_setting_yaml(
                 CUSTOM_FUEL_SETTING_YAML)
@@ -461,19 +462,19 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
         cmd = """
         echo -e '"SSL":\n  "force_https": "true"' >> /etc/fuel/astute.yaml
         """
-        self.ssh_manager.execute_on_remote(admin_node_ip, cmd)
+        self.ssh_manager.check_call(admin_node_ip, cmd)
         cmd = "find / -name \"nginx_services.pp\""
         puppet_manifest = \
-            self.ssh_manager.execute_on_remote(
+            self.ssh_manager.check_call(
                 admin_node_ip, cmd)['stdout'][0].strip()
         cmd = 'puppet apply {0}'.format(puppet_manifest)
-        self.ssh_manager.execute_on_remote(admin_node_ip, cmd)
+        self.ssh_manager.check_call(admin_node_ip, cmd)
         cmd = """
         systemctl status nginx.service |
         awk 'match($0, /\s+Active:.*\((\w+)\)/, a) {print a[1]}'
         """
         wait(lambda: (
-             self.ssh_manager.execute_on_remote(
+             self.ssh_manager.check_call(
                  admin_node_ip, cmd)['stdout'][0] != 'dead'), interval=10,
              timeout=30,
              timeout_msg='Nginx service is dead after trying to enable '
@@ -540,13 +541,13 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
     def kill_wait_for_external_config(self):
         kill_cmd = 'pkill -f "^wait_for_external_config"'
         check_cmd = 'pkill -0 -f "^wait_for_external_config"; [[ $? -eq 1 ]]'
-        self.ssh_manager.execute_on_remote(
+        self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            cmd=kill_cmd
+            command=kill_cmd
         )
-        self.ssh_manager.execute_on_remote(
+        self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            cmd=check_cmd
+            command=check_cmd
         )
 
     def wait_bootstrap(self):
@@ -596,9 +597,9 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
                            'is not based on Ubuntu!')
             return
 
-        bootstrap_images = self.ssh_manager.execute_on_remote(
+        bootstrap_images = self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            cmd='fuel-bootstrap --quiet list'
+            command='fuel-bootstrap --quiet list'
         )['stdout']
         assert_true(any('active' in line for line in bootstrap_images),
                     'Ubuntu bootstrap image wasn\'t built and activated! '
@@ -652,10 +653,10 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
                          'yum update -y 2>>/var/log/yum-update-error.log'
 
         logger.info('Performing yum clean and update commands')
-        update_result = self.ssh_manager.execute_on_remote(
+        update_result = self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            cmd=update_command,
-            err_msg='Packages update failed, inspect logs for details')
+            command=update_command,
+            error_info='Packages update failed, inspect logs for details')
 
         logger.info('Packages were updated successfully')
 
@@ -692,10 +693,10 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
         # ssh connection hanging on massive output from puppet run.
         cmd = '/usr/share/fuel-utils/update-master-node.sh > /dev/null 2>&1'
 
-        self.ssh_manager.execute_on_remote(
+        self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
-            cmd=cmd,
-            err_msg='Update failed, inspect logs for details',
+            command=cmd,
+            error_info='Update failed, inspect logs for details',
         )
         logger.info('Update successful')
 
