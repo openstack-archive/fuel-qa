@@ -423,7 +423,7 @@ class CommandLineTest(test_cli_base.CommandLine):
             7. Provision one compute node using Fuel CLI
             8. Provision one cinder node using Fuel CLI
             9. Provision two ceph-osd nodes using Fuel CLI
-            10. Provision one base-os node using Fuel CLI
+            10. Provision two base-os node using Fuel CLI
             11. Leave 2 nodes in discover state
             12. Deploy the ceph-osd and controller nodes using Fuel CLI
             13. Deploy the compute node using Fuel CLI
@@ -539,20 +539,20 @@ class CommandLineTest(test_cli_base.CommandLine):
             'nodes {}'.format(
                 self.fuel_web.get_nailgun_node_by_status('provisioned')))
 
-        # Add and provision 2 ceph-osd node_ids[4], node_ids[5]
+        # Add and provision 2 ceph-osd node_ids[3], node_ids[4]
         self.show_step(9, details='using node ids {0}, {1}'.format(
-            node_ids[4], node_ids[5]))
+            node_ids[3], node_ids[4]))
         cmd = (
             'fuel --env-id={0} node set --node {1},{2} '
-            '--role=ceph-osd'.format(cluster_id, node_ids[4], node_ids[5]))
+            '--role=ceph-osd'.format(cluster_id, node_ids[3], node_ids[4]))
         self.ssh_manager.check_call(admin_ip, cmd)
-        for node_id in (node_ids[4], node_ids[5]):
+        for node_id in (node_ids[3], node_ids[4]):
             self.update_node_interfaces(node_id)
 
         cmd = ('fuel '
                '--env-id={0} node --provision '
                '--node {1},{2} '
-               '--json'.format(cluster_id, node_ids[4], node_ids[5]))
+               '--json'.format(cluster_id, node_ids[3], node_ids[4]))
         task = self.ssh_manager.check_call(admin_ip, cmd).stdout_json
         self.assert_cli_task_success(task, timeout=10 * 60)
 
@@ -565,15 +565,18 @@ class CommandLineTest(test_cli_base.CommandLine):
             ' current list of provisioned '
             'nodes {}'.format(
                 self.fuel_web.get_nailgun_node_by_status('provisioned')))
-        # Add and provision 1 base-os node node_ids[6]
-        self.show_step(10, details='using node ids {0}'.format(node_ids[6]))
-        cmd = ('fuel --env-id={0} node set --node {1} '
-               '--role=base-os'.format(cluster_id, node_ids[6]))
+        # Add and provision 2 base-os node node_ids[5], node_ids[6]
+        self.show_step(10, details='using node ids {0},{1}'.format(
+            node_ids[5], node_ids[6]))
+        cmd = ('fuel --env-id={0} node set --node {1},{2} '
+               '--role=base-os'.format(cluster_id, node_ids[5], node_ids[6]))
         self.ssh_manager.check_call(admin_ip, cmd)
-        self.update_node_interfaces(node_ids[6])
+        for node_id in (node_ids[5], node_ids[6]):
+            self.update_node_interfaces(node_id)
 
         cmd = ('fuel --env-id={0} node --provision '
-               '--node={1} --json'.format(cluster_id, node_ids[6]))
+               '--node={1},{2} --json'.format(cluster_id, node_ids[5],
+                                              node_ids[6]))
         task = self.ssh_manager.check_call(admin_ip, cmd).stdout_json
         self.assert_cli_task_success(task, timeout=10 * 60)
 
@@ -606,12 +609,12 @@ class CommandLineTest(test_cli_base.CommandLine):
             assert_true(node['pending_addition'])
 
         # Deploy ceph-osd and controller nodes
-        # node_ids[0], node_ids[4] node_ids[5]
+        # node_ids[0], node_ids[3] node_ids[4]
         self.show_step(12, details='for node ids {0}, {1}, {2}'.format(
-            node_ids[0], node_ids[4], node_ids[5]))
+            node_ids[0], node_ids[3], node_ids[4]))
         cmd = (
             'fuel --env-id={0} node --deploy --node {1},{2},{3} --json'.format(
-                cluster_id, node_ids[0], node_ids[4], node_ids[5]))
+                cluster_id, node_ids[0], node_ids[3], node_ids[4]))
         task = self.ssh_manager.check_call(admin_ip, cmd).stdout_json
         self.assert_cli_task_success(task, timeout=80 * 60)
 
@@ -632,10 +635,11 @@ class CommandLineTest(test_cli_base.CommandLine):
         self.assert_cli_task_success(task, timeout=60 * 60)
         self.assert_all_tasks_completed(cluster_id=cluster_id)
 
-        # Deploy the base-os node node_ids[6]
-        self.show_step(15, details='for node id {}'.format(node_ids[6]))
-        cmd = ('fuel --env-id={0} node --deploy --node {1} --json'.format(
-            cluster_id, node_ids[6]))
+        # Deploy the base-os node node_ids[5] node_ids[6]
+        self.show_step(15, details='for node id {0} {1}'.format(node_ids[5],
+                                                                node_ids[6]))
+        cmd = ('fuel --env-id={0} node --deploy --node {1},{2} --json'.format(
+            cluster_id, node_ids[5], node_ids[6]))
         task = self.ssh_manager.check_call(admin_ip, cmd).stdout_json
         self.assert_cli_task_success(task, timeout=60 * 60)
         self.assert_all_tasks_completed(cluster_id=cluster_id)
