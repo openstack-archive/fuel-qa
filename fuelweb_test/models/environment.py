@@ -377,6 +377,7 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
             )
             self.ssh_manager.update_connection(
                 ip=self.ssh_manager.admin_ip,
+                port=22,
                 login=new_login,
                 password=new_password
             )
