@@ -241,14 +241,15 @@ def get_node_packages(remote, func_name, node_role,
 
 @logwrap
 def store_packages_json(env):
+    ssh_manager = SSHManager()
     func_name = "".join(get_test_method_name())
     packages = {func_name: {}}
     cluster_id = env.fuel_web.get_last_created_cluster()
     for nailgun_node in env.fuel_web.client.list_cluster_nodes(cluster_id):
         role = '_'.join(nailgun_node['roles'])
         logger.debug('role is {0}'.format(role))
-        with env.d_env.get_ssh_to_remote(nailgun_node['ip']) as remote:
-            packages = get_node_packages(remote, func_name, role, packages)
+        remote = ssh_manager.get_remote(nailgun_node['ip'])
+        packages = get_node_packages(remote, func_name, role, packages)
     packages_file = '{0}/packages.json'.format(settings.LOGS_DIR)
     if os.path.isfile(packages_file):
         with open(packages_file, 'r') as outfile:
