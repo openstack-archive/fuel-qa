@@ -107,9 +107,10 @@ class CICMaintenanceMode(TestBasic):
         logger.info('Maintenance mode for node-{0}'.format(_id))
         asserts.assert_true('True' in check_available_mode(_ip),
                             "Maintenance mode is not available")
-        self.ssh_manager.execute_on_remote(
+        self.ssh_manager.check_call(
             ip=_ip,
-            cmd="umm on")
+            command="umm on",
+            expected=[-1])
 
         self.fuel_web.wait_node_is_offline(dregular_ctrl)
 
@@ -123,9 +124,9 @@ class CICMaintenanceMode(TestBasic):
         asserts.assert_true('True' in check_auto_mode(_ip),
                             "Maintenance mode is not switched on")
 
-        self.ssh_manager.execute_on_remote(
+        self.ssh_manager.check_call(
             ip=_ip,
-            cmd="umm off")
+            command="umm off")
 
         self.fuel_web.wait_node_is_online(dregular_ctrl)
 
@@ -200,11 +201,9 @@ class CICMaintenanceMode(TestBasic):
         logger.info('Unexpected reboot on node-{0}'
                     .format(_id))
 
-        command = 'reboot --force >/dev/null & '
-
-        self.ssh_manager.execute_on_remote(
+        self.ssh_manager.check_call(
             ip=_ip,
-            cmd=command)
+            command='reboot >/dev/null & ')
 
         wait(lambda:
              not checkers.check_ping(self.env.get_admin_node_ip(),
@@ -228,9 +227,9 @@ class CICMaintenanceMode(TestBasic):
                             "Maintenance mode is not switched on")
 
         logger.info('turn off Maintenance mode')
-        self.ssh_manager.execute_on_remote(
+        self.ssh_manager.check_call(
             ip=_ip,
-            cmd="umm off")
+            command="umm off")
         time.sleep(30)
 
         change_config(_ip)
@@ -303,9 +302,9 @@ class CICMaintenanceMode(TestBasic):
 
         asserts.assert_true('True' in check_available_mode(_ip),
                             "Maintenance mode is not available")
-        self.ssh_manager.execute_on_remote(
+        self.ssh_manager.check_call(
             ip=_ip,
-            cmd="umm disable")
+            command="umm disable")
 
         asserts.assert_false('True' in check_available_mode(_ip),
                              "Maintenance mode should not be available")
@@ -313,10 +312,10 @@ class CICMaintenanceMode(TestBasic):
         logger.info('Try to execute maintenance mode '
                     'for node-{0}'.format(_id))
 
-        self.ssh_manager.execute_on_remote(
+        self.ssh_manager.check_call(
             ip=_ip,
-            cmd="umm on",
-            assert_ec_equal=[1])
+            command="umm on",
+            expected=[1])
 
         # If we don't disable maintenance mode,
         # the node would have gone to reboot, so we just expect
@@ -375,14 +374,12 @@ class CICMaintenanceMode(TestBasic):
         asserts.assert_false('True' in check_available_mode(_ip),
                              "Maintenance mode should not be available")
 
-        command = 'reboot --force >/dev/null & '
-
         logger.info('Unexpected reboot on node-{0}'
                     .format(_id))
 
-        self.ssh_manager.execute_on_remote(
+        self.ssh_manager.check_call(
             ip=_ip,
-            cmd=command)
+            command='reboot >/dev/null & ')
 
         wait(lambda:
              not checkers.check_ping(self.env.get_admin_node_ip(),
@@ -392,7 +389,7 @@ class CICMaintenanceMode(TestBasic):
                  dregular_ctrl.name))
 
         # Node don't have enough time for set offline status
-        # after reboot --force
+        # after reboot
         # Just waiting
 
         asserts.assert_true(
