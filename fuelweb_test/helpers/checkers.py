@@ -897,7 +897,7 @@ def check_oswl_stat(postgres_actions, nailgun_actions,
     expected_resource_count = {
         'current':
         {'vm': 0,
-         'flavor': 6,
+         'flavor': 2,
          'volume': 0,
          'image': 0,
          'tenant': 2,
@@ -921,6 +921,7 @@ def check_oswl_stat(postgres_actions, nailgun_actions,
          }
     }
     for resource in resources:
+        logger.warning("RESOURCE: {}".format(resource))
         q = "select resource_data from oswl_stats where" \
             " resource_type = '\"'\"'{0}'\"'\"';".format(resource)
 
@@ -928,6 +929,8 @@ def check_oswl_stat(postgres_actions, nailgun_actions,
         def get_resource():
             result = postgres_actions.run_query('nailgun', q)
             logger.debug("resource state is {}".format(result))
+            logger.warning("LEN RESOURCE: {}".format(len(json.loads(result)[operation])))
+            logger.warning("EXPECTED {}".format(expected_resource_count[operation][resource]))
             if not result:
                 return False
             return (
