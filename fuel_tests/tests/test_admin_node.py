@@ -38,6 +38,7 @@ ssh_manager = SSHManager()
 class TestAdminNode(object):
     """TestAdminNode."""  # TODO documentation
 
+    @pytest.mark.skip
     @pytest.mark.test_cobbler_alive
     def test_cobbler_alive(self):
         """Test current installation has correctly setup cobbler
