@@ -899,7 +899,7 @@ def check_oswl_stat(postgres_actions, nailgun_actions,
     expected_resource_count = {
         'current':
         {'vm': 0,
-         'flavor': 6,
+         'flavor': 2,
          'volume': 0,
          'image': 0,
          'tenant': 2,
