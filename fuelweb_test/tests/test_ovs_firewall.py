@@ -80,8 +80,8 @@ class CheckOVSFirewall(TestBasic):
             server = os_conn.create_server_for_migration(label=net_name)
             current_ifaces = self.get_ifaces(compute_ip)
         current_flows = self.get_flows(compute_ip)
-        assert_equal(len(set(current_ifaces.stdout) - set(ifaces.stdout)), 1,
-                     "Check is failed. Passed data is not equal:"
+        assert_equal(len(current_ifaces.stdout) - len(ifaces.stdout), 1,
+                     "Check is failed:"
                      " {}\n\n{}".format(ifaces, current_ifaces))
         assert_not_equal(set(flows.stdout), set(current_flows.stdout),
                          "Check is failed. Passed data is equal:"
