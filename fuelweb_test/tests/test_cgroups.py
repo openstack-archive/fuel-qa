@@ -79,7 +79,10 @@ class TestCgroupHa(TestBasic):
     def generate_lscgroups(cgroups):
         """Generate a list of lscgroups entities from cgroups dicts."""
 
-        return ["{}:/{}".format(cgroup["controller"], cgroup["process"])
+        cpu_controller = "cpu,cpuacct"
+        return ["{}:/{}".format(cpu_controller
+                if cgroup["controller"] in cpu_controller
+                else cgroup["controller"], cgroup["process"])
                 for cgroup in cgroups]
 
     def apply_cgroups(self, cgroups, node_ids):
