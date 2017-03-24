@@ -211,10 +211,9 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
 
     @staticmethod
     def get_target_devs(devops_nodes):
-        return [
-            interface.target_dev for interface in [
-                val for var in map(lambda node: node.interfaces, devops_nodes)
-                for val in var]]
+        return [devops_node.get_interface_target_dev(interface.mac_address)
+                for devops_node in devops_nodes
+                for interface in devops_node.interfaces]
 
     @property
     def d_env(self):
