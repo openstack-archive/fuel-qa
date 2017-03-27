@@ -322,6 +322,7 @@ class Manager(Basic):
                         "in scenario) {1}>>>".format(str(step), details_msg))
 
     def make_diagnostic_snapshot(self, status, name):
+        self.env.resume_environment()
         create_diagnostic_snapshot(self.env, status, name)
 
     def save_env_snapshot(self, name):
