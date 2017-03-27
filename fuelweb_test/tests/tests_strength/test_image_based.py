@@ -74,6 +74,8 @@ class RepeatableImageBased(TestBasic):
              timeout_msg='Nodes failed to become online')
         for slave in self.env.d_env.nodes().slaves[:5]:
             slave.destroy()
+        self.fuel_web.wait_nodes_get_offline_state(
+            self.env.d_env.nodes().slaves[:5], timeout=10 * 60)
 
         self.env.make_snapshot("deploy_after_delete", is_make=True)
 
