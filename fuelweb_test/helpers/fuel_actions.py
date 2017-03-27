@@ -26,11 +26,13 @@ from fuelweb_test import logger
 from fuelweb_test.helpers.decorators import retry
 from fuelweb_test.helpers.regenerate_repo import regenerate_centos_repo
 from fuelweb_test.helpers.regenerate_repo import regenerate_ubuntu_repo
+from fuelweb_test.helpers.replace_repos import replace_ubuntu_repos
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_FROM_GIT
 from fuelweb_test.settings import FUEL_PLUGIN_BUILDER_REPO
 from fuelweb_test.settings import FUEL_USE_LOCAL_NTPD
 from fuelweb_test.settings import KEYSTONE_CREDS
+from fuelweb_test.settings import MIRROR_UBUNTU
 from fuelweb_test.settings import MOS_MU_PATH
 from fuelweb_test.settings import MOS_UBUNTU_MIRROR_ID
 from fuelweb_test.settings import PLUGIN_PACKAGE_VERSION
@@ -160,9 +162,15 @@ class AdminActions(BaseActions):
                    ip=self.admin_ip
                    ).write_content(fuel_settings)
 
-        fuel_settings['BOOTSTRAP']['repos'] = \
-            [repo for repo in fuel_settings[
-                'BOOTSTRAP']['repos'] if "mos-" not in repo['name']]
+        if MIRROR_UBUNTU:
+            fuel_settings['BOOTSTRAP']['repos'] = \
+                replace_ubuntu_repos(
+                    {
+                        'value': fuel_settings['BOOTSTRAP']['repos']
+                    },
+                    upstream_host='archive.ubuntu.com')
+            logger.info("Replace default Ubuntu mirror URL for "
+                        "bootstrap image in Fuel settings")
 
         self.save_fuel_settings(fuel_settings)
 
