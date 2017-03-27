@@ -38,6 +38,8 @@ def replace_ubuntu_repos(repos_attr, upstream_host):
     if help_data.EXTRA_DEB_REPOS:
         repos = add_ubuntu_extra_mirrors(repos=repos)
     if help_data.FORCE_DISABLE_UPDATES:
+        repos = [repo for repo in repos if repo['name']
+                 not in ('mos-updates', 'mos-security', 'mos-holdback')]
         repos = [repo for repo in repos if
                  'ubuntu' in repo['name'] or repo['name'] == 'mos' or
                  repo['name'] == 'mos-holdback']
