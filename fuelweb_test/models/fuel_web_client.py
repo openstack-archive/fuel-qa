@@ -2238,6 +2238,11 @@ class FuelWebClient29(object):
             self.wait_node_is_online(node, timeout=timeout)
 
     @logwrap
+    def wait_nodes_get_offline_state(self, nodes, timeout=4 * 60):
+        for node in nodes:
+            self.wait_node_is_offline(node, timeout=timeout)
+
+    @logwrap
     def wait_cluster_nodes_get_online_state(self, cluster_id,
                                             timeout=4 * 60):
         self.wait_nodes_get_online_state(
