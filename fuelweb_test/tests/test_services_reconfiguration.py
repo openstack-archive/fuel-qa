@@ -166,21 +166,26 @@ class ServicesReconfiguration(TestBasic):
                                            param['option'],
                                            param['value'])
 
-    def check_service_was_restarted(self, nodes, uptime_before, service_name):
+    def check_service_was_restarted(self, nodes, uptime_before, service_name,
+                                    timeout=10*60, interval=60):
         """
         :param nodes: a list of nailgun nodes
         :param uptime_before: a dictionary of ip nodes and process uptime
         :param service_name: a string of service name
         :return:
         """
+        def is_restarted(nodes):
+            for node in nodes:
+                with self.env.d_env.get_ssh_to_remote(node) as remote:
+                    uptime = utils.get_process_uptime(remote, service_name)
+                    if uptime > uptime_before[node]:
+                        return False
+            return true
+
         nodes = [x['ip'] for x in nodes]
-        for node in nodes:
-            with self.env.d_env.get_ssh_to_remote(node) as remote:
-                uptime = utils.get_process_uptime(remote, service_name)
-                asserts.assert_true(uptime <= uptime_before[node],
-                                    'Service "{0}" was not '
-                                    'restarted on {1}'.format(service_name,
-                                                              node))
+        helpers.wait(lambda: is_restarted(nodes), timeout=timeout,
+                     interval=interval, timeout_msg='Service "{0}" was not'
+                     'restarted on {1}.'.format(service_name, node))
 
     def check_overcommit_ratio(self, os_conn, cluster_id):
         """
