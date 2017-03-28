@@ -1100,6 +1100,7 @@ class ServicesReconfiguration(TestBasic):
         self.fuel_web.assert_task_success(task, timeout=900, interval=5)
 
         self.show_step(11)
+        self.fuel_web.deploy_cluster_wait(cluster_id_1, check_services=False)
         self.check_service_was_restarted(controller_env_1,
                                          uptimes,
                                          service_name)
@@ -1126,6 +1127,7 @@ class ServicesReconfiguration(TestBasic):
         self.fuel_web.assert_task_success(task, timeout=900, interval=5)
 
         self.show_step(16)
+        self.fuel_web.deploy_cluster_wait(cluster_id_2, check_services=False)
         self.check_service_was_restarted(controller_env_2,
                                          uptimes,
                                          service_name)
