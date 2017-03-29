@@ -90,7 +90,7 @@ template:
       ironic:
         net: *pool_default
         params:
-          vlan_start: 103
+          vlan_start: 0
       private:
         net: *pool_default
         params:
