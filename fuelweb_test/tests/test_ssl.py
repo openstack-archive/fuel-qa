@@ -61,7 +61,7 @@ class SSL_Tests(TestBasic):
         assert_equal(2, len(nodes))
         self.env.make_snapshot("master_node_with_https_only", is_make=True)
 
-    @test(depends_on=['master_node_with_https_only'],
+    @test(depends_on_groups=['master_node_with_https_only'],
           groups=["endpoints_with_disabled_ssl"])
     @log_snapshot_after_test
     def endpoints_with_disabled_ssl(self):
