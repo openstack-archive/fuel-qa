@@ -392,7 +392,7 @@ class TestCustomGraph(TestBasic):
         self.move_ubuntu_target_image(rel_id, cluster_id)
 
         self.show_step(3)  # Download deployment graph
-        rel_tasks = self.fuel_web.client.get_release_tasks(rel_id)[0]['tasks']
+        rel_tasks = self.fuel_web.client.get_release_tasks(rel_id)[3]['tasks']
         release_tasks = set([task['task_name'] for task in rel_tasks])
 
         self.show_step(4)  # Fetch all tasks from /etc/puppet
