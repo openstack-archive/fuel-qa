@@ -1,0 +1,9 @@
+Code-Review+2: Vladimir Khlyunev <vkhlyunev@mirantis.com>
+Verified+1: Fuel CI <fuel-ci-bot@mirantis.com>
+Workflow+1: Nastya Urlapova <aurlapova@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Wed, 29 Mar 2017 10:44:23 +0000
+Reviewed-on: https://review.openstack.org/451236
+Project: openstack/fuel-qa
+Branch: refs/heads/stable/ocata
