@@ -3,4 +3,4 @@
 # Check virtual environment update scripts on CI first.
 # If you want to use SQLite DB - postgree lib is not required and you can
 # remove postgree egg
-git+git://github.com/openstack/fuel-devops.git@3.0.3#egg=project[postgre]
+git+git://github.com/openstack/fuel-devops.git@3.0.4#egg=project[postgre]
