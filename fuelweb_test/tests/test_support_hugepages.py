@@ -451,6 +451,8 @@ class SupportHugepages(TestBasic):
             self.fuel_web.get_nailgun_node_by_name(mixed_host))
         self.fuel_web.cold_restart_nodes([target_compute])
 
+        self.fuel_web.assert_ha_services_ready(cluster_id)
+
         self.boot_instance_with_hugepage(
             target_compute_name=mixed_host,
             flavor_name="h1.small_mixed.hpgs",
