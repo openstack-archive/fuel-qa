@@ -479,7 +479,9 @@ class TestCgroupHa(TestBasic):
         self.show_step(3)
         target_controller = self.fuel_web.get_nailgun_primary_node(
             self.fuel_web.get_devops_node_by_nailgun_node(n_ctrls[0]))
+
         self.fuel_web.cold_restart_nodes([target_controller])
+        self.fuel_web.assert_ha_services_ready(cluster_id)
 
         self.show_step(4)
         self.check_cgroups_on_node(n_ctrls[0], cgroups)

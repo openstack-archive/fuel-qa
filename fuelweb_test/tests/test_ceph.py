@@ -921,6 +921,7 @@ class CheckCephPartitionsAfterReboot(TestBasic):
 
             self.show_step(10, node)
             logger.info("Check Ceph health is ok after reboot")
+            self.fuel_web.assert_ha_services_ready(cluster_id)
             self.fuel_web.check_ceph_status(cluster_id)
 
             self.show_step(11, node)
@@ -944,6 +945,7 @@ class CheckCephPartitionsAfterReboot(TestBasic):
 
             self.show_step(13, node)
             logger.info("Check Ceph health is ok after reboot")
+            self.fuel_web.assert_ha_services_ready(cluster_id)
             self.fuel_web.check_ceph_status(cluster_id)
 
 
