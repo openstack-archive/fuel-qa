@@ -2112,7 +2112,6 @@ class FuelWebClient29(object):
         if wait_online:
             for node in devops_nodes:
                 self.wait_node_is_online(node, timeout=timeout)
-            self.environment.sync_time()
 
     @logwrap
     def ip_address_show(self, node_name, interface, namespace=None):
