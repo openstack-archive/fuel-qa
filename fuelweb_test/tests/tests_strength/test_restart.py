@@ -162,7 +162,8 @@ class CephRestart(TestBasic):
                 'slave-01',
                 'slave-02',
                 'slave-03',
-                'slave-04']))
+                'slave-04']),
+            skip_timesync=True)
 
         # Wait for HA services ready
         self.fuel_web.assert_ha_services_ready(cluster_id)

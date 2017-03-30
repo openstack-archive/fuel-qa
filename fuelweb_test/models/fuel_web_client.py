@@ -2093,7 +2093,8 @@ class FuelWebClient29(object):
 
     def cold_restart_nodes(self, devops_nodes,
                            wait_offline=True, wait_online=True,
-                           wait_after_destroy=None, timeout=4 * 60):
+                           wait_after_destroy=None, timeout=4 * 60,
+                           skip_timesync=False):
         logger.info('Cold restart nodes %s',
                     [n.name for n in devops_nodes])
         for node in devops_nodes:
@@ -2112,7 +2113,8 @@ class FuelWebClient29(object):
         if wait_online:
             for node in devops_nodes:
                 self.wait_node_is_online(node, timeout=timeout)
-            self.environment.sync_time()
+            if not skip_timesync:
+                self.environment.sync_time()
 
     @logwrap
     def ip_address_show(self, node_name, interface, namespace=None):
