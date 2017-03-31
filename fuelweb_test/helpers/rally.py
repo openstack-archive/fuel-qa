@@ -172,7 +172,7 @@ class RallyEngine(object):
                "'[[:space:]]*\\\\|[[:space:]]*' '/\w/{{print $2\",\"$3\",\"$4"
                "\",\"$5\",\"$6\",\"$7\",\"$8}}'").format(deployment_uuid)
         result = self.run_container_command(cmd)
-        assert_equal(len(result['stdout']), 2,
+        assert_equal(len(result.stdout), 2,
                      "Command 'rally deployment show' returned unexpected "
                      "value: expected 2 lines, got {0}: ".format(result))
         keys = [k for k in result['stdout'][0].strip().split(',') if k != '']
