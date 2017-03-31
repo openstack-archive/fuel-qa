@@ -699,14 +699,12 @@ class ServicesReconfiguration(TestBasic):
         Scenario:
             1. Revert snapshot reconfigure_ml2_vlan_range
             2. Reset cluster
-            3. Upload a new openstack configuration for nova
-            4. Deploy changes
-            5. Run OSTF
-            6. Verify nova and neutron settings
-            7. Create new private network
-            8. Try to create one more, verify that it is impossible
-            9. Boot instances with flavor that occupy all CPU
-            10. Boot extra instance and catch the error
+            3. Deploy changes
+            4. Run OSTF
+            5. Verify neutron settings
+            6. Create new private network
+            7. Try to create one more, verify that it is impossible
+
 
         Snapshot "preservation_config_after_reset_and_preconfigured_deploy"
 
@@ -719,42 +717,29 @@ class ServicesReconfiguration(TestBasic):
         cluster_id = self.fuel_web.get_last_created_cluster()
         self.fuel_web.stop_reset_env_wait(cluster_id)
 
-        self.show_step(3)
-        config = utils.get_config_template('nova_cpu')
-        structured_config_nova = get_structured_config_dict(config)
-        self.fuel_web.client.upload_configuration(config,
-                                                  cluster_id,
-                                                  role='controller')
         config = utils.get_config_template('neutron')
-        structured_config_neutron = get_structured_config_dict(config)
+        structured_config = get_structured_config_dict(config)
 
-        self.show_step(4)
+        self.show_step(3)
         self.fuel_web.wait_nodes_get_online_state(
             self.env.d_env.nodes().slaves[:4], timeout=10 * 60)
 
         self.fuel_web.deploy_cluster_wait(cluster_id)
 
-        self.show_step(5)
+        self.show_step(4)
         self.fuel_web.run_ostf(
             cluster_id=cluster_id)
 
-        self.show_step(6)
+        self.show_step(5)
         controllers = self.fuel_web.get_nailgun_cluster_nodes_by_roles(
             cluster_id, ['controller'])
-        structured_config = {}
-        structured_config.update(structured_config_neutron)
-        structured_config.update(structured_config_nova)
         self.check_config_on_remote(controllers, structured_config)
 
+        self.show_step(6)
         self.show_step(7)
-        self.show_step(8)
         os_conn = os_actions.OpenStackActions(
             self.fuel_web.get_public_vip(cluster_id))
         self.check_ml2_vlan_range(os_conn)
-
-        self.show_step(9)
-        self.show_step(10)
-        self.check_overcommit_ratio(os_conn, cluster_id)
 
         snapshot = "preservation_config_after_reset_and_preconfigured_deploy"
         self.env.make_snapshot(snapshot, is_make=True)
