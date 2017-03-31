@@ -175,7 +175,7 @@ class TagsCRUD(TestBasic):
             3. Repeat the Step 2 with non-existing tag name
             4. Create a cluster
             5. Deploy the cluster
-            6. Run OSTF
+            6. Run OSTF without strict check
 
         Duration 30m
         Snapshot roles_to_tags
@@ -236,9 +236,14 @@ class TagsCRUD(TestBasic):
         self.update_nodes(nodes)
         self.show_step(5)
         self.deploy_cluster()
+        # we are unable to check cluster health by ostf because ostf does not
+        # able to deal with cluster without built-in controller role
+        # lets just run it and see results
         self.show_step(6)
-        self.run_ostf()
-
+        try:
+            self.run_ostf()
+        finally:
+            logger.debug("OSTF shouldn't work, we are just curious")
         self.env.make_snapshot("roles_to_tags")
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_9],
