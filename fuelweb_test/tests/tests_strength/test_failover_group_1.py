@@ -120,7 +120,7 @@ class FailoverGroup1(TestBasic):
                      'found {} nodes!'.format(len(controllers)))
 
         target_controllers = self.fuel_web.get_pacemaker_resource_location(
-            controllers[0]['fqdn'], 'vip__management')
+            'slave-01', 'vip__management')
 
         assert_equal(len(target_controllers), 1,
                      'Expected 1 controller with "vip__management" resource '
@@ -201,7 +201,7 @@ class FailoverGroup1(TestBasic):
 
         for agent in neutron_agents:
             target_controllers = self.fuel_web.get_pacemaker_resource_location(
-                controllers[0]['fqdn'], agent['resource'])
+                'slave-01', agent['resource'])
             assert_true(len(target_controllers) >= 1,
                         "Didn't find controllers with "
                         "running {0} on it".format(agent['name']))
