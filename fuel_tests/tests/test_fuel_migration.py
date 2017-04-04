@@ -30,12 +30,20 @@ def fuel_master_migration(request):
     """Fixture which migrate Fuel Master to a compute"""
 
     instance = request.node.instance
+    snapshot_name = 'migrated_fuel_master'
+    if instance.manager.check_run(snapshot_name):
+        logger.debug('Snapshot with name {!r} already exists and it will '
+                     'be used for further testing'.format(snapshot_name))
+        instance.manager.env.revert_snapshot(snapshot_name)
+        return None
     cluster_id = instance._storage['cluster_id']
     instance.start_fuel_migration()
     instance.check_migration_status()
     instance.run_checkers()
     instance.manager.fuel_web.verify_network(cluster_id)
     instance.manager.fuel_web.run_ostf(cluster_id=cluster_id)
+    instance.manager.save_env_snapshot(snapshot_name)
+    instance.manager.env.revert_snapshot(snapshot_name)
 
 
 @pytest.mark.get_logs
