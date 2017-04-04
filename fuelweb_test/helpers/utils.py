@@ -1185,7 +1185,9 @@ class SettingsChanger(object):
         'operator_user.homedir', 'access.email', 'common.libvirt_type',
         'additional_components.ironic', 'additional_components.ceilometer',
         'workloads_collector.tenant', 'access.user',
-        'workloads_collector.user', 'operator_user.name']
+        'workloads_collector.user', 'operator_user.name',
+        'additional_components.murano', 'additional_components.sahara',
+        'storage.volumes_lvm']
 
     def __init__(self, attrs=None):
         self._attrs = attrs['editable'] if attrs else None
