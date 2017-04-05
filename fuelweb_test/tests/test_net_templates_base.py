@@ -323,7 +323,7 @@ class TestNetworkTemplatesBase(TestBasic):
             {
                 'name': 'ceph-radosgw',
                 'network_roles': ['ceph/radosgw'],
-                'tcp_ports': [6780],
+                'tcp_ports': [7480],
                 'udp_ports': [],
                 'enabled': True
             },

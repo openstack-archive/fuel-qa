@@ -1114,13 +1114,13 @@ class RadosGW(TestBasic):
         self.ssh_manager.execute_on_remote(
             ip=node['ip'],
             cmd="s3cmd --access_key={0}  --secret_key={1} "
-                "--no-ssl  --host={2}:6780 mb s3://test_bucket".format(
+                "--no-ssl  --host={2}:7480 mb s3://test_bucket".format(
                     access_key, secret_key, pub_contr_ip))
 
         result = self.ssh_manager.execute_on_remote(
             ip=node['ip'],
             cmd="{0} --access_key={1}  --secret_key={2} "
-                "--no-ssl  --host={3}:6780 ls".format(
+                "--no-ssl  --host={3}:7480 ls".format(
                     settings.S3_API_CLIENT, access_key, secret_key,
                     pub_contr_ip))
 
