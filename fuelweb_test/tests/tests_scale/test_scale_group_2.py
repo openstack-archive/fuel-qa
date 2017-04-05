@@ -27,6 +27,42 @@ class HaScaleGroup2(TestBasic):
     """HaScaleGroup2."""  # TODO documentation
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+          groups=["ha_scale_group_2_cluster"])
+    @log_snapshot_after_test
+    def ha_scale_group_2_cluster(self):
+        """Deploy cluster with 3 controllers and 1 compute
+
+        Scenario:
+            1. Create cluster
+            2. Add 3 controller nodes and 1 compute
+            3. Deploy the cluster
+
+        Duration 80m
+        Snapshot ha_scale_group_2_cluster
+
+        """
+        self.env.revert_snapshot("ready_with_5_slaves")
+        self.show_step(1, initialize=True)
+        cluster_id = self.fuel_web.create_cluster(
+            name=self.__class__.__name__,
+            mode=DEPLOYMENT_MODE)
+        self.show_step(2)
+        self.fuel_web.update_nodes(
+            cluster_id,
+            {
+                'slave-01': ['controller'],
+                'slave-02': ['controller'],
+                'slave-03': ['controller'],
+                'slave-04': ['compute']
+            }
+        )
+        self.show_step(3)
+        self.fuel_web.deploy_cluster_wait(cluster_id)
+        self.fuel_web.verify_network(cluster_id)
+        self.env.make_snapshot("ha_scale_group_2_cluster",
+                               is_make=True)
+
+    @test(depends_on=[ha_scale_group_2_cluster],
           groups=["replace_primary_controller"])
     @log_snapshot_after_test
     def replace_primary_controller(self):
@@ -48,23 +84,11 @@ class HaScaleGroup2(TestBasic):
         Snapshot replace_primary_controller
 
         """
-        self.env.revert_snapshot("ready_with_5_slaves")
+        self.env.revert_snapshot("ha_scale_group_2_cluster")
         self.show_step(1, initialize=True)
-        cluster_id = self.fuel_web.create_cluster(
-            name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE)
         self.show_step(2)
-        self.fuel_web.update_nodes(
-            cluster_id,
-            {
-                'slave-01': ['controller'],
-                'slave-02': ['controller'],
-                'slave-03': ['controller'],
-                'slave-04': ['compute']
-            }
-        )
         self.show_step(3)
-        self.fuel_web.deploy_cluster_wait(cluster_id)
+        cluster_id = self.fuel_web.get_last_created_cluster()
 
         self.show_step(4)
         primary_controller = self.fuel_web.get_nailgun_primary_node(
@@ -86,13 +110,13 @@ class HaScaleGroup2(TestBasic):
         )
         self.show_step(8)
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        self.show_step(10)
-        self.fuel_web.verify_network(cluster_id)
         self.show_step(9)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.show_step(10)
+        self.fuel_web.verify_network(cluster_id)
         self.env.make_snapshot("replace_primary_controller")
 
-    @test(depends_on=[SetupEnvironment.prepare_slaves_5],
+    @test(depends_on=[ha_scale_group_2_cluster],
           groups=["remove_controllers"])
     @log_snapshot_after_test
     def remove_controllers(self):
@@ -114,31 +138,19 @@ class HaScaleGroup2(TestBasic):
         Snapshot remove_controllers
 
         """
-        self.env.revert_snapshot("ready_with_5_slaves")
+        self.env.revert_snapshot("ha_scale_group_2_cluster")
         self.show_step(1, initialize=True)
-        cluster_id = self.fuel_web.create_cluster(
-            name=self.__class__.__name__,
-            mode=DEPLOYMENT_MODE)
         self.show_step(2)
-        self.fuel_web.update_nodes(
-            cluster_id,
-            {
-                'slave-01': ['controller'],
-                'slave-02': ['controller'],
-                'slave-03': ['controller'],
-                'slave-04': ['compute']
-            }
-        )
         self.show_step(3)
-        self.fuel_web.deploy_cluster_wait(cluster_id)
+        cluster_id = self.fuel_web.get_last_created_cluster()
 
         hosts = []
 
         for node_name in ('slave-02', 'slave-03'):
             node = self.fuel_web.get_nailgun_node_by_devops_node(
                 self.env.d_env.get_node(name=node_name))
-            hostname = ''.join(self.ssh_manager.execute_on_remote(
-                ip=node['ip'], cmd="hostname")['stdout']).strip()
+            hostname = ''.join(self.ssh_manager.check_call(
+                ip=node['ip'], command="hostname")['stdout']).strip()
             hosts.append(hostname)
         logger.debug('hostname are {}'.format(hosts))
         nodes = {'slave-02': ['controller'],
@@ -150,10 +162,10 @@ class HaScaleGroup2(TestBasic):
         )
         self.show_step(5)
         self.fuel_web.deploy_cluster_wait(cluster_id)
-        self.show_step(7)
-        self.fuel_web.verify_network(cluster_id)
         self.show_step(6)
         self.fuel_web.run_ostf(cluster_id=cluster_id)
+        self.show_step(7)
+        self.fuel_web.verify_network(cluster_id)
 
         node = self.fuel_web.get_nailgun_node_by_devops_node(
             self.env.d_env.get_node(name='slave-01'))
@@ -162,15 +174,15 @@ class HaScaleGroup2(TestBasic):
             self.show_step(8, initialize=True)
             cmd = "grep '{}' /etc/hosts".format(host)
             logger.info('Checking hosts on {}'.format(host))
-            result = self.ssh_manager.execute_on_remote(
-                ip=node['ip'], cmd=cmd, assert_ec_equal=[1])
+            result = self.ssh_manager.check_call(
+                ip=node['ip'], command=cmd, expected=[1])
             assert_equal(result['exit_code'], 1,
                          "host {} is present in /etc/hosts".format(host))
             self.show_step(9)
             cmd = "grep '{}' /etc/corosync/corosync.conf".format(host)
             logger.info('Checking corosync.conf on {}'.format(host))
-            result = self.ssh_manager.execute_on_remote(
-                ip=node['ip'], cmd=cmd, assert_ec_equal=[1])
+            result = self.ssh_manager.check_call(
+                ip=node['ip'], command=cmd, expected=[1])
             assert_equal(result['exit_code'], 1,
                          "host {} is present in"
                          " /etc/corosync/corosync.conf".format(host))
