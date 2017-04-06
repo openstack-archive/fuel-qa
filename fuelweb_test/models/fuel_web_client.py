@@ -36,7 +36,6 @@ from keystoneauth1 import exceptions
 from keystoneauth1.identity import V2Password
 from keystoneauth1.session import Session as KeystoneSession
 import netaddr
-import six
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_false
 from proboscis.asserts import assert_is_not_none
@@ -977,7 +976,7 @@ class FuelWebClient29(object):
     def filter_nailgun_entities(entities, **filters):
         res = []
         for entity in entities:
-            for f_key, f_value in six.iteritems(filters):
+            for f_key, f_value in filters.items():
                 if entity.get(f_key) != f_value:
                     break
             else:
