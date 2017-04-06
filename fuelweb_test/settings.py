@@ -726,8 +726,8 @@ RH_POOL_HASH = os.environ.get("RH_POOL_HASH")
 
 # Ironic variables
 IRONIC_USER_IMAGE_URL = os.environ.get(
-    "IRONIC_USER_IMAGE_URL", "https://cloud-images.ubuntu.com/trusty/current/"
-                             "trusty-server-cloudimg-amd64.tar.gz")
+    "IRONIC_USER_IMAGE_URL", "https://cloud-images.ubuntu.com/xenial/current/"
+                             "xenial-server-cloudimg-amd64.tar.gz")
 
 NOVA_QUOTAS_ENABLED = get_var_as_bool("NOVA_QUOTAS_ENABLED", False)
 
