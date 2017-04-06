@@ -22,6 +22,7 @@ from fuelweb_test.helpers.checkers import check_cluster_presence
 from fuelweb_test.helpers.checkers import check_cobbler_node_exists
 from fuelweb_test.helpers.decorators import log_snapshot_after_test
 from fuelweb_test.helpers.utils import generate_floating_ranges
+from fuelweb_test.helpers.utils import diff_dicts
 from fuelweb_test.settings import DEPLOYMENT_MODE
 from fuelweb_test.settings import SSL_CN
 from fuelweb_test.settings import PATH_TO_PEM
@@ -294,10 +295,10 @@ class CommandLineTest(test_cli_base.CommandLine):
         cluster_config = self.get_cluster_config_cli(task_id)
         self.show_step(19)
         # Compare cluster settings
-        assert_equal(cluster_settings,
-                     cluster_config,
-                     message='Cluster settings are not equal before'
-                             ' and after deploy')
+        diff = diff_dicts(cluster_settings, cluster_config)
+        assert_true(any(diff['added'], diff['removed']),
+                    message='Cluster settings are not equal before'
+                            ' and after deploy: \n {}'.format(diff))
         self.show_step(20)
         # Run OSTF
         self.fuel_web.run_ostf(cluster_id=cluster_id,
@@ -663,10 +664,10 @@ class CommandLineTest(test_cli_base.CommandLine):
         self.show_step(18)
         cluster_config = self.get_cluster_config_cli(task_id)
         self.show_step(19)
-        assert_equal(cluster_settings,
-                     cluster_config,
-                     message='Cluster settings are not equal before'
-                             ' and after deploy')
+        diff = diff_dicts(cluster_settings, cluster_config)
+        assert_true(any(diff['added'], diff['removed']),
+                    message='Cluster settings are not equal before'
+                            ' and after deploy: \n {}'.format(diff))
         # Run OSTF
         self.show_step(20)
         self.fuel_web.run_ostf(cluster_id=cluster_id,

@@ -1610,3 +1610,37 @@ def get_instance_ipv6(instance, network):
                 'Not found ip v6 for instance. Details:\n {}'
                 .format(instance.addresses[network['name']]))
     return instance_ip[0]
+
+
+def diff_dicts(dict1, dict2, diff_dict=None):
+    """ Get difference between two dictionaries
+
+    :param dict1: dict, first dictionary
+    :param dict2: dict, second dictionary
+    :param diff_dict: dict,
+    :return: dict, difference
+    """
+    if diff_dict is None:
+        diff_dict = {'added': {},
+                     'removed': {}}
+    keys2 = set(dict2.keys())
+    keys1 = set(dict1.keys())
+    keys_intersect = keys2.intersection(keys1)
+    keys_added = keys2 - keys_intersect
+    keys_removed = keys1 - keys_intersect
+    for key in keys_added:
+        diff_dict['added'].update({key: dict2[key]})
+    for key in keys_removed:
+        diff_dict['removed'].update({key: dict1[key]})
+    for key in keys_intersect:
+        if dict2[key] == dict1[key]:
+            continue
+        elif isinstance(dict2[key], dict) and isinstance(dict1[key], dict):
+            temp_diff_dict = diff_dicts(dict1[key], dict2[key],
+                                        diff_dict=copy.deepcopy(diff_dict))
+            diff_dict['added'].update({key: temp_diff_dict['added']})
+            diff_dict['removed'].update({key: temp_diff_dict['removed']})
+        else:
+            diff_dict['added'].update({key: dict2[key]})
+            diff_dict['removed'].update({key: dict1[key]})
+    return diff_dict
