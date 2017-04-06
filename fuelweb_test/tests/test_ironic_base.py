@@ -145,7 +145,7 @@ class TestIronicDeploy(TestBasic):
 
     def _boot_nova_instances(self, ironic_conn):
         ironic_slaves = self.env.d_env.nodes().ironics
-        user_image = ironic_conn.get_image_by_name('virtual_trusty_ext4')
+        user_image = ironic_conn.get_image_by_name('virtual_xenial_ext4')
         network = ironic_conn.nova.networks.find(label='baremetal')
         # Randomize name to avoid conflict on repetitive flavor creation.
         flavor_name = self._rand_name('baremetal_flavor')

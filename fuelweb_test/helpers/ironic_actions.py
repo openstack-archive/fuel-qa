@@ -37,9 +37,9 @@ class IronicActions(os_actions.OpenStackActions):
                                    "file_system": "ext4", "size": 10000}]}]
         cmd = ('. /root/openrc; cd /tmp/; '
                'curl {img_url} | tar -xzp; '
-               'glance image-create --name virtual_trusty_ext4 '
+               'glance image-create --name virtual_xenial_ext4 '
                '--disk-format raw --container-format bare '
-               '--file trusty-server-cloudimg-amd64.img --visibility public '
+               '--file xenial-server-cloudimg-amd64.img --visibility public '
                '--property cpu_arch="x86_64" '
                '--property hypervisor_type="baremetal" '
                '--property fuel_disk_info=\'{disk_info}\'').format(
