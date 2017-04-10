@@ -468,6 +468,9 @@ class EnvironmentModel(six.with_metaclass(SingletonMeta, object)):
                 admin_node_ip, cmd)['stdout'][0].strip()
         cmd = 'puppet apply {0}'.format(puppet_manifest)
         self.ssh_manager.check_call(admin_node_ip, cmd)
+        cmd = 'cat /var/lib/fuel/keys/master/nginx/nginx.crt >> ' \
+              '/etc/ssl/certs/ca-bundle.crt'
+        self.ssh_manager.check_call(admin_node_ip, cmd)
         cmd = """
         systemctl status nginx.service |
         awk 'match($0, /\s+Active:.*\((\w+)\)/, a) {print a[1]}'
