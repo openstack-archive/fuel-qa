@@ -286,18 +286,24 @@ groups:
        dhcp: false
        forward:
          mode: route
+       vlan_ifaces:
+         - 101
 
      management:
        address_pool: management-pool01
        dhcp: false
        forward:
          mode: route
+       vlan_ifaces:
+         - 102
 
      private:
        address_pool: private-pool01
        dhcp: false
        forward:
          mode: route
+       vlan_ifaces:
+         - 103
 
    nodes:
     - name: admin        # Custom name of VM for Fuel admin node
@@ -380,12 +386,16 @@ groups:
        dhcp: false
        forward:
          mode: route
+       vlan_ifaces:
+         - 102
 
      private2:
        address_pool: private-pool02
        dhcp: false
        forward:
          mode: route
+       vlan_ifaces:
+         - 103
 
    nodes:
     - name: slave-04
@@ -436,12 +446,16 @@ groups:
        dhcp: false
        forward:
          mode: route
+       vlan_ifaces:
+         - 102
 
      private3:
        address_pool: private-pool03
        dhcp: false
        forward:
          mode: route
+       vlan_ifaces:
+         - 103
 
    nodes:
     - name: slave-07
