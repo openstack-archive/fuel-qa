@@ -168,16 +168,16 @@ class RallyEngine(object):
         return [line.strip() for line in result['stdout']]
 
     def show_deployment(self, deployment_uuid):
-        cmd = ("rally deployment show {0} | awk -F "
-               "'[[:space:]]*\\\\|[[:space:]]*' '/\w/{{print $2\",\"$3\",\"$4"
-               "\",\"$5\",\"$6\",\"$7\",\"$8}}'").format(deployment_uuid)
+        cmd = "rally deployment show {0}".format(deployment_uuid)
         result = self.run_container_command(cmd)
-        assert_equal(len(result['stdout']), 2,
-                     "Command 'rally deployment show' returned unexpected "
-                     "value: expected 2 lines, got {0}: ".format(result))
-        keys = [k for k in result['stdout'][0].strip().split(',') if k != '']
-        values = [v for v in result['stdout'][1].strip().split(',') if v != '']
-        return {keys[i]: values[i] for i in range(0, len(keys))}
+        output_payload = [
+            [word.strip() for word in line.split("|") if word.strip()]
+            for line in result.stdout if line.startswith("|")]
+        assert_equal(
+            len(output_payload), 2,
+            "Command 'rally deployment show' returned unexpected "
+            "value: expected 2 lines, got {0}: ".format(result.stdout_str))
+        return dict(zip(*output_payload))
 
     def list_tasks(self):
         cmd = "rally task list --uuids-only"
