@@ -170,7 +170,7 @@ class SeparateAllFailover(TestBasic):
         self.fuel_web.assert_os_services_ready(cluster_id, timeout=15 * 60)
 
         self.fuel_web.run_ostf(
-            cluster_id=cluster_id)
+            cluster_id=cluster_id, should_fail=1)
 
     @test(depends_on=[SeparateAllServices.separate_all_service],
           groups=["separate_all_service_controller_shutdown"])
