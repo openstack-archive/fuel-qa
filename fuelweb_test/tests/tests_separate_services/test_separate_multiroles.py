@@ -166,7 +166,7 @@ class SeparateAllFailover(TestBasic):
         all_node.destroy()
         wait(lambda: not self.fuel_web.get_nailgun_node_by_devops_node(
             all_node)['online'], timeout=60 * 5)
-        self.fuel_web.assert_ha_services_ready(cluster_id)
+        self.fuel_web.assert_ha_services_ready(cluster_id, should_fail=1)
         self.fuel_web.assert_os_services_ready(cluster_id, timeout=15 * 60)
 
         self.fuel_web.run_ostf(
