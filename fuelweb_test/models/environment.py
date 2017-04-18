@@ -666,6 +666,17 @@ class EnvironmentModel(object):
         dockerctl start all
         dockerctl check
         """
+        logger.info('Disabling containers services...')
+        self.ssh_manager.execute_on_remote(
+            ip=self.admin_node_ip,
+            cmd='systemctl disable docker-postgres docker-rabbitmq '
+                'docker-keystone docker-rsync docker-astute '
+                'docker-rsyslog docker-nailgun docker-ostf '
+                'docker-nginx docker-cobbler docker-mcollective',
+            err_msg='Unable to disable services'
+        )
+        logger.info('Services disabled')
+
         logger.info('Terminating all containers...')
         self.ssh_manager.execute_on_remote(
             ip=self.admin_node_ip,
@@ -733,6 +744,17 @@ class EnvironmentModel(object):
             err_msg='Unable to load images'
         )
         logger.info('Images loaded')
+
+        logger.info('Enabling containers services...')
+        self.ssh_manager.execute_on_remote(
+            ip=self.admin_node_ip,
+            cmd='systemctl enable docker-postgres docker-rabbitmq '
+                'docker-keystone docker-rsync docker-astute '
+                'docker-rsyslog docker-nailgun docker-ostf '
+                'docker-nginx docker-cobbler docker-mcollective',
+            err_msg='Unable to enable services'
+        )
+        logger.info('Services enabled')
 
         cmd = ' ; '.join(
             ["dockerctl start all",
