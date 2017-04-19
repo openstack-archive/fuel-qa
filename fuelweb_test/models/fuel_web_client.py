@@ -1881,7 +1881,7 @@ class FuelWebClient(object):
             assert 'No cluster_deletion task found!'
 
     @logwrap
-    def wait_nodes_get_online_state(self, nodes, timeout=4 * 60):
+    def wait_nodes_get_online_state(self, nodes, timeout=5 * 60):
         for node in nodes:
             logger.info('Wait for %s node online status', node.name)
             try:
@@ -1897,7 +1897,7 @@ class FuelWebClient(object):
                         'Node {0} is online'.format(node['mac']))
 
     @logwrap
-    def wait_mysql_galera_is_up(self, node_names, timeout=60 * 4):
+    def wait_mysql_galera_is_up(self, node_names, timeout=60 * 10):
         def _get_galera_status(_remote):
             cmd = ("mysql --connect_timeout=5 -sse \"SELECT VARIABLE_VALUE "
                    "FROM information_schema.GLOBAL_STATUS WHERE VARIABLE_NAME"
