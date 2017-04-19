@@ -535,8 +535,8 @@ class FuelPluginBuilder(BaseActions):
             rpms += " tar git"
             fpb_package = "git+{}".format(FUEL_PLUGIN_BUILDER_REPO)
 
-        self.execute_in_container("yum -y install {}".format(rpms),
-                                  self.container, 0)
+        self.execute_in_container("yum -y --skip-broken install {}"
+                                  .format(rpms), self.container, 0)
         self.execute_in_container("pip install {}".format(fpb_package),
                                   self.container, 0)
 
