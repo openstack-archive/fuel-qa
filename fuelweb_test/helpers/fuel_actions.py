@@ -380,15 +380,15 @@ class AdminActions(BaseActions):
         assert_equal(notupdated_packages, [], msg)
 
     def prepare_admin_node_for_mos_mu(self):
-        """Prepare master node for update via mos-playbooks tool"""
-        logger.info('Searching for mos-playbooks and mos-release packages')
-        search_command = 'yum search mos-playbooks && yum search mos-release'
+        """Prepare master node for update via mos-updates tool"""
+        logger.info('Searching for mos-updates and mos-release packages')
+        search_command = 'yum search mos-updates && yum search mos-release'
         search_result = self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
             command=search_command)
 
         if "Warning: No matches found for: " in search_result.stderr_str:
-            logger.warning("mos-release or mos-playbooks wasn't found. "
+            logger.warning("mos-release or mos-updates wasn't found. "
                            "Install mos-release from 9.2 repository")
             cmd = 'yum install -y http://mirror.fuel-infra.org/mos-repos/' \
                   'centos/mos9.0-centos7/9.2-updates/x86_64/Packages/' \
@@ -409,8 +409,8 @@ class AdminActions(BaseActions):
             self.new_packages))
         mos_mu_path = 'cd {} &&'.format(MOS_MU_PATH)
 
-        logger.info('Installing mos-playbooks package')
-        install_command = 'yum install -y mos-playbooks'
+        logger.info('Installing mos-updates package')
+        install_command = 'yum install -y mos-updates'
         self.ssh_manager.check_call(
             ip=self.ssh_manager.admin_ip,
             command=install_command)
@@ -423,7 +423,7 @@ class AdminActions(BaseActions):
             command=command)
 
     def admin_install_updates_mos_mu(self):
-        """Update master node using mos-playbooks tool"""
+        """Update master node using mos-updates tool"""
         mos_mu_path = 'cd {} ;'.format(MOS_MU_PATH)
 
         logger.info('Update Fuel node')
