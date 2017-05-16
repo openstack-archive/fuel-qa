@@ -665,6 +665,7 @@ class EnvironmentModel(object):
         reboot
         dockerctl start all
         dockerctl check
+        fuel release --sync-deployment-tasks --dir /etc/puppet/liberty-8.0/
         """
         logger.info('Disabling containers services...')
         self.ssh_manager.execute_on_remote(
@@ -758,8 +759,12 @@ class EnvironmentModel(object):
 
         cmd = ' ; '.join(
             ["dockerctl start all",
-             "dockerctl check"]
-        )
+             "dockerctl check",
+             "fuel release --sync-deployment-tasks "
+             "--dir /etc/puppet/liberty-8.0/ "
+             "--user={user} --password={pwd}"
+             "".format(user=settings.KEYSTONE_CREDS['username'],
+                       pwd=settings.KEYSTONE_CREDS['password'])])
 
         result = self.ssh_manager.execute(
             ip=self.ssh_manager.admin_ip,
