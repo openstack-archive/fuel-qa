@@ -26,5 +26,5 @@ Jinja2>=2.8  # BSD License (3 clause)
 AllPairs==2.0.1
 launchpadlib
 beautifulsoup4>=4.2.0
-requests>=2.8.1,!=2.9.0  # Apache-2.0
+requests>=2.8.1,!=2.9.0,<2.15  # Apache-2.0
 joblib>=0.8.4
