@@ -73,25 +73,10 @@ if StrictVersion(devops.__version__) < StrictVersion('3.0.2'):
     # Enforce closing all connections for objects recreate and API arrival
     SSHClient.close_connections()
 
-else:
-    with open(
-            os.path.abspath(
-                os.path.join(
-                    os.path.dirname(os.path.abspath(__file__)),
-                    '../requirements-devops-source.txt'
-                ))
-    ) as req:
-        d_req = req.read()
-
-    req_ver = d_req.split('@')[-1]
-
-    if StrictVersion(req_ver) >= StrictVersion('3.0.2'):
-        logger.warning(
-            'Please revert changes with change-id:\n'
-            '\tId90f06b4c83f9e0a21adf5c90aa04111d2a4153e (gerrit 359911)\n'
-            'This solution is not required for now due to using actual version'
-            'of fuel-devops.'
-        )
+# else:
+    # There was request for reverting
+    # '\tId90f06b4c83f9e0a21adf5c90aa04111d2a4153e (gerrit 359911)\n'
+    # but now its not needed anymore
 
 
 class SSHManager(six.with_metaclass(SingletonMeta, object)):
