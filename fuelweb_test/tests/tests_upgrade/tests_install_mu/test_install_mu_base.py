@@ -191,6 +191,38 @@ class MUInstallBase(test_cli_base.CommandLine):
         )
 
     def _install_mu(self, cluster_id, repos, apply_patches=False):
+        if settings.USE_MOS_MU_FOR_UPGRADE:
+            mos_mu_path = 'cd {} &&'.format(settings.MOS_MU_PATH)
+
+            nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
+            cmd_ceph_ver = "ceph version | egrep -o '[0-9]*\.[0-9]*\.[0-9]*'"
+            cmd_kernel_ver = "uname -r"
+            kernel_before = {}
+            ceph_before = {}
+            ceph_detected = False
+            for node in nodes:
+                logger.info("Get current version of kernel and ceph on node {}"
+                            "".format(node['hostname']))
+                with self.fuel_web.get_ssh_for_nailgun_node(node) as remote:
+                    out = remote.execute(cmd_kernel_ver).stdout[0]
+                    logger.info("Kernel version: {}".format(out))
+                    kernel_before[node['hostname']] = out
+                    if 'ceph-osd' in node['roles']:
+                        ceph_detected = True
+                        out = remote.execute(cmd_ceph_ver).stdout[0]
+                        ceph_before[node['hostname']] = out
+                        logger.info("Ceph version: {}".format(out))
+
+            if ceph_detected:
+                logger.info('Update ceph')
+                command = \
+                    '{0} ansible-playbook playbooks/update_ceph.yml -e \'' \
+                    '{{"env_id":{1}, "add_ceph_repo":true}}\'' \
+                    ''.format(mos_mu_path, cluster_id)
+                self.ssh_manager.check_call(
+                    ip=self.ssh_manager.admin_ip,
+                    command=command)
+
         if settings.UPGRADE_CLUSTER_FROM_PROPOSED:
             cmd = "fuel2 update install --env {} --repos {} " \
                   "--restart-rabbit --restart-mysql".format(cluster_id,
@@ -215,27 +247,6 @@ class MUInstallBase(test_cli_base.CommandLine):
         self.assert_cli_task_success(task, timeout=settings.DEPLOYMENT_TIMEOUT)
 
         if settings.USE_MOS_MU_FOR_UPGRADE:
-            mos_mu_path = 'cd {} &&'.format(settings.MOS_MU_PATH)
-
-            nodes = self.fuel_web.client.list_cluster_nodes(cluster_id)
-            cmd_ceph_ver = "ceph version | egrep -o '[0-9]*\.[0-9]*\.[0-9]*'"
-            cmd_kernel_ver = "uname -r"
-            kernel_before = {}
-            ceph_before = {}
-            ceph_detected = False
-            for node in nodes:
-                logger.info("Get current version of kernel and ceph on node {}"
-                            "".format(node['hostname']))
-                with self.fuel_web.get_ssh_for_nailgun_node(node) as remote:
-                    out = remote.execute(cmd_kernel_ver).stdout[0]
-                    logger.info("Kernel version: {}".format(out))
-                    kernel_before[node['hostname']] = out
-                    if 'ceph-osd' in node['roles']:
-                        ceph_detected = True
-                        out = remote.execute(cmd_ceph_ver).stdout[0]
-                        ceph_before[node['hostname']] = out
-                        logger.info("Ceph version: {}".format(out))
-
             logger.info('Upgrade kernel on 4.4')
             command = \
                 '{0} ansible-playbook playbooks/mos9_env_upgrade_kernel_' \
@@ -244,16 +255,6 @@ class MUInstallBase(test_cli_base.CommandLine):
             self.ssh_manager.check_call(
                 ip=self.ssh_manager.admin_ip,
                 command=command)
-
-            if ceph_detected:
-                logger.info('Update ceph')
-                command = \
-                    '{0} ansible-playbook playbooks/update_ceph.yml -e \'' \
-                    '{{"env_id":{1}, "restart_ceph":false}}\'' \
-                    ''.format(mos_mu_path, cluster_id)
-                self.ssh_manager.check_call(
-                    ip=self.ssh_manager.admin_ip,
-                    command=command)
 
             if apply_patches:
                 logger.info('Apply patches')
