@@ -28,7 +28,7 @@ except ImportError:
     # pylint: disable=no-member
     DevopsObjNotFound = Node.DoesNotExist
     # pylint: enable=no-member
-from devops.helpers.helpers import _wait
+from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
 from fuelweb_test.helpers.ssh_manager import SSHManager
 from fuelweb_test.helpers.ssl import copy_cert_from_master
@@ -149,7 +149,7 @@ class FuelWebClient(object):
     def assert_cluster_ready(self, os_conn, smiles_count,
                              networks_count=2, timeout=300):
         logger.info('Assert cluster services are UP')
-        _wait(
+        wait_pass(
             lambda: self.get_cluster_status(
                 os_conn,
                 smiles_count=smiles_count,
@@ -165,10 +165,10 @@ class FuelWebClient(object):
             logger.info('Waiting {0} sec. for passed OSTF HA tests.'
                         .format(timeout))
             with QuietLogger():
-                _wait(lambda: self.run_ostf(cluster_id,
-                                            test_sets=['ha'],
-                                            should_fail=should_fail),
-                      interval=20, timeout=timeout)
+                wait_pass(lambda: self.run_ostf(cluster_id,
+                                                test_sets=['ha'],
+                                                should_fail=should_fail),
+                          interval=20, timeout=timeout)
             logger.info('OSTF HA tests passed successfully.')
         else:
             logger.debug('Cluster {0} is not in HA mode, OSTF HA tests '
@@ -182,10 +182,10 @@ class FuelWebClient(object):
         logger.info('Waiting {0} sec. for passed OSTF Sanity checks.'
                     .format(timeout))
         with QuietLogger():
-            _wait(lambda: self.run_ostf(cluster_id,
-                                        test_sets=['sanity'],
-                                        should_fail=should_fail),
-                  interval=10, timeout=timeout)
+            wait_pass(lambda: self.run_ostf(cluster_id,
+                                            test_sets=['sanity'],
+                                            should_fail=should_fail),
+                      interval=10, timeout=timeout)
         logger.info('OSTF Sanity checks passed successfully.')
 
     @logwrap

@@ -16,8 +16,8 @@ import re
 import time
 from devops.error import TimeoutError
 
-from devops.helpers.helpers import _tcp_ping
-from devops.helpers.helpers import _wait
+from devops.helpers.helpers import tcp_ping
+from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
 from devops.helpers.ntp import sync_time
 from devops.models import Environment
@@ -365,13 +365,13 @@ class EnvironmentModel(object):
         if not skip_timesync:
             self.sync_time()
         try:
-            _wait(self.fuel_web.client.get_releases,
-                  expected=EnvironmentError, timeout=300)
+            wait_pass(self.fuel_web.client.get_releases,
+                      expected=EnvironmentError, timeout=300)
         except exceptions.Unauthorized:
             self.set_admin_keystone_password()
             self.fuel_web.get_nailgun_version()
 
-        _wait(lambda: self.check_slaves_are_ready(), timeout=60 * 6)
+        wait_pass(lambda: self.check_slaves_are_ready(), timeout=60 * 6)
         return True
 
     def set_admin_ssh_password(self):
@@ -530,7 +530,7 @@ class EnvironmentModel(object):
     @logwrap
     def wait_for_provisioning(self,
                               timeout=settings.WAIT_FOR_PROVISIONING_TIMEOUT):
-        _wait(lambda: _tcp_ping(
+        wait_pass(lambda: tcp_ping(
             self.d_env.nodes(
             ).admin.get_ip_address_by_network_name
             (self.d_env.admin_net), 22), timeout=timeout)
