@@ -63,7 +63,7 @@ def get_yaml_to_json(node_ssh, filename):
     logger.critical(msg)
 
     cmd = ("python -c 'import sys, yaml, json; json.dump("
-           "yaml.load(sys.stdin),"
+           "yaml.safe_load(sys.stdin),"
            " sys.stdout)' < {0}").format(filename)
     err_res = ''
     res = node_ssh.execute(cmd)
@@ -307,7 +307,7 @@ def update_yaml(yaml_tree=None, yaml_value='', is_uniq=True,
     yaml_data = {}
     if os.path.isfile(yaml_file):
         with open(yaml_file, 'r') as f:
-            yaml_data = yaml.load(f)
+            yaml_data = yaml.safe_load(f)
 
     # Walk through the 'yaml_data' dict, find or create a tree using
     # sub-keys in order provided in 'yaml_tree' list
@@ -519,7 +519,7 @@ def get_network_template(template_name):
     template = os.path.join(templates_path, '{}.yaml'.format(template_name))
     if os.path.exists(template):
         with open(template) as template_file:
-            return yaml.load(template_file)
+            return yaml.safe_load(template_file)
 
 
 @logwrap
@@ -763,7 +763,7 @@ def get_config_template(template_name):
                             'config_templates/{0}.yaml'.format(template_name))
     if os.path.exists(template):
         with open(template) as template_file:
-            return yaml.load(template_file)
+            return yaml.safe_load(template_file)
 
 
 @logwrap
@@ -1390,7 +1390,7 @@ class SettingsChanger(object):
                 if file_type == 'json':
                     self.attrs = json.load(f)
                 else:
-                    self.attrs = yaml.load(f)
+                    self.attrs = yaml.safe_load(f)
         except ValueError:
             logger.error("Check settings file for consistency")
             raise

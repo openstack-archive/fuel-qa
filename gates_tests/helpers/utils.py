@@ -301,7 +301,7 @@ def fuel_library_modules_mapping(modules):
     # open yaml with covered modules
     with open(
             "gates_tests/helpers/fuel_library_modules_mapping.yaml", "r") as f:
-        mapping = yaml.load(f)
+        mapping = yaml.safe_load(f)
 
     if modules and isinstance(modules, dict):
         all_modules = set(list(itertools.chain.from_iterable(
@@ -378,7 +378,7 @@ def openstack_puppet_project_mapping(project):
     with open(
             "gates_tests/helpers/openstack_puppet_projects_mapping.yaml",
             "r") as f:
-        mapping = yaml.load(f)
+        mapping = yaml.safe_load(f)
 
         all_projects = set(list(itertools.chain.from_iterable(
             [mapping[test_group]['modules'] for test_group in mapping])))
