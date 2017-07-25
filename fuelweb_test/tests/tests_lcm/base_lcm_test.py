@@ -138,7 +138,7 @@ class LCMTestBasic(TestBasic):
                             'File {!r} not found on node {!r}'
                             .format(report_file, node['id']))
         with ssh.open_on_remote(ip, report_file) as f:
-            data = yaml.load(f)
+            data = yaml.safe_load(f)
         ssh.rm_rf_on_remote(ip, report_file)
         return data
 
@@ -157,7 +157,7 @@ class LCMTestBasic(TestBasic):
             os.path.dirname(__file__), "fixtures",
             deployment_type, subdir, "{}.yaml".format(role))
         with open(fixture_path) as f:
-            fixture = yaml.load(f)
+            fixture = yaml.safe_load(f)
 
         default_attrs = {"no_puppet_run": False,
                          "type": "puppet",
@@ -452,9 +452,9 @@ class LCMTestBasic(TestBasic):
                               deployment, "ensurability", "{}")
 
         with open(f_path.format("cluster_settings.yaml")) as f:
-            cluster_fixture = yaml.load(f)
+            cluster_fixture = yaml.safe_load(f)
         with open(f_path.format("nodes_settings.yaml")) as f:
-            nodes_fixture = yaml.load(f)
+            nodes_fixture = yaml.safe_load(f)
 
         return cluster_fixture, nodes_fixture
 

@@ -319,7 +319,7 @@ class TestMultiRackDeployment(DataDrivenUpgradeBase):
         logger.debug('Updating custom nodegroup ID in network configuration..')
         network_config_new = self.fuel_web.client.get_networks(cluster_id)
         with open(self.netgroup_description_file, "r") as file_obj:
-            netconf_all_groups = yaml.load(file_obj)
+            netconf_all_groups = yaml.safe_load(file_obj)
 
         asserts.assert_true(netconf_all_groups is not None,
                             'Network configuration for nodegroups is empty!')

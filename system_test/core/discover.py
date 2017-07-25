@@ -64,7 +64,7 @@ def load_yaml(path):
             raise ValueError(
                 "Cannot load the template {0} : include file {1} "
                 "doesn't exist.".format(path, file_name))
-        return yaml.load(open(file_name))
+        return yaml.safe_load(open(file_name))
 
     def yaml_get_env_variable(loader, node):
         if not node.value.strip():
@@ -88,12 +88,12 @@ def load_yaml(path):
                              "{filename}".format(var=env_variable,
                                                  filename=loader.name))
 
-        return yaml.load(value)
+        return yaml.safe_load(value)
 
     yaml.add_constructor("!include", yaml_include)
     yaml.add_constructor("!os_env", yaml_get_env_variable)
 
-    return yaml.load(open(path))
+    return yaml.safe_load(open(path))
 
 
 def find_duplicates(yamls):

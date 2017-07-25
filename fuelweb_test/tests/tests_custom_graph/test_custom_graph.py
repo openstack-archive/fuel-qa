@@ -186,7 +186,7 @@ class TestCustomGraph(TestBasic):
                                         'config_templates',
                                         tasks_filename)
         with open(local_tasks_file, 'r') as yaml_file:
-            tasks_yaml_data = yaml.load(yaml_file)
+            tasks_yaml_data = yaml.safe_load(yaml_file)
         custom_tasks = set([t['id'] for t in tasks_yaml_data])
         upload_tasks_path = '/tmp/{}'.format(tasks_filename)
         self.ssh_manager.upload_to_remote(
@@ -296,7 +296,7 @@ class TestCustomGraph(TestBasic):
                                         'config_templates',
                                         tasks_filename)
         with open(local_tasks_file, 'r') as yaml_file:
-            tasks_yaml_data = yaml.load(yaml_file)
+            tasks_yaml_data = yaml.safe_load(yaml_file)
         expected_tasks = set([t['id'] for t in tasks_yaml_data])
         upload_tasks_path = '/tmp/{}'.format(tasks_filename)
         self.ssh_manager.upload_to_remote(
@@ -448,7 +448,7 @@ class TestCustomGraph(TestBasic):
                                         'config_templates',
                                         rel_tasks_filename)
         with open(local_tasks_file, 'r') as yaml_file:
-            release_tasks_yaml_data = yaml.load(yaml_file)
+            release_tasks_yaml_data = yaml.safe_load(yaml_file)
         upload_tasks_path = '/tmp/{}'.format(rel_tasks_filename)
 
         self.ssh_manager.upload_to_remote(
@@ -471,7 +471,7 @@ class TestCustomGraph(TestBasic):
                                         'config_templates',
                                         c_tasks_filename)
         with open(local_tasks_file, 'r') as yaml_file:
-            cluster_tasks_yaml_data = yaml.load(yaml_file)
+            cluster_tasks_yaml_data = yaml.safe_load(yaml_file)
         upload_tasks_path = '/tmp/{}'.format(rel_tasks_filename)
 
         self.ssh_manager.upload_to_remote(

@@ -65,7 +65,7 @@ class UnlockSettingsTab(TestBasic):
                            "Aborting the test")
         with open(path_to_conf, 'r') as f:
             try:
-                config = yaml.load(f)
+                config = yaml.safe_load(f)
                 return config
             except ValueError:
                 logger.error("Check config file for consistency")

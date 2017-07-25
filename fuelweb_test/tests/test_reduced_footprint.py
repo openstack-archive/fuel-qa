@@ -389,7 +389,7 @@ class TestVirtRoleBaremetal(TestBasic):
         """
         template_path = os.path.join(template_dir, '{0}.yaml'.format(template))
         with open(template_path) as template_file:
-            return yaml.load(template_file)
+            return yaml.safe_load(template_file)
 
     @test(depends_on=[SetupEnvironment.prepare_slaves_1],
           groups=["baremetal_deploy_cluster_with_virt_node"])
