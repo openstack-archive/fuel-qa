@@ -71,6 +71,8 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
             self.add_nodes_to_cluster(remote, cluster_id, node_ids[2],
                                       ['cinder'])
 
+            for node_id in node_ids[0:2]:
+                self.update_node_interfaces(node_id)
             self.fuel_web.verify_network(cluster_id)
             self.show_step(5)
             cmd = 'fuel --env-id={0} deploy-changes --json'.format(cluster_id)
@@ -120,6 +122,8 @@ class CommandLineAcceptanceDeploymentTests(test_cli_base.CommandLine):
             self.show_step(2)
             self.add_nodes_to_cluster(remote, cluster_id, node_ids[0:3],
                                       ['controller'])
+            for node_id in node_ids[0:3]:
+                self.update_node_interfaces(node_id)
             self.show_step(3)
             cmd = ('fuel node --node-id {0} --provision --env {1} --json'.
                    format(','.join(str(n) for n in node_ids), cluster_id))

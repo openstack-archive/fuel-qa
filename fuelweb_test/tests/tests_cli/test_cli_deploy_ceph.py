@@ -78,6 +78,8 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
                                       ['compute'])
             self.add_nodes_to_cluster(remote, cluster_id, node_ids[5:7],
                                       ['ceph-osd'])
+            for node_id in node_ids[0:7]:
+                self.update_node_interfaces(node_id)
             self.fuel_web.verify_network(cluster_id)
             self.show_step(5)
             cmd = 'fuel --env-id={0} deploy-changes --json'.format(cluster_id)
@@ -151,7 +153,8 @@ class CommandLineAcceptanceCephDeploymentTests(test_cli_base.CommandLine):
                         cluster['id'],
                         ','.join(map(str, nodes[role])), role)
             )
-
+        for node_id in node_ids[0:8]:
+            self.update_node_interfaces(node_id)
         self.show_step(5)
         self.fuel_web.verify_network(cluster['id'])
 
