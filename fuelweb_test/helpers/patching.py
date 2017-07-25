@@ -206,7 +206,7 @@ def get_package_test_info(package, pkg_type, tests_path, patch_target):
     packages_path = "{0}/{1}/packages.yaml".format(tests_path, pkg_type)
     tests = set()
     tests_file = 'test.yaml'
-    all_packages = yaml.load(open(packages_path).read())
+    all_packages = yaml.safe_load(open(packages_path).read())
     assert_is_not_none(_get_target_and_project(package, all_packages),
                        "Package '{0}' doesn't belong to any installation "
                        "target / project".format(package))
@@ -224,7 +224,7 @@ def get_package_test_info(package, pkg_type, tests_path, patch_target):
                                    package, tests_file))
     for path in (target_tests_path, project_tests_path, package_tests_path):
         try:
-            test = yaml.load(open(path).read())
+            test = yaml.safe_load(open(path).read())
             if 'system_tests' in test.keys():
                 tests.update(test['system_tests']['tags'])
         except IOError as e:

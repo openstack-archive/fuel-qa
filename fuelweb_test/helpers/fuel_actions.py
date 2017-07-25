@@ -158,7 +158,7 @@ class AdminActions(BaseActions):
 
         fuel_settings = self.get_fuel_settings()
         with open(path) as fyaml:
-            custom_fuel_settings = yaml.load(fyaml)
+            custom_fuel_settings = yaml.safe_load(fyaml)
 
         fuel_settings = dict_merge(fuel_settings, custom_fuel_settings)
         self.save_fuel_settings(fuel_settings)
@@ -267,7 +267,7 @@ class NailgunActions(BaseActions):
             # replace https endpoints to http endpoints
             with self.ssh_manager.open_on_remote(self.admin_ip,
                                                  base_cfg_file) as f:
-                data = yaml.load(f)
+                data = yaml.safe_load(f)
             for key, value in data.items():
                 if (isinstance(key, str) and key.startswith("COLLECTOR") and
                         key.endswith("URL") and value.startswith("https")):

@@ -53,7 +53,7 @@ class TaskLCMCoverage(TestBasic):
         :return: a set of tasks
         """
         with open(path) as f:
-            fixture = yaml.load(f)
+            fixture = yaml.safe_load(f)
         for task in fixture['tasks']:
             task_name, task_attr = task.items()[0]
             if task_attr is None:
