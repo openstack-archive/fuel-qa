@@ -1,4 +1,4 @@
 # TODO(ddmitriev): remove this requirement when fuel-devops
 # will be available as a PyPi package.
 # Check virtual environment update scripts on CI first.
-git+git://github.com/openstack/fuel-devops.git@2.9.23
+git+git://github.com/openstack/fuel-devops.git@release/2.9
