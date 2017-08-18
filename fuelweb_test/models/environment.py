@@ -454,7 +454,7 @@ class EnvironmentModel(object):
                 device='cdrom').volume.upload(settings.ISO_PATH)
         self.d_env.start([admin])
         logger.info("Waiting for admin node to start up")
-        wait(lambda: admin.driver.node_active(admin), 60)
+        wait(lambda: admin.driver.node_active(admin), timeout=60)
         logger.info("Proceed with installation")
         # update network parameters at boot screen
         admin.send_keys(self.get_keys(admin, custom=custom,
