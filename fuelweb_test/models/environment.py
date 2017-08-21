@@ -363,7 +363,7 @@ class EnvironmentModel(object):
                           security=settings.SECURITY_TEST):
         # start admin node
         admin = self.d_env.nodes().admin
-        if(iso_connect_as == 'usb'):
+        if iso_connect_as == 'usb':
             admin.disk_devices.get(device='disk',
                                    bus='usb').volume.upload(settings.ISO_PATH)
         else:  # cdrom is default
@@ -386,6 +386,10 @@ class EnvironmentModel(object):
         admin.await(self.d_env.admin_net, timeout=10 * 60)
         self.set_admin_ssh_password()
         self.admin_actions.modify_configs(self.d_env.router())
+        # FIXME
+        if settings.UPDATE_MASTER:
+            self.admin_install_updates()
+        #
         self.wait_bootstrap()
 
         if settings.UPDATE_FUEL:
@@ -399,18 +403,9 @@ class EnvironmentModel(object):
         time.sleep(10)
         self.set_admin_keystone_password()
         self.sync_time(['admin'])
-        if settings.UPDATE_MASTER:
-            if settings.UPDATE_FUEL_MIRROR:
-                for i, url in enumerate(settings.UPDATE_FUEL_MIRROR):
-                    conf_file = '/etc/yum.repos.d/temporary-{}.repo'.format(i)
-                    cmd = ("echo -e"
-                           " '[temporary-{0}]\nname="
-                           "temporary-{0}\nbaseurl={1}/"
-                           "\ngpgcheck=0\npriority="
-                           "1' > {2}").format(i, url, conf_file)
-                    with self.d_env.get_admin_remote() as remote:
-                        remote.execute(cmd)
-            self.admin_install_updates()
+        # FIXME
+        # if settings.UPDATE_MASTER:
+        #     self.admin_install_updates()
         if settings.MULTIPLE_NETWORKS:
             self.describe_second_admin_interface()
             multiple_networks_hacks.configure_second_admin_cobbler(self)
@@ -426,11 +421,14 @@ class EnvironmentModel(object):
                 settings.FUEL_STATS_HOST, settings.FUEL_STATS_PORT
             ))
         if settings.PATCHING_DISABLE_UPDATES:
+            # Why do we do this now, after UPDATE_MASTER update ?
             remote = self.d_env.get_admin_remote()
             cmd = "find /etc/yum.repos.d/ -type f -regextype posix-egrep" \
                   " -regex '.*/mos[0-9,\.]+\-(updates|security).repo' | " \
                   "xargs -n1 -i sed '$aenabled=0' -i {}"
             self.execute_remote_cmd(remote, cmd)
+        import sys
+        sys.exit(1)
 
     @update_rpm_packages
     @upload_manifests
@@ -528,6 +526,79 @@ class EnvironmentModel(object):
                                 remote_status['exit_code'],
                                 remote_status['stdout']))
 
+    def process_UPDATE_FUEL_MIRROR(self,_remote):
+        """
+        :mirrors: list of items:
+        ["repo_name,repo_url,repo_priority,exclude_list"]
+        :return: list of dicts
+        mirrors = [
+            {
+                "name": "name",
+                "url": "url",
+                "priority": "repo_priority",
+                "exlude_list": "exlude_list",
+            }
+        ]
+        """
+        logger.info("Hello:{}".format(settings.UPDATE_FUEL_MIRROR))
+        mirrors = []
+        for mirror in list(settings.UPDATE_FUEL_MIRROR):
+            # TODO core index out of range with default values
+            mirrors.append({
+                "name": mirror.split(",")[0],
+                "url": mirror.split(",")[1],
+                "priority": mirror.split(",")[2],
+                "exlude_list": mirror.split(",")[3:],
+            }
+            )
+        logger.info("Parsed UPDATE_FUEL_MIRROR:{}".format(mirrors))
+        for mirror in mirrors:
+            conf_file = '/etc/yum.repos.d/' \
+                        'temporary-{0}.repo'.format(mirror["name"])
+            cmd = ("echo -e"
+                   " '[temporary-{0}]\n"
+                   "name=temporary-{0}\n"
+                   "baseurl={1}/\n"
+                   "gpgcheck=0\n"
+                   "priority={2}\n"
+                   "exlude_list={3}\n' > {4}").format(
+                mirror["name"],
+                mirror["url"],
+                mirror["priority"],
+                mirror["exlude_list"],
+                conf_file)
+            _remote.execute(cmd, verbose=True)
+
+    def admin_install_updates_hooks(self, admin_remote):
+        """
+        Apply set of hooks, which neede for correct migrathion from worked
+        kernel to centos6 upstream one.
+        See https://review.openstack.org/#/c/485264/ for more info.
+        :return:
+        """
+        logger.info('Set update hooks, implemented in scope of MU 9\nSee '
+                    'https://review.openstack.org/#/c/485264/ for more info.')
+        logger.info("Remove all old firmware-related pacages,"
+                    "since they will conflict with upstream one")
+
+        cmd = """
+        #!/bin/bash
+        set -x ; set -e;
+        TDIR="/root/update_procedure/" ; mkdir -p ${TDIR};
+        pushd ${TDIR};
+        rpm -qa |grep -i firmware|grep -i "mos\|mira" >> uninstall_list
+        for package in $(cat uninstall_list); do
+          yum remove -y ${package} 2&>1 >> uninstall_log
+        done
+        """
+        cmd_res = admin_remote.execute(cmd)
+        logger.info('Result of "{0}"\ncommand on master node: '
+                    '{1}'.format(cmd, cmd_res))
+        assert_equal(int(cmd_res['exit_code']), 0,
+                     'Command failed,inspect logs for details')
+        self.process_UPDATE_FUEL_MIRROR(admin_remote)
+        logger.info("ZZZ3")
+
     def admin_install_updates(self):
         """Install maintenance updates using the following commands (see docs
         for details):
@@ -541,13 +612,31 @@ class EnvironmentModel(object):
         fuel release --sync-deployment-tasks --dir /etc/puppet/
         """
         logger.info('Start admin node update')
+        if settings.UPDATE_FUEL_MIRROR:
+            logger.info('UPDATE_FUEL_MIRROR detected')
+            logger.info('ZZ1:{}'.format(settings.UPDATE_FUEL_MIRROR))
+
+            # for i, url in enumerate(settings.UPDATE_FUEL_MIRROR):
+            #     conf_file = '/etc/yum.repos.d/temporary-{}.repo'.format(i)
+            #     cmd = ("echo -e"
+            #            " '[temporary-{0}]\nname="
+            #            "temporary-{0}\nbaseurl={1}/"
+            #            "\ngpgcheck=0\npriority="
+            #            "1' > {2}").format(i, url, conf_file)
+            #     with self.d_env.get_admin_remote() as remote:
+            #         remote.execute(cmd, verbose=True)
         admin_remote = self.d_env.get_admin_remote()
+        # FIXME
+        self.admin_install_updates_hooks(admin_remote)
+        #
         logger.info('Terminating all containers...')
         admin_remote.execute('dockerctl destroy all')
         logger.info('Containers terminated')
 
         logger.info('Searching for updates..')
-
+        # FIXME
+        #self.admin_install_updates_hooks(admin_remote)
+        #
         update_command = 'yum clean expire-cache; yum update -y'
         update_result = admin_remote.execute(update_command)
         logger.info('Result of "{1}" command on master node: '
@@ -555,6 +644,8 @@ class EnvironmentModel(object):
         assert_equal(int(update_result['exit_code']), 0,
                      'Packages update failed, '
                      'inspect logs for details')
+        # Since update could install "centos-release" package,we need to cleanup
+        admin_remote.execute('rm -fv /etc/yum.repos.d/CentOS*.repo')
 
         # Check if any packets were updated and update was successful
         for str_line in update_result['stdout']:
