@@ -220,7 +220,7 @@ def update_rpm_packages(func):
                          'Packages update failed, '
                          'inspect logs for details')
             environment.execute_remote_cmd(remote,
-                                           cmd='rm -f {0}'.format(conf_file),
+                                           cmd='rm -fv {0}'.format(conf_file),
                                            exit_code=0)
         except Exception:
             logger.error("Could not update packages")
