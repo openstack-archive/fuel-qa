@@ -12,22 +12,28 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+import ConfigParser
+import StringIO
 import re
 import time
-import yaml
 from warnings import warn
 
+import yaml
 from devops.error import TimeoutError
 from devops.helpers.helpers import tcp_ping_
-from devops.helpers.helpers import wait_pass
 from devops.helpers.helpers import wait
+from devops.helpers.helpers import wait_pass
 from devops.helpers.ntp import sync_time
 from devops.models import Environment
 from keystoneclient import exceptions
 from proboscis.asserts import assert_equal
 from proboscis.asserts import assert_true
 
+from fuelweb_test import logger
+from fuelweb_test import logwrap
+from fuelweb_test import settings
 from fuelweb_test.helpers import checkers
+from fuelweb_test.helpers import multiple_networks_hacks
 from fuelweb_test.helpers.decorators import revert_info
 from fuelweb_test.helpers.decorators import update_rpm_packages
 from fuelweb_test.helpers.decorators import upload_manifests
@@ -39,12 +45,8 @@ from fuelweb_test.helpers.fuel_actions import NailgunActions
 from fuelweb_test.helpers.fuel_actions import PostgresActions
 from fuelweb_test.helpers.utils import erase_data_from_hdd
 from fuelweb_test.helpers.utils import timestat
-from fuelweb_test.helpers import multiple_networks_hacks
-from fuelweb_test.models.fuel_web_client import FuelWebClient
 from fuelweb_test.models.collector_client import CollectorClient
-from fuelweb_test import settings
-from fuelweb_test import logwrap
-from fuelweb_test import logger
+from fuelweb_test.models.fuel_web_client import FuelWebClient
 
 
 class EnvironmentModel(object):
@@ -363,7 +365,7 @@ class EnvironmentModel(object):
                           security=settings.SECURITY_TEST):
         # start admin node
         admin = self.d_env.nodes().admin
-        if(iso_connect_as == 'usb'):
+        if iso_connect_as == 'usb':
             admin.disk_devices.get(device='disk',
                                    bus='usb').volume.upload(settings.ISO_PATH)
         else:  # cdrom is default
@@ -387,29 +389,17 @@ class EnvironmentModel(object):
         self.set_admin_ssh_password()
         self.admin_actions.modify_configs(self.d_env.router())
         self.wait_bootstrap()
-
         if settings.UPDATE_FUEL:
             # Update Ubuntu packages
             self.admin_actions.upload_packages(
                 local_packages_dir=settings.UPDATE_FUEL_PATH,
                 centos_repo_path=None,
                 ubuntu_repo_path=settings.LOCAL_MIRROR_UBUNTU)
-
         self.docker_actions.wait_for_ready_containers()
         time.sleep(10)
         self.set_admin_keystone_password()
         self.sync_time(['admin'])
         if settings.UPDATE_MASTER:
-            if settings.UPDATE_FUEL_MIRROR:
-                for i, url in enumerate(settings.UPDATE_FUEL_MIRROR):
-                    conf_file = '/etc/yum.repos.d/temporary-{}.repo'.format(i)
-                    cmd = ("echo -e"
-                           " '[temporary-{0}]\nname="
-                           "temporary-{0}\nbaseurl={1}/"
-                           "\ngpgcheck=0\npriority="
-                           "1' > {2}").format(i, url, conf_file)
-                    with self.d_env.get_admin_remote() as remote:
-                        remote.execute(cmd)
             self.admin_install_updates()
         if settings.MULTIPLE_NETWORKS:
             self.describe_second_admin_interface()
@@ -528,6 +518,139 @@ class EnvironmentModel(object):
                                 remote_status['exit_code'],
                                 remote_status['stdout']))
 
+    def process_fuel_master_repos(self, _remote):
+        """
+        Since MU9 require ecxclude_package hack
+        we need to parse already defined repo files, and add packages for
+        "exclude". See https://review.openstack.org/#/c/485264
+        """
+        repo_dir = "/etc/yum.repos.d/"
+
+        def list_repofiles():
+            repolist = []
+            for _file in _remote.check_call('ls {}'.format(repo_dir)).stdout:
+                repolist.append(_file.replace("\n", ""))
+            return repolist
+
+        def process_repofile(repofile, _remote):
+            config = ConfigParser.RawConfigParser()
+            logger.debug("Processing:%s" % repofile)
+            with _remote.open(repofile, 'r') as f:
+                config.readfp(StringIO.StringIO(f.read()))
+            for section in config.sections():
+                url = config.get(section, "baseurl")
+                if any([mask for mask in
+                        settings.UPDATE_FUEL_MIRROR_MAP["centos"] if
+                        mask in url]):
+                    logger.debug("Repo:{} with url:{} related to"
+                                 "'centos upstream repo'".format(repo, url))
+                    try:
+                        exclude = config.get(section, "exclude")
+                        exclude = exclude.append(
+                            settings.UPDATE_FUEL_MIRROR_EXLUDE_CENTOS)
+                    except:
+                        exclude = settings.UPDATE_FUEL_MIRROR_EXLUDE_CENTOS
+                elif any([mask for mask in
+                          settings.UPDATE_FUEL_MIRROR_MAP["nailgun"] if
+                          mask in url]):
+                    logger.debug('Repo:{} with url:%s related to'
+                                 ' "nailgun" repo'.format(repo, url))
+                    try:
+                        exclude = config.get(section, "exclude")
+                        exclude = exclude.append(
+                            settings.UPDATE_FUEL_MIRROR_EXLUDE_NAILGUN)
+                    except:
+                        exclude = settings.UPDATE_FUEL_MIRROR_EXLUDE_NAILGUN
+                else:
+                    logger.warning('WARNING: For repo:{} exclude list'
+                                   ' not detected!'.format(repo))
+                    return
+                config.set(section, "exclude", ",".join(exclude))
+                with _remote.open(repofile, 'wb') as f:
+                    logger.debug("Updating repofile:{} ".format(repofile))
+                    config.write(f)
+
+        logger.info("process_fuel_master_repos:{0}".format(list_repofiles()))
+        for repo in list_repofiles():
+            process_repofile(repo_dir + repo, _remote)
+
+    def process_update_fuel_mirror(self, _remote):
+        """
+        Function will add new repo files on master,
+        from settings.UPDATE_FUEL_MIRROR
+
+        """
+        mirrors = []
+        for mirror in list(settings.UPDATE_FUEL_MIRROR):
+            try:
+                priority = mirror.split(",")[2]
+            except IndexError:
+                priority = '10'
+            try:
+                exclude_list = ','.join(mirror.split(",")[3:])
+            except IndexError:
+                exclude_list = ""
+            mirrors.append({
+                "name": mirror.split(",")[0],
+                "url": mirror.split(",")[1],
+                "priority": priority,
+                "exclude_list": exclude_list
+            }
+            )
+        logger.info("Parsed UPDATE_FUEL_MIRROR:{}".format(mirrors))
+        for mirror in mirrors:
+            repo_file = '/etc/yum.repos.d/' \
+                        'temporary-{0}.repo'.format(mirror["name"])
+            repo_value = (
+                "[temporary-{0}]\n"
+                "name=temporary-{0}\n"
+                "baseurl={1}/\n"
+                "gpgcheck=0\n"
+                "priority={2}\n"
+                "exclude={3}\n").format(mirror["name"], mirror["url"],
+                                        mirror["priority"],
+                                        mirror["exclude_list"])
+            with _remote.open(repo_file, 'w') as f:
+                f.write(repo_value)
+        self.process_fuel_master_repos(_remote)
+
+    def admin_install_updates_hooks(self, admin_remote):
+        """
+        Apply set of hooks, for correct migration from forked
+        kernel to centos6 upstream one.
+        Flow:
+        1) Remove all forked firmware packages
+        2) Add repos to fuel master, from UPDATE_FUEL_MIRROR
+        3) Check all fuel-master repos, and add exlude listing from
+        UPDATE_FUEL_MIRROR_MAP mask. (Ugly, but don't have other idea.)
+        """
+        logger.info('Set update hooks, implemented in scope of MU 9\n See '
+                    'https://review.openstack.org/#/c/485264/ for more info.')
+        logger.info("Remove all old firmware-related pacages,"
+                    "since they will conflict with upstream one")
+        temp_file = '/root/update_master_mu9.sh'
+        remote_script = '''
+#!/bin/bash
+set -x;
+TDIR=$(mktemp -d -p /root/ --suffix=_update_kernel)
+pushd ${TDIR};
+echo "Start $(date '+%Y-%m-%d-%H-%M-%S')" >> uninstall_log
+if [[ $(rpm -qa |grep -i firmware|grep -i "mos\|mira") ]]; then
+  rpm -qa |grep -i firmware|grep -i "mos\|mira" >> uninstall_list
+  for package in $(cat uninstall_list); do
+    yum remove -y ${package} 2&>1 >> uninstall_log
+  done
+else
+  echo "Ok,Looks like no packages for delete.."  2&>1 >> uninstall_log
+fi
+echo "Finish $(date \"+%Y-%m-%d-%H-%M-%S\")" >> uninstall_log
+'''
+        with admin_remote.open(temp_file, 'w') as f:
+            f.write(remote_script)
+        cmd = "bash {}".format(temp_file)
+        admin_remote.check_call(cmd, verbose=True)
+        self.process_update_fuel_mirror(admin_remote)
+
     def admin_install_updates(self):
         """Install maintenance updates using the following commands (see docs
         for details):
@@ -541,13 +664,16 @@ class EnvironmentModel(object):
         fuel release --sync-deployment-tasks --dir /etc/puppet/
         """
         logger.info('Start admin node update')
+
         admin_remote = self.d_env.get_admin_remote()
         logger.info('Terminating all containers...')
         admin_remote.execute('dockerctl destroy all')
         logger.info('Containers terminated')
 
         logger.info('Searching for updates..')
-
+        if settings.UPDATE_FUEL_MIRROR:
+            logger.info('UPDATE_FUEL_MIRROR detected')
+            self.admin_install_updates_hooks(admin_remote)
         update_command = 'yum clean expire-cache; yum update -y'
         update_result = admin_remote.execute(update_command)
         logger.info('Result of "{1}" command on master node: '
@@ -555,6 +681,10 @@ class EnvironmentModel(object):
         assert_equal(int(update_result['exit_code']), 0,
                      'Packages update failed, '
                      'inspect logs for details')
+        # Since update could install "centos-release" package,we
+        # need to cleanup.
+        admin_remote.check_call('rm -fv /etc/yum.repos.d/CentOS*.repo',
+                                verbose=True)
 
         # Check if any packets were updated and update was successful
         for str_line in update_result['stdout']:
