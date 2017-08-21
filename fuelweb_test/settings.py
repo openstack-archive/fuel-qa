@@ -505,7 +505,23 @@ DOWNLOAD_LINK = os.environ.get(
                      'ubuntu-14.04.4-server-amd64.iso')
 UPDATE_FUEL = get_var_as_bool('UPDATE_FUEL', False)
 UPDATE_FUEL_PATH = os.environ.get('UPDATE_FUEL_PATH', '~/fuel/pkgs/')
+# Format: UPDATE_FUEL_MIRROR="anyname,url,priority,exclude_list"
+# Mirror separator - space.
+# Default priority=10
+# Each item after priority, means to be exluded.
+# priority,exclude_lis are optional.
+# Implemented along https://review.openstack.org/#/c/485264
 UPDATE_FUEL_MIRROR = os.environ.get("UPDATE_FUEL_MIRROR", '').split()
+
+# Since after https://review.openstack.org/#/c/485264 , we need to add
+UPDATE_FUEL_MIRROR_EXLUDE_NAILGUN ="*.i?86,*.i686,,python-requests*"
+UPDATE_FUEL_MIRROR_EXLUDE_CENTOS = "iwl*-firmware*mira*,libertas-*-firmware*mira*,linux-firmware,kernel*3.10.5*mos*,kernel*2.6.3*mos*"
+# exlude_list for all repos, we need to try guess which one is for nailgun, and
+# which for centos...lets make a simple matrix for those.
+UPDATE_FUEL_MIRROR_MAP = {
+    "centos": ["security", "centos6"],
+    "nailgun": ["updates", "proposed", "holdback", "os", "cr"]
+}
 
 UPDATE_MASTER = get_var_as_bool('UPDATE_MASTER', False)
 
