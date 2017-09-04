@@ -134,9 +134,7 @@ class EnvironmentModel(object):
     @logwrap
     def get_admin_node_ip(self):
         return str(
-            self.d_env.nodes(
-            ).admin.get_ip_address_by_network_name(
-                self.d_env.admin_net))
+            self.d_env.nodes().admin.get_ip_address_by_network_name('admin'))
 
     @logwrap
     def get_ebtables(self, cluster_id, devops_nodes):
@@ -149,14 +147,12 @@ class EnvironmentModel(object):
             'ks': 'hd:LABEL="Mirantis_Fuel":/ks.cfg' if iso_connect_as == 'usb'
             else 'cdrom:/ks.cfg',
             'repo': 'hd:LABEL="Mirantis_Fuel":/',  # only required for USB boot
-            'ip': node.get_ip_address_by_network_name(
-                self.d_env.admin_net),
-            'mask': self.d_env.get_network(
-                name=self.d_env.admin_net).ip.netmask,
+            'ip': node.get_ip_address_by_network_name('admin'),
+            'mask': self.d_env.get_network(name='admin').ip.netmask,
             'gw': self.d_env.router(),
             'hostname': ''.join((settings.FUEL_MASTER_HOSTNAME,
                                  settings.DNS_SUFFIX)),
-            'nat_interface': self.d_env.nat_interface,
+            'nat_interface': '',
             'dns1': settings.DNS,
             'showmenu': 'yes' if custom else 'no',
             'build_images': '1' if build_images else '0'
@@ -223,7 +219,7 @@ class EnvironmentModel(object):
         admin = self.d_env.nodes().admin
 
         try:
-            admin.await(self.d_env.admin_net, timeout=30, by_port=8000)
+            admin.await('admin', timeout=30, by_port=8000)
         except Exception as e:
             logger.warning("From first time admin isn't reverted: "
                            "{0}".format(e))
@@ -233,7 +229,7 @@ class EnvironmentModel(object):
 
             admin.start()
             logger.info('Admin node started second time.')
-            self.d_env.nodes().admin.await(self.d_env.admin_net)
+            self.d_env.nodes().admin.await('admin')
             self.set_admin_ssh_password()
             self.docker_actions.wait_for_ready_containers(timeout=600)
 
@@ -383,7 +379,7 @@ class EnvironmentModel(object):
             nessus_node = self.d_env.get_node(name='slave-nessus')
             nessus_node.start()
         # wait while installation complete
-        admin.await(self.d_env.admin_net, timeout=10 * 60)
+        admin.await('admin', timeout=10 * 60)
         self.set_admin_ssh_password()
         self.admin_actions.modify_configs(self.d_env.router())
         self.wait_bootstrap()
@@ -426,7 +422,7 @@ class EnvironmentModel(object):
         wait_pass(lambda: tcp_ping_(
             self.d_env.nodes(
             ).admin.get_ip_address_by_network_name
-            (self.d_env.admin_net), 22), timeout=timeout)
+            ('admin'), 22), timeout=timeout)
 
     def setup_customisation(self):
         self.wait_for_provisioning()
@@ -727,12 +723,12 @@ class EnvironmentModel(object):
     @logwrap
     def describe_second_admin_interface(self):
         remote = self.d_env.get_admin_remote()
-        admin_net2_object = self.d_env.get_network(name=self.d_env.admin_net2)
+        admin_net2_object = self.d_env.get_network(name='admin2')
         second_admin_network = admin_net2_object.ip.network
         second_admin_netmask = admin_net2_object.ip.netmask
-        second_admin_if = settings.INTERFACES.get(self.d_env.admin_net2)
+        second_admin_if = settings.INTERFACES.get('admin2')
         second_admin_ip = str(self.d_env.nodes(
-        ).admin.get_ip_address_by_network_name(self.d_env.admin_net2))
+        ).admin.get_ip_address_by_network_name('admin2'))
         logger.info(('Parameters for second admin interface configuration: '
                      'Network - {0}, Netmask - {1}, Interface - {2}, '
                      'IP Address - {3}').format(second_admin_network,

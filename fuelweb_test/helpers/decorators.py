@@ -79,7 +79,7 @@ def log_snapshot_after_test(func):
         try:
             result = func(*args, **kwargs)
         except SkipTest:
-            raise SkipTest()
+            raise
         except Exception as test_exception:
             exc_trace = sys.exc_traceback
             name = 'error_%s' % func.__name__
@@ -169,7 +169,7 @@ def update_rpm_packages(func):
     def wrapper(*args, **kwargs):
         result = func(*args, **kwargs)
         if not settings.UPDATE_FUEL:
-                return result
+            return result
         try:
             environment = get_current_env(args)
             if not environment:
@@ -295,7 +295,7 @@ def update_fuel(func):
 def revert_info(snapshot_name, master_ip, description=""):
     logger.info("<" * 5 + "*" * 100 + ">" * 5)
     logger.info("{} Make snapshot: {}".format(description, snapshot_name))
-    command = ("dos.py revert-resume {env} --snapshot-name {name} "
+    command = ("dos.py revert-resume {env} {name} "
                "&& ssh root@{master_ip}".format(
                    env=settings.ENV_NAME,
                    name=snapshot_name,
