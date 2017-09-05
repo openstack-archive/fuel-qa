@@ -182,6 +182,7 @@ class EnvironmentModel(object):
         }
         if iso_connect_as == 'usb':
             keys = (
+                "<Wait>\n"
                 "<Wait>\n"  # USB boot uses boot_menu=yes for master node
                 "<F12>\n"
                 "2\n"
