@@ -253,7 +253,7 @@ CheckRequirements() {
         fi
 
         if [ -f "${REQUIREMENTS_PATH}/requirements-devops.txt" ]; then
-            # Try to install fuel-devops as a package, to controll that
+            # Try to install fuel-devops as a package, to control that
             # required version of fuel-devops is already installed.
             # Installation will fail if fuel-devops is not installed or
             # installed with correct version (until it is not a PyPi package)
