@@ -743,7 +743,7 @@ def check_stats_private_info(collector_remote, postgres_actions,
         'mcollective_password': _settings['mcollective']['password'],
         'keystone_admin_token': _settings['keystone']['admin_token'],
         'keystone_nailgun_password': _settings['keystone']['nailgun_password'],
-        'kesytone_ostf_password': _settings['keystone']['ostf_password'],
+        'keystone_ostf_password': _settings['keystone']['ostf_password'],
     }
 
     secret_data_types = {
