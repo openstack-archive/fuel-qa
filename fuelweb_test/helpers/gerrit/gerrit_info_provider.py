@@ -63,7 +63,7 @@ class FuelLibraryModulesProvider(object):
         self.review = review
 
     @classmethod
-    def from_environment_vars(cls, endpoint='https://review.openstack.org'):
+    def from_environment_vars(cls, endpoint='https://review.opendev.org'):
         review = GerritClient(endpoint,
                               project=settings.GERRIT_PROJECT,
                               branch=settings.GERRIT_BRANCH,
