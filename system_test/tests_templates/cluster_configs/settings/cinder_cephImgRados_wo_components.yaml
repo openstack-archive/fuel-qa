@@ -1,5 +1,0 @@
----
-storages:
- !include cluster_configs/settings/storages/cinder_cephImgRados.yaml
-components:
- !include cluster_configs/settings/components/wo_components.yaml

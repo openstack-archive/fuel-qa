@@ -1,3 +1,0 @@
-system_tests:
-  tags:
-    - nova-compute

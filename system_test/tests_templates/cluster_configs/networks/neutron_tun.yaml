@@ -1,4 +1,0 @@
----
-provider: neutron
-segment-type: tun
-pubip-to-all: false

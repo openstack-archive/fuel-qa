@@ -1,7 +1,0 @@
----
-- roles:
-   - controller
-  count: 1
-- roles:
-   - compute
-  count: 2

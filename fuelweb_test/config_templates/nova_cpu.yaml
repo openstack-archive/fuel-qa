@@ -1,8 +1,0 @@
----
-nova_config:
-  DEFAULT/cpu_allocation_ratio:
-    value: "1.0"
-    notify: "Service[nova-scheduler]"
-service:
-  nova-scheduler:
-    ensure: running

@@ -1,9 +1,0 @@
----
-- roles:
-    - controller
-  count: 3
-- roles:
-    - compute
-    - ceph-osd
-  count: 3
-

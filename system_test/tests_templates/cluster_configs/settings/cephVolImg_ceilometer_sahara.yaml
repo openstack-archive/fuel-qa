@@ -1,5 +1,0 @@
----
-storages:
- !include cluster_configs/settings/storages/cephImgVol.yaml
-components:
- !include cluster_configs/settings/components/ceilometer_sahara.yaml

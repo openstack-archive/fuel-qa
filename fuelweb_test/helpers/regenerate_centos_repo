@@ -1,5 +1,0 @@
-#!/bin/bash
-
-REPO_PATH=$1
-
-createrepo --update ${REPO_PATH} 2>/dev/null
